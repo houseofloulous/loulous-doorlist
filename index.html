@@ -1,809 +1,1084 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>LouLou's — Door List</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  <script>
-var TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
-var BASE_ID = 'appY6p2HwRtDmOvAf';
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>LouLou's | Door List</title>
 
-var EVENTS = [
-  { name: "L'Atelier | March 28th", table: "3/28 Door List" },
-  { name: "Do Not Disturb II | Feb 28th", table: "2/28 Door List" },
-  { name: "Do Not Disturb I | Dec 13th", table: "12/13 Door List" }
-];
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
 
-var allGuests = [];
-var currentTab = 'all';
-var currentTable = EVENTS[0].table;
-var currentGuest = null;
-
-function apiHeaders() {
-  return { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
-}
-
-function fetchAll(table, callback) {
-  var records = [];
-  function fetchPage(offset) {
-    var url = 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(table) + '?pageSize=100';
-    if (offset) url += '&offset=' + offset;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
-    xhr.onload = function() {
-      var data = JSON.parse(xhr.responseText);
-      if (data.error) { callback(null, data.error.message); return; }
-      records = records.concat(data.records);
-      if (data.offset) { fetchPage(data.offset); } else { callback(records, null); }
-    };
-    xhr.onerror = function() { callback(null, 'Network error'); };
-    xhr.send();
-  }
-  fetchPage(null);
-}
-
-function init() {
-  var sel = document.getElementById('eventSelect');
-  for (var i = 0; i < EVENTS.length; i++) {
-    var opt = document.createElement('option');
-    opt.value = EVENTS[i].table;
-    opt.textContent = EVENTS[i].name;
-    sel.appendChild(opt);
-  }
-  sel.value = EVENTS[0].table;
-  document.getElementById('currentEventName').textContent = EVENTS[0].name;
-  loadGuests();
-}
-
-function onEventChange() {
-  var sel = document.getElementById('eventSelect');
-  currentTable = sel.value;
-  for (var i = 0; i < EVENTS.length; i++) {
-    if (EVENTS[i].table === currentTable) {
-      document.getElementById('currentEventName').textContent = EVENTS[i].name;
-      break;
+  <style>
+    :root{
+      --cream:#EDE8E0;
+      --cream-dark:#E0D9CE;
+      --terracotta:#E8532A;
+      --near-black:#1C1814;
+      --brown:#5C4A3A;
+      --gold:#C9A96E;
+      --surface:#F5F1EA;
+      --white:#ffffff;
     }
-  }
-  loadGuests();
-}
 
-function loadGuests() {
-  showLoading();
-  fetchAll(currentTable, function(records, err) {
-    if (err) { showError('Error: ' + err); return; }
-    allGuests = [];
-    for (var i = 0; i < records.length; i++) {
-      var f = records[i].fields;
-      allGuests.push({
-        id: records[i].id,
-        name: f['Full Name'] || 'Unknown',
-        photo: f['Photo'] ? f['Photo'][0].url : null,
-        list: f['List'] || '',
-        email: f['Email'] || '',
-        phone: f['Phone'] || '',
-        instagram: f['Instagram'] || '',
-        checkedIn: f['Checked In'] || false,
-        coatCheck: f['Coat Check #'] || '',
-        phoneCheck: f['Phone Check #'] || '',
-        doorNotes: f['Door Notes'] || '',
-        nda: f['NDA'] || '',
-        stiCleared: f['STI Cleared'] || false
-      });
+    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body{
+      background:var(--cream);
+      color:var(--near-black);
+      font-family:'Jost',sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
     }
-    renderGuests('');
-  });
-}
+    a{ color:inherit; }
 
-function getTabGuests() {
-  if (currentTab === 'all') return allGuests;
-  if (currentTab === 'nda') return allGuests.filter(function(g) { return g.nda !== 'Signed'; });
-  if (currentTab === 'Guest') return allGuests.filter(function(g) {
-    var l = (g.list || '').toLowerCase();
-    return !l.includes('work') && !l.includes('staff');
-  });
-  if (currentTab === 'Working') return allGuests.filter(function(g) {
-    var l = (g.list || '').toLowerCase();
-    return l.includes('work') || l.includes('staff');
-  });
-  return allGuests;
-}
-
-function filterGuests(query) { renderGuests(query); }
-
-function wireCardOpen(card, guest) {
-  // pointerup is more reliable on iOS than click (especially inside scrollable grids)
-  card.addEventListener('pointerup', function(ev) {
-    if (ev && typeof ev.button === 'number' && ev.button !== 0) return;
-    openDetail(guest);
-  });
-
-  // Keyboard support (desktop)
-  card.addEventListener('keydown', function(ev) {
-    if (ev.key === 'Enter' || ev.key === ' ') {
-      ev.preventDefault();
-      openDetail(guest);
+    .header{
+      position:sticky;
+      top:0;
+      z-index:100;
+      background:var(--near-black);
+      padding:14px 18px 0;
+      box-shadow:0 2px 18px rgba(0,0,0,0.35);
     }
-  });
-}
-
-function renderGuests(query) {
-  var guests = getTabGuests();
-  if (query) {
-    var q = query.toLowerCase();
-    guests = guests.filter(function(g) { return g.name.toLowerCase().includes(q); });
-  }
-  document.getElementById('guestCount').textContent = guests.length + ' people';
-  if (guests.length === 0) { showEmpty('No guests on this list.'); return; }
-
-  var grid = document.createElement('div');
-  grid.className = 'guest-grid';
-
-  for (var i = 0; i < guests.length; i++) {
-    (function(guest) {
-      var card = document.createElement('div');
-      card.className = 'guest-card' + (guest.checkedIn ? ' checked-in' : '');
-      card.setAttribute('role', 'button');
-      card.setAttribute('tabindex', '0');
-      card.setAttribute('aria-label', 'Open ' + guest.name);
-
-      var photoWrap = document.createElement('div');
-      if (guest.photo) {
-        photoWrap.className = 'guest-photo-wrap';
-        var img = document.createElement('img');
-        img.className = 'guest-photo';
-        img.src = guest.photo;
-        img.alt = guest.name;
-        img.loading = 'lazy';
-        photoWrap.appendChild(img);
-      } else {
-        photoWrap.className = 'guest-photo-placeholder';
-        var span = document.createElement('span');
-        span.textContent = guest.name.charAt(0);
-        photoWrap.appendChild(span);
-      }
-      card.appendChild(photoWrap);
-
-      var info = document.createElement('div');
-      info.className = 'guest-card-info';
-      var nameEl = document.createElement('div');
-      nameEl.className = 'guest-card-name';
-      nameEl.textContent = guest.name;
-      info.appendChild(nameEl);
-      if (guest.list) {
-        var typeEl = document.createElement('div');
-        typeEl.className = 'guest-card-type';
-        typeEl.textContent = guest.list;
-        info.appendChild(typeEl);
-      }
-      card.appendChild(info);
-
-      // IMPORTANT: use our reliable handler
-      wireCardOpen(card, guest);
-
-      grid.appendChild(card);
-    })(guests[i]);
-  }
-
-  var content = document.getElementById('mainContent');
-  content.innerHTML = '';
-  content.appendChild(grid);
-}
-
-function setTab(tab) {
-  currentTab = tab;
-  var tabs = document.querySelectorAll('.tab');
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
-  }
-  renderGuests('');
-}
-
-function openDetail(guest) {
-  currentGuest = guest;
-  var dc = document.getElementById('detailContent');
-  dc.innerHTML = '';
-
-  // Photo
-  var photoWrap = document.createElement('div');
-  photoWrap.className = 'detail-photo-wrap';
-  if (guest.photo) {
-    var img = document.createElement('img');
-    img.className = 'detail-photo';
-    img.src = guest.photo;
-    img.alt = guest.name;
-    photoWrap.appendChild(img);
-  } else {
-    var ph = document.createElement('div');
-    ph.className = 'detail-photo-placeholder';
-    ph.textContent = guest.name.charAt(0);
-    photoWrap.appendChild(ph);
-  }
-  dc.appendChild(photoWrap);
-
-  // Name
-  var nameEl = document.createElement('div');
-  nameEl.className = 'detail-name';
-  nameEl.textContent = guest.name;
-  dc.appendChild(nameEl);
-
-  // Badge
-  if (guest.list) {
-    var meta = document.createElement('div');
-    meta.className = 'detail-meta';
-    var badge = document.createElement('span');
-    badge.className = 'detail-badge ' + ((guest.list || '').toLowerCase().includes('work') ? 'badge-working' : 'badge-guest');
-    badge.textContent = guest.list;
-    meta.appendChild(badge);
-    dc.appendChild(meta);
-  }
-
-  // Contact info
-  if (guest.phone || guest.email || guest.instagram) {
-    var contact = document.createElement('div');
-    contact.className = 'contact-info';
-    if (guest.phone) {
-      var p = document.createElement('div');
-      p.className = 'contact-item';
-      p.innerHTML = '📞 <a href="tel:' + guest.phone + '" style="color:var(--brown);text-decoration:none;">' + guest.phone + '</a>';
-      contact.appendChild(p);
+    .header-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:14px;
+      padding-bottom:10px;
     }
-    if (guest.email) {
-      var e = document.createElement('div');
-      e.className = 'contact-item';
-      e.innerHTML = '✉️ <a href="mailto:' + guest.email + '" style="color:var(--terracotta);text-decoration:none;">' + guest.email + '</a>';
-      contact.appendChild(e);
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:2px;
+      min-width:0;
     }
-    if (guest.instagram) {
-      var ig = document.createElement('div');
-      ig.className = 'contact-item';
-      var igHandle = guest.instagram.replace('https://www.instagram.com/','@').replace('https://instagram.com/','@').replace(/\/$/,'');
-      ig.innerHTML = '📸 <a href="' + guest.instagram + '" target="_blank" style="color:var(--brown);text-decoration:none;">' + igHandle + '</a>';
-      contact.appendChild(ig);
+    .logo{
+      font-family:'Playfair Display',serif;
+      font-size:22px;
+      color:var(--terracotta);
+      letter-spacing:0.02em;
+      line-height:1.1;
+      white-space:nowrap;
     }
-    dc.appendChild(contact);
-  }
-
-  // Check-in section
-  var section = document.createElement('div');
-  section.className = 'detail-section';
-  section.innerHTML = '<div class="detail-section-title">Check-In</div>';
-
-  // Checked In toggle
-  section.appendChild(makeToggle('✓ Checked In', 'chkCheckedIn', guest.checkedIn));
-
-  // NDA toggle
-  section.appendChild(makeToggle('✍️ NDA Signed', 'chkNDA', guest.nda === 'Signed'));
-
-  // NDA unsigned row
-  var ndaRow = document.createElement('div');
-  ndaRow.id = 'ndaLinkRow';
-  ndaRow.className = 'nda-unsigned-row';
-  ndaRow.style.display = guest.nda === 'Signed' ? 'none' : 'block';
-  ndaRow.innerHTML = '<div>🚩 If NDA is unsigned, please <a href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank" style="color:var(--terracotta);font-weight:500;">click here</a> and have them sign:</div>';
-  section.appendChild(ndaRow);
-
-  // Wire NDA toggle to show/hide row
-  var ndaChk = section.querySelector('#chkNDA');
-  ndaChk.addEventListener('change', function() {
-    ndaRow.style.display = this.checked ? 'none' : 'block';
-  });
-
-  // STI toggle
-  section.appendChild(makeToggle('🧪 STI Cleared', 'chkSTI', guest.stiCleared));
-
-  // Coat check
-  section.appendChild(makeInput('🧥 Coat Check #', 'inpCoat', guest.coatCheck, 'e.g. 69'));
-  section.appendChild(makeInput('📱 Phone Check #', 'inpPhone', guest.phoneCheck, 'e.g. 69'));
-  section.appendChild(makeTextarea('📋 Door Notes', 'inpNotes', guest.doorNotes));
-
-  dc.appendChild(section);
-
-  // Save button
-  var btn = document.createElement('button');
-  btn.className = 'save-btn';
-  btn.textContent = 'Save Changes';
-  btn.onclick = saveGuest;
-  dc.appendChild(btn);
-
-  document.getElementById('detailOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('detailSheet').classList.add('open'); }, 10);
-}
-
-function makeToggle(label, id, checked) {
-  var row = document.createElement('div');
-  row.className = 'toggle-row';
-  row.innerHTML = '<div class="toggle-label">' + label + '</div><label class="toggle"><input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '><span class="toggle-slider"></span></label>';
-  return row;
-}
-
-function makeInput(label, id, value, placeholder) {
-  var row = document.createElement('div');
-  row.className = 'detail-input-row';
-  row.innerHTML = '<div class="detail-input-label">' + label + '</div><input class="detail-input" id="' + id + '" type="text" value="' + (value||'') + '" placeholder="' + placeholder + '">';
-  return row;
-}
-
-function makeTextarea(label, id, value) {
-  var row = document.createElement('div');
-  row.className = 'detail-input-row';
-  row.innerHTML = '<div class="detail-input-label">' + label + '</div><textarea class="detail-input detail-textarea" id="' + id + '" placeholder="Any notes...">' + (value||'') + '</textarea>';
-  return row;
-}
-
-function closeDetail() {
-  document.getElementById('detailSheet').classList.remove('open');
-  document.getElementById('detailOverlay').classList.remove('open');
-}
-
-function saveGuest() {
-  var btn = document.querySelector('.save-btn');
-  btn.textContent = 'Saving...';
-
-  var checkedIn = document.getElementById('chkCheckedIn').checked;
-  var ndaSigned = document.getElementById('chkNDA').checked;
-  var stiCleared = document.getElementById('chkSTI').checked;
-  var coatCheck = document.getElementById('inpCoat').value;
-  var phoneCheck = document.getElementById('inpPhone').value;
-  var doorNotes = document.getElementById('inpNotes').value;
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('PATCH', 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(currentTable) + '/' + currentGuest.id);
-  xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onload = function() {
-    currentGuest.checkedIn = checkedIn;
-    currentGuest.nda = ndaSigned ? 'Signed' : 'No';
-    currentGuest.stiCleared = stiCleared;
-    currentGuest.coatCheck = coatCheck;
-    currentGuest.phoneCheck = phoneCheck;
-    currentGuest.doorNotes = doorNotes;
-    for (var i = 0; i < allGuests.length; i++) {
-      if (allGuests[i].id === currentGuest.id) { allGuests[i] = currentGuest; break; }
+    .event-name{
+      font-family:'Cormorant Garamond',serif;
+      color:rgba(237,232,224,0.78);
+      letter-spacing:0.14em;
+      text-transform:uppercase;
+      font-size:12px;
+      line-height:1.2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      max-width:60vw;
     }
-    btn.textContent = 'Saved ✓';
-    setTimeout(function() { closeDetail(); renderGuests(''); }, 600);
-  };
-  xhr.onerror = function() { btn.textContent = 'Error — Try Again'; };
-  xhr.send(JSON.stringify({ fields: { 'Checked In': checkedIn, 'NDA': ndaSigned ? 'Signed' : 'No', 'STI Cleared': stiCleared, 'Coat Check #': coatCheck, 'Phone Check #': phoneCheck, 'Door Notes': doorNotes } }));
-}
+    .stats{
+      display:flex;
+      flex-direction:column;
+      align-items:flex-end;
+      gap:6px;
+    }
+    .guest-count{
+      color:var(--gold);
+      font-size:12px;
+      font-weight:300;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      white-space:nowrap;
+    }
+    .logout-btn{
+      border:1px solid rgba(255,255,255,0.18);
+      background:rgba(255,255,255,0.06);
+      color:rgba(237,232,224,0.82);
+      font-size:11px;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      padding:8px 10px;
+      border-radius:10px;
+      cursor:pointer;
+    }
 
-function showLoading() {
-  document.getElementById('mainContent').innerHTML =
-    '<div class="loading"><div class="loading-spinner"></div><div class="loading-text">Opening the doors...</div></div>';
-}
+    .tabs{
+      display:flex;
+      gap:10px;
+      overflow-x:auto;
+      padding-bottom:10px;
+      scrollbar-width:none;
+    }
+    .tabs::-webkit-scrollbar{ display:none; }
+    .tab{
+      border:none;
+      background:rgba(255,255,255,0.07);
+      color:rgba(237,232,224,0.72);
+      padding:10px 14px;
+      border-radius:12px;
+      cursor:pointer;
+      font-size:11px;
+      font-weight:500;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      white-space:nowrap;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .tab.active{
+      background:rgba(232,83,42,0.18);
+      color:var(--terracotta);
+      border:1px solid rgba(232,83,42,0.35);
+    }
 
-function showEmpty(msg) {
-  document.getElementById('mainContent').innerHTML = '<div class="empty-state">' + msg + '</div>';
-  document.getElementById('guestCount').textContent = '';
-}
+    .subbar{
+      position:sticky;
+      top:86px;
+      z-index:90;
+      background:var(--surface);
+      border-bottom:1px solid var(--cream-dark);
+      padding:10px 12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .event-select{
+      flex:0 0 260px;
+      max-width:52vw;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--cream-dark);
+      background:var(--white);
+      font-size:13px;
+      outline:none;
+      cursor:pointer;
+    }
+    .search{
+      flex:1;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--cream-dark);
+      background:var(--white);
+      font-size:14px;
+      outline:none;
+    }
+    .search:focus{ border-color:rgba(232,83,42,0.55); }
 
-function showError(msg) {
-  document.getElementById('mainContent').innerHTML = '<div class="error-state">' + msg + '</div>';
-}
+    .main{
+      padding:12px;
+    }
 
-init();
-</script>
-</style>
+    .guest-grid{
+      display:grid;
+      grid-template-columns:repeat(4, 1fr);
+      gap:10px;
+    }
+    @media (min-width: 768px){
+      .guest-grid{ grid-template-columns:repeat(6, 1fr); }
+      .subbar{ padding:12px 18px; }
+      .main{ padding:18px; }
+      .header{ padding:16px 18px 0; }
+    }
+    @media (min-width: 1100px){
+      .guest-grid{ grid-template-columns:repeat(7, 1fr); }
+    }
+
+    .guest-card{
+      background:var(--white);
+      border-radius:14px;
+      overflow:hidden;
+      box-shadow:0 2px 10px rgba(0,0,0,0.08);
+      cursor:pointer;
+      user-select:none;
+      -webkit-user-select:none;
+      touch-action:manipulation;
+      transition:transform 120ms ease, box-shadow 120ms ease;
+      position:relative;
+    }
+    .guest-card:active{ transform:scale(0.98); }
+    .guest-card:focus{ outline:none; box-shadow:0 0 0 2px rgba(232,83,42,0.35), 0 2px 10px rgba(0,0,0,0.12); }
+
+    .guest-card.checked-in::after{
+      content:"✓";
+      position:absolute;
+      top:8px;
+      right:8px;
+      width:22px;
+      height:22px;
+      border-radius:50%;
+      background:var(--terracotta);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:700;
+      font-size:12px;
+      z-index:2;
+    }
+
+    .tile{
+      width:100%;
+      aspect-ratio:1 / 1;
+      background:var(--cream-dark);
+      position:relative;
+      overflow:hidden;
+    }
+    .tile img{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center;
+      display:block;
+      pointer-events:none;
+    }
+    .tile .initial{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:'Playfair Display',serif;
+      font-size:30px;
+      color:rgba(92,74,58,0.6);
+      pointer-events:none;
+    }
+
+    .card-meta{
+      padding:10px 10px 12px;
+    }
+    .card-name{
+      font-size:12px;
+      font-weight:500;
+      color:var(--near-black);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .card-type{
+      margin-top:3px;
+      font-size:10px;
+      letter-spacing:0.12em;
+      text-transform:uppercase;
+      color:rgba(232,83,42,0.85);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .state{
+      padding:60px 14px;
+      text-align:center;
+      color:var(--brown);
+      font-family:'Cormorant Garamond',serif;
+      font-size:18px;
+    }
+    .spinner{
+      width:36px;
+      height:36px;
+      border:2px solid var(--cream-dark);
+      border-top-color:var(--terracotta);
+      border-radius:50%;
+      margin:0 auto 14px;
+      animation:spin 0.8s linear infinite;
+    }
+    @keyframes spin { to{ transform:rotate(360deg); } }
+
+    /* Detail sheet */
+    .overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(28,24,20,0.6);
+      display:none;
+      z-index:200;
+      backdrop-filter:blur(4px);
+    }
+    .overlay.open{ display:block; }
+
+    .sheet{
+      position:fixed;
+      left:0;
+      right:0;
+      bottom:0;
+      background:var(--surface);
+      border-radius:22px 22px 0 0;
+      max-height:92vh;
+      overflow:auto;
+      transform:translateY(100%);
+      transition:transform 280ms cubic-bezier(0.32,0.72,0,1);
+      z-index:201;
+      -webkit-overflow-scrolling:touch;
+    }
+    .sheet.open{ transform:translateY(0); }
+
+    .handle{
+      width:40px;
+      height:4px;
+      background:var(--cream-dark);
+      border-radius:4px;
+      margin:12px auto 0;
+    }
+
+    .detail-header{
+      padding:18px 18px 0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:10px;
+    }
+    .avatar{
+      width:120px;
+      height:120px;
+      border-radius:50%;
+      overflow:hidden;
+      border:3px solid var(--cream-dark);
+      background:linear-gradient(135deg, var(--cream-dark), var(--cream));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-family:'Playfair Display',serif;
+      font-size:42px;
+      color:rgba(92,74,58,0.6);
+    }
+    .avatar img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      object-position:center;
+      display:block;
+    }
+    .detail-name{
+      font-family:'Playfair Display',serif;
+      font-size:26px;
+      font-weight:500;
+      text-align:center;
+      padding:0 10px;
+    }
+    .detail-badge{
+      font-size:11px;
+      letter-spacing:0.14em;
+      text-transform:uppercase;
+      color:rgba(232,83,42,0.85);
+    }
+
+    .detail-body{
+      padding:10px 18px 24px;
+    }
+    .section-title{
+      margin-top:18px;
+      margin-bottom:10px;
+      font-size:10px;
+      letter-spacing:0.2em;
+      text-transform:uppercase;
+      color:rgba(92,74,58,0.75);
+    }
+
+    .row{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px 0;
+      border-bottom:1px solid var(--cream-dark);
+    }
+    .row-label{
+      font-size:15px;
+      color:var(--near-black);
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .toggle{
+      position:relative;
+      width:52px;
+      height:30px;
+      flex:0 0 auto;
+    }
+    .toggle input{ opacity:0; width:0; height:0; }
+    .slider{
+      position:absolute;
+      inset:0;
+      border-radius:999px;
+      background:var(--cream-dark);
+      cursor:pointer;
+      transition:background 160ms ease;
+    }
+    .slider::before{
+      content:"";
+      position:absolute;
+      width:24px;
+      height:24px;
+      left:3px;
+      top:3px;
+      background:#fff;
+      border-radius:50%;
+      box-shadow:0 1px 4px rgba(0,0,0,0.15);
+      transition:transform 160ms ease;
+    }
+    .toggle input:checked + .slider{ background:var(--terracotta); }
+    .toggle input:checked + .slider::before{ transform:translateX(22px); }
+
+    .linkrow{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      padding:10px 0 0;
+    }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid var(--cream-dark);
+      background:rgba(255,255,255,0.7);
+      font-size:13px;
+      color:var(--brown);
+      text-decoration:none;
+    }
+    .pill strong{ color:var(--near-black); font-weight:600; }
+
+    .field{
+      padding:14px 0;
+      border-bottom:1px solid var(--cream-dark);
+    }
+    .field label{
+      display:block;
+      font-size:10px;
+      letter-spacing:0.16em;
+      text-transform:uppercase;
+      color:rgba(92,74,58,0.75);
+      margin-bottom:8px;
+    }
+    .field input, .field textarea{
+      width:100%;
+      border:1px solid var(--cream-dark);
+      border-radius:12px;
+      padding:12px 12px;
+      background:#fff;
+      outline:none;
+      font-family:'Jost',sans-serif;
+      font-size:15px;
+      color:var(--near-black);
+    }
+    .field textarea{ min-height:90px; resize:none; line-height:1.45; }
+    .field input:focus, .field textarea:focus{ border-color:rgba(232,83,42,0.55); }
+
+    .save{
+      margin-top:18px;
+      width:100%;
+      border:none;
+      border-radius:14px;
+      padding:16px 14px;
+      background:var(--terracotta);
+      color:#fff;
+      font-size:13px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .save:active{ transform:scale(0.99); }
+
+    /* Login modal */
+    .login{
+      position:fixed;
+      inset:0;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(28,24,20,0.72);
+      z-index:300;
+      padding:18px;
+    }
+    .login.open{ display:flex; }
+    .login-card{
+      width:min(420px, 100%);
+      background:var(--surface);
+      border-radius:18px;
+      padding:18px 16px;
+      box-shadow:0 12px 40px rgba(0,0,0,0.35);
+    }
+    .login-title{
+      font-family:'Playfair Display',serif;
+      font-size:22px;
+      color:var(--near-black);
+      margin-bottom:6px;
+      text-align:center;
+    }
+    .login-sub{
+      text-align:center;
+      color:rgba(92,74,58,0.8);
+      font-size:13px;
+      margin-bottom:14px;
+    }
+    .login-card .field{ border-bottom:none; padding:10px 0; }
+    .login-btn{
+      width:100%;
+      border:none;
+      border-radius:14px;
+      padding:14px 14px;
+      background:var(--near-black);
+      color:rgba(237,232,224,0.92);
+      font-size:12px;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      cursor:pointer;
+      margin-top:8px;
+    }
+    .login-error{
+      margin-top:10px;
+      font-size:13px;
+      color:var(--terracotta);
+      text-align:center;
+      min-height:18px;
+    }
+
+    .hidden{ display:none; }
+  </style>
 </head>
+
 <body>
-
-<div class="header">
-  <div class="header-top">
-    <div>
-      <div class="logo">LouLou's</div>
-      <div class="event-name" id="currentEventName"></div>
+  <div class="header">
+    <div class="header-top">
+      <div class="brand">
+        <div class="logo">LouLou's</div>
+        <div class="event-name" id="eventName">Loading...</div>
+      </div>
+      <div class="stats">
+        <div class="guest-count" id="guestCount"></div>
+        <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
+      </div>
     </div>
-    <div class="guest-count" id="guestCount"></div>
+
+    <div class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab active" data-tab="door" type="button">👥 Door List</button>
+      <button class="tab" data-tab="guests" type="button">🔥 Guests</button>
+      <button class="tab" data-tab="working" type="button">🍸 Working</button>
+      <button class="tab" data-tab="ndas" type="button">✍️ NDAs</button>
+    </div>
   </div>
-  <div class="tabs">
-    <button class="tab active" data-tab="all" onclick="setTab('all')">👥 Door List</button>
-    <button class="tab" data-tab="Guest" onclick="setTab('Guest')">🔥 Guests</button>
-    <button class="tab" data-tab="Working" onclick="setTab('Working')">🎭 Working</button>
-    <button class="tab" data-tab="nda" onclick="setTab('nda')">✍️ NDAs</button>
+
+  <div class="subbar">
+    <select class="event-select" id="eventSelect"></select>
+    <input class="search" id="searchInput" placeholder="Search guests..." />
   </div>
-</div>
 
-<div class="event-selector">
-  <select class="event-select" id="eventSelect" onchange="onEventChange()">
-    <option value="">— Select Event —</option>
-  </select>
-</div>
-
-<div class="search-bar">
-  <input class="search-input" type="search" placeholder="Search guests..." oninput="filterGuests(this.value)" />
-</div>
-
-<div id="mainContent">
-  <div class="loading">
-    <div class="loading-spinner"></div>
-    <div class="loading-text">Opening the doors...</div>
+  <div class="main" id="mainContent">
+    <div class="state">
+      <div class="spinner"></div>
+      Opening the doors...
+    </div>
   </div>
-</div>
 
-<div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
-<div class="detail-sheet" id="detailSheet">
-  <div class="detail-handle"></div>
-  <div id="detailContent"></div>
-</div>
+  <!-- Detail -->
+  <div class="overlay" id="overlay"></div>
+  <div class="sheet" id="sheet" aria-modal="true" role="dialog">
+    <div class="handle"></div>
+    <div id="detailRoot"></div>
+  </div>
 
-<script>
-var TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
-var BASE_ID = 'appY6p2HwRtDmOvAf';
+  <!-- Login -->
+  <div class="login" id="login">
+    <div class="login-card">
+      <div class="login-title">Staff Access</div>
+      <div class="login-sub">Enter your username and passcode.</div>
 
-var EVENTS = [
-  { name: "L'Atelier | March 28th", table: "3/28 Door List" },
-  { name: "Do Not Disturb II | Feb 28th", table: "2/28 Door List" },
-  { name: "Do Not Disturb I | Dec 13th", table: "12/13 Door List" }
-];
+      <div class="field">
+        <label>Username</label>
+        <input id="loginUser" autocomplete="username" />
+      </div>
+      <div class="field">
+        <label>Passcode</label>
+        <input id="loginPass" type="password" autocomplete="current-password" />
+      </div>
 
-var allGuests = [];
-var currentTab = 'all';
-var currentTable = EVENTS[0].table;
-var currentGuest = null;
+      <button class="login-btn" id="loginBtn" type="button">Sign In</button>
+      <div class="login-error" id="loginError"></div>
+    </div>
+  </div>
 
-function apiHeaders() {
-  return { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
-}
+  <script>
+    // 1) Set this to your Cloudflare Worker URL, no trailing slash.
+    // Example: https://loulous-door-api.YOURNAME.workers.dev
+    const API_BASE = "https://YOUR-WORKER-URL.workers.dev";
 
-function fetchAll(table, callback) {
-  var records = [];
-  function fetchPage(offset) {
-    var url = 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(table) + '?pageSize=100';
-    if (offset) url += '&offset=' + offset;
-    var xhr = new XMLHttpRequest();
-    xhr.open('GET', url);
-    xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
-    xhr.onload = function() {
-      var data = JSON.parse(xhr.responseText);
-      if (data.error) { callback(null, data.error.message); return; }
-      records = records.concat(data.records);
-      if (data.offset) { fetchPage(data.offset); } else { callback(records, null); }
+    // Airtable fields expected in your Door List table:
+    // Full Name, Photo (attachment), List, Email, Phone, Instagram,
+    // Checked In (checkbox), VIP Wristband (checkbox), NDA Signed (checkbox), STI Verified (checkbox),
+    // Coat Check #, Door Notes, Ticket Type, Tags
+    //
+    // Your Worker should expose:
+    // GET  /api/ping
+    // GET  /api/events
+    // GET  /api/records?table=TABLE_NAME
+    // PATCH /api/record?table=TABLE_NAME&id=RECORD_ID
+
+    const state = {
+      tab: "door",
+      events: [],
+      table: "",
+      guests: [],
+      query: "",
+      currentGuest: null,
+      auth: ""
     };
-    xhr.onerror = function() { callback(null, 'Network error'); };
-    xhr.send();
-  }
-  fetchPage(null);
-}
 
-function init() {
-  var sel = document.getElementById('eventSelect');
-  for (var i = 0; i < EVENTS.length; i++) {
-    var opt = document.createElement('option');
-    opt.value = EVENTS[i].table;
-    opt.textContent = EVENTS[i].name;
-    sel.appendChild(opt);
-  }
-  sel.value = EVENTS[0].table;
-  document.getElementById('currentEventName').textContent = EVENTS[0].name;
-  loadGuests();
-}
+    const $ = (id) => document.getElementById(id);
 
-function onEventChange() {
-  var sel = document.getElementById('eventSelect');
-  currentTable = sel.value;
-  for (var i = 0; i < EVENTS.length; i++) {
-    if (EVENTS[i].table === currentTable) {
-      document.getElementById('currentEventName').textContent = EVENTS[i].name;
-      break;
+    function setAuth(user, pass) {
+      state.auth = "Basic " + btoa(user + ":" + pass);
+      localStorage.setItem("loulous_auth", state.auth);
     }
-  }
-  loadGuests();
-}
 
-function loadGuests() {
-  showLoading();
-  fetchAll(currentTable, function(records, err) {
-    if (err) { showError('Error: ' + err); return; }
-    allGuests = [];
-    for (var i = 0; i < records.length; i++) {
-      var f = records[i].fields;
-      allGuests.push({
-        id: records[i].id,
-        name: f['Full Name'] || 'Unknown',
-        photo: f['Photo'] ? f['Photo'][0].url : null,
-        list: f['List'] || '',
-        email: f['Email'] || '',
-        phone: f['Phone'] || '',
-        instagram: f['Instagram'] || '',
-        checkedIn: f['Checked In'] || false,
-        coatCheck: f['Coat Check #'] || '',
-        phoneCheck: f['Phone Check #'] || '',
-        doorNotes: f['Door Notes'] || '',
-        nda: f['NDA'] || '',
-        stiCleared: f['STI Cleared'] || false
+    function clearAuth() {
+      state.auth = "";
+      localStorage.removeItem("loulous_auth");
+    }
+
+    function authHeaders() {
+      return { "Authorization": state.auth };
+    }
+
+    async function api(path, opts = {}) {
+      const res = await fetch(API_BASE + path, {
+        ...opts,
+        headers: {
+          ...(opts.headers || {}),
+          ...authHeaders(),
+          "Content-Type": "application/json"
+        }
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => "");
+        throw new Error(text || ("HTTP " + res.status));
+      }
+      return res.json();
+    }
+
+    function showLoading(msg) {
+      $("mainContent").innerHTML = `
+        <div class="state">
+          <div class="spinner"></div>
+          ${msg || "Opening the doors..."}
+        </div>`;
+    }
+
+    function showState(msg) {
+      $("mainContent").innerHTML = `<div class="state">${msg}</div>`;
+    }
+
+    function openLogin(errorMsg) {
+      $("login").classList.add("open");
+      $("loginError").textContent = errorMsg || "";
+      $("loginUser").focus();
+    }
+
+    function closeLogin() {
+      $("login").classList.remove("open");
+      $("loginError").textContent = "";
+    }
+
+    async function tryExistingAuth() {
+      const saved = localStorage.getItem("loulous_auth");
+      if (!saved) return false;
+      state.auth = saved;
+      try {
+        await api("/api/ping");
+        return true;
+      } catch {
+        clearAuth();
+        return false;
+      }
+    }
+
+    async function login() {
+      const user = $("loginUser").value.trim();
+      const pass = $("loginPass").value;
+      if (!user || !pass) {
+        $("loginError").textContent = "Please enter both fields.";
+        return;
+      }
+      setAuth(user, pass);
+      try {
+        await api("/api/ping");
+        closeLogin();
+        await bootstrap();
+      } catch (e) {
+        clearAuth();
+        $("loginError").textContent = "Incorrect username or passcode.";
+      }
+    }
+
+    function setTabs() {
+      document.querySelectorAll(".tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === state.tab);
       });
     }
-    renderGuests('');
-  });
-}
 
-function getTabGuests() {
-  if (currentTab === 'all') return allGuests;
-  if (currentTab === 'nda') return allGuests.filter(function(g) { return g.nda !== 'Signed'; });
-  if (currentTab === 'Guest') return allGuests.filter(function(g) {
-    var l = (g.list || '').toLowerCase();
-    return !l.includes('work') && !l.includes('staff');
-  });
-  if (currentTab === 'Working') return allGuests.filter(function(g) {
-    var l = (g.list || '').toLowerCase();
-    return l.includes('work') || l.includes('staff');
-  });
-  return allGuests;
-}
+    function applyTabFilter(list) {
+      const tab = state.tab;
 
-function filterGuests(query) { renderGuests(query); }
+      if (tab === "door") return list;
 
-function renderGuests(query) {
-  var guests = getTabGuests();
-  if (query) {
-    var q = query.toLowerCase();
-    guests = guests.filter(function(g) { return g.name.toLowerCase().includes(q); });
-  }
-  document.getElementById('guestCount').textContent = guests.length + ' people';
-  if (guests.length === 0) { showEmpty('No guests on this list.'); return; }
-
-  var grid = document.createElement('div');
-  grid.className = 'guest-grid';
-
-  for (var i = 0; i < guests.length; i++) {
-    (function(guest) {
-      var card = document.createElement('div');
-      card.className = 'guest-card' + (guest.checkedIn ? ' checked-in' : '');
-
-      var photoWrap = document.createElement('div');
-      if (guest.photo) {
-        photoWrap.className = 'guest-photo-wrap';
-        var img = document.createElement('img');
-        img.className = 'guest-photo';
-        img.src = guest.photo;
-        img.alt = guest.name;
-        img.loading = 'lazy';
-        photoWrap.appendChild(img);
-      } else {
-        photoWrap.className = 'guest-photo-placeholder';
-        var span = document.createElement('span');
-        span.textContent = guest.name.charAt(0);
-        photoWrap.appendChild(span);
+      if (tab === "guests") {
+        return list.filter(g => !isWorking(g.list));
       }
-      card.appendChild(photoWrap);
 
-      var info = document.createElement('div');
-      info.className = 'guest-card-info';
-      var nameEl = document.createElement('div');
-      nameEl.className = 'guest-card-name';
-      nameEl.textContent = guest.name;
-      info.appendChild(nameEl);
-      if (guest.list) {
-        var typeEl = document.createElement('div');
-        typeEl.className = 'guest-card-type';
-        typeEl.textContent = guest.list;
-        info.appendChild(typeEl);
+      if (tab === "working") {
+        return list.filter(g => isWorking(g.list));
       }
-      card.appendChild(info);
 
-      card.setAttribute('role', 'button');
-card.tabIndex = 0;
+      if (tab === "ndas") {
+        // Show anyone who has NOT signed NDA
+        return list.filter(g => !g.ndaSigned);
+      }
 
-function open() { openDetail(guest); }
-
-// iPhone friendly tap
-card.addEventListener('pointerup', function(e) {
-  if (e && typeof e.button === 'number' && e.button !== 0) return;
-  open();
-});
-
-// fallback
-card.addEventListener('click', open);
-
-// keyboard
-card.addEventListener('keydown', function(e) {
-  if (e.key === 'Enter' || e.key === ' ') {
-    e.preventDefault();
-    open();
-  }
-});, function() { openDetail(guest); });
-      grid.appendChild(card);
-    })(guests[i]);
-  }
-
-  var content = document.getElementById('mainContent');
-  content.innerHTML = '';
-  content.appendChild(grid);
-}
-
-function setTab(tab) {
-  currentTab = tab;
-  var tabs = document.querySelectorAll('.tab');
-  for (var i = 0; i < tabs.length; i++) {
-    tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
-  }
-  renderGuests('');
-}
-
-function openDetail(guest) {
-  currentGuest = guest;
-  var dc = document.getElementById('detailContent');
-  dc.innerHTML = '';
-
-  // Photo
-  var photoWrap = document.createElement('div');
-  photoWrap.className = 'detail-photo-wrap';
-  if (guest.photo) {
-    var img = document.createElement('img');
-    img.className = 'detail-photo';
-    img.src = guest.photo;
-    img.alt = guest.name;
-    photoWrap.appendChild(img);
-  } else {
-    var ph = document.createElement('div');
-    ph.className = 'detail-photo-placeholder';
-    ph.textContent = guest.name.charAt(0);
-    photoWrap.appendChild(ph);
-  }
-  dc.appendChild(photoWrap);
-
-  // Name
-  var nameEl = document.createElement('div');
-  nameEl.className = 'detail-name';
-  nameEl.textContent = guest.name;
-  dc.appendChild(nameEl);
-
-  // Badge
-  if (guest.list) {
-    var meta = document.createElement('div');
-    meta.className = 'detail-meta';
-    var badge = document.createElement('span');
-    badge.className = 'detail-badge ' + ((guest.list || '').toLowerCase().includes('work') ? 'badge-working' : 'badge-guest');
-    badge.textContent = guest.list;
-    meta.appendChild(badge);
-    dc.appendChild(meta);
-  }
-
-  // Contact info
-  if (guest.phone || guest.email || guest.instagram) {
-    var contact = document.createElement('div');
-    contact.className = 'contact-info';
-    if (guest.phone) {
-      var p = document.createElement('div');
-      p.className = 'contact-item';
-      p.innerHTML = '📞 <a href="tel:' + guest.phone + '" style="color:var(--brown);text-decoration:none;">' + guest.phone + '</a>';
-      contact.appendChild(p);
+      return list;
     }
-    if (guest.email) {
-      var e = document.createElement('div');
-      e.className = 'contact-item';
-      e.innerHTML = '✉️ <a href="mailto:' + guest.email + '" style="color:var(--terracotta);text-decoration:none;">' + guest.email + '</a>';
-      contact.appendChild(e);
+
+    function isWorking(listVal) {
+      const l = (listVal || "").toLowerCase();
+      return l.includes("work") || l.includes("staff");
     }
-    if (guest.instagram) {
-      var ig = document.createElement('div');
-      ig.className = 'contact-item';
-      var igHandle = guest.instagram.replace('https://www.instagram.com/','@').replace('https://instagram.com/','@').replace(/\/$/,'');
-      ig.innerHTML = '📸 <a href="' + guest.instagram + '" target="_blank" style="color:var(--brown);text-decoration:none;">' + igHandle + '</a>';
-      contact.appendChild(ig);
+
+    function normalizeInstagram(val) {
+      if (!val) return "";
+      let v = String(val).trim();
+      if (!v) return "";
+      v = v.replace(/^@/, "");
+      v = v.replace(/^https?:\/\/(www\.)?instagram\.com\//, "");
+      v = v.replace(/\/$/, "");
+      return v;
     }
-    dc.appendChild(contact);
-  }
 
-  // Check-in section
-  var section = document.createElement('div');
-  section.className = 'detail-section';
-  section.innerHTML = '<div class="detail-section-title">Check-In</div>';
-
-  // Checked In toggle
-  section.appendChild(makeToggle('✓ Checked In', 'chkCheckedIn', guest.checkedIn));
-
-  // NDA toggle
-  section.appendChild(makeToggle('✍️ NDA Signed', 'chkNDA', guest.nda === 'Signed'));
-
-  // NDA unsigned row
-  var ndaRow = document.createElement('div');
-  ndaRow.id = 'ndaLinkRow';
-  ndaRow.className = 'nda-unsigned-row';
-  ndaRow.style.display = guest.nda === 'Signed' ? 'none' : 'block';
-  ndaRow.innerHTML = '<div>🚩 If NDA is unsigned, please <a href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank" style="color:var(--terracotta);font-weight:500;">click here</a> and have them sign:</div>';
-  section.appendChild(ndaRow);
-
-  // Wire NDA toggle to show/hide row
-  var ndaChk = section.querySelector('#chkNDA');
-  ndaChk.addEventListener('change', function() {
-    ndaRow.style.display = this.checked ? 'none' : 'block';
-  });
-
-  // STI toggle
-  section.appendChild(makeToggle('🧪 STI Cleared', 'chkSTI', guest.stiCleared));
-
-  // Coat check
-  section.appendChild(makeInput('🧥 Coat Check #', 'inpCoat', guest.coatCheck, 'e.g. 69'));
-  section.appendChild(makeInput('📱 Phone Check #', 'inpPhone', guest.phoneCheck, 'e.g. 69'));
-  section.appendChild(makeTextarea('📋 Door Notes', 'inpNotes', guest.doorNotes));
-
-  dc.appendChild(section);
-
-  // Save button
-  var btn = document.createElement('button');
-  btn.className = 'save-btn';
-  btn.textContent = 'Save Changes';
-  btn.onclick = saveGuest;
-  dc.appendChild(btn);
-
-  document.getElementById('detailOverlay').classList.add('open');
-  setTimeout(function() { document.getElementById('detailSheet').classList.add('open'); }, 10);
-}
-
-function makeToggle(label, id, checked) {
-  var row = document.createElement('div');
-  row.className = 'toggle-row';
-  row.innerHTML = '<div class="toggle-label">' + label + '</div><label class="toggle"><input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '><span class="toggle-slider"></span></label>';
-  return row;
-}
-
-function makeInput(label, id, value, placeholder) {
-  var row = document.createElement('div');
-  row.className = 'detail-input-row';
-  row.innerHTML = '<div class="detail-input-label">' + label + '</div><input class="detail-input" id="' + id + '" type="text" value="' + (value||'') + '" placeholder="' + placeholder + '">';
-  return row;
-}
-
-function makeTextarea(label, id, value) {
-  var row = document.createElement('div');
-  row.className = 'detail-input-row';
-  row.innerHTML = '<div class="detail-input-label">' + label + '</div><textarea class="detail-input detail-textarea" id="' + id + '" placeholder="Any notes...">' + (value||'') + '</textarea>';
-  return row;
-}
-
-function closeDetail() {
-  document.getElementById('detailSheet').classList.remove('open');
-  document.getElementById('detailOverlay').classList.remove('open');
-}
-
-function saveGuest() {
-  var btn = document.querySelector('.save-btn');
-  btn.textContent = 'Saving...';
-
-  var checkedIn = document.getElementById('chkCheckedIn').checked;
-  var ndaSigned = document.getElementById('chkNDA').checked;
-  var stiCleared = document.getElementById('chkSTI').checked;
-  var coatCheck = document.getElementById('inpCoat').value;
-  var phoneCheck = document.getElementById('inpPhone').value;
-  var doorNotes = document.getElementById('inpNotes').value;
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('PATCH', 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(currentTable) + '/' + currentGuest.id);
-  xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  xhr.onload = function() {
-    currentGuest.checkedIn = checkedIn;
-    currentGuest.nda = ndaSigned ? 'Signed' : 'No';
-    currentGuest.stiCleared = stiCleared;
-    currentGuest.coatCheck = coatCheck;
-    currentGuest.phoneCheck = phoneCheck;
-    currentGuest.doorNotes = doorNotes;
-    for (var i = 0; i < allGuests.length; i++) {
-      if (allGuests[i].id === currentGuest.id) { allGuests[i] = currentGuest; break; }
+    function guestFromRecord(r) {
+      const f = r.fields || {};
+      const photoUrl = Array.isArray(f["Photo"]) && f["Photo"][0] && f["Photo"][0].url ? f["Photo"][0].url : "";
+      return {
+        id: r.id,
+        name: f["Full Name"] || "Unknown",
+        photo: photoUrl,
+        list: f["List"] || "",
+        email: f["Email"] || "",
+        phone: f["Phone"] || "",
+        instagram: normalizeInstagram(f["Instagram"] || ""),
+        checkedIn: !!f["Checked In"],
+        vip: !!f["VIP Wristband"],
+        ndaSigned: !!f["NDA Signed"],
+        sti: !!f["STI Verified"],
+        coat: f["Coat Check #"] || "",
+        notes: f["Door Notes"] || "",
+        ticketType: f["Ticket Type"] || "",
+        tags: Array.isArray(f["Tags"]) ? f["Tags"] : []
+      };
     }
-    btn.textContent = 'Saved ✓';
-    setTimeout(function() { closeDetail(); renderGuests(''); }, 600);
-  };
-  xhr.onerror = function() { btn.textContent = 'Error — Try Again'; };
-  xhr.send(JSON.stringify({ fields: { 'Checked In': checkedIn, 'NDA': ndaSigned ? 'Signed' : 'No', 'STI Cleared': stiCleared, 'Coat Check #': coatCheck, 'Phone Check #': phoneCheck, 'Door Notes': doorNotes } }));
-}
 
-function showLoading() {
-  document.getElementById('mainContent').innerHTML = '<div class="loading"><div class="loading-spinner"></div><div class="loading-text">Opening the doors...</div></div>';
-}
-function showEmpty(msg) {
-  document.getElementById('mainContent').innerHTML = '<div class="empty-state">' + msg + '</div>';
-  document.getElementById('guestCount').textContent = '';
-}
-function showError(msg) {
-  document.getElementById('mainContent').innerHTML = '<div class="error-state">' + msg + '</div>';
-}
+    function render() {
+      const q = state.query.trim().toLowerCase();
 
-init();
-</script>
+      let list = state.guests.slice();
+      if (q) {
+        list = list.filter(g => (g.name || "").toLowerCase().includes(q));
+      }
+
+      list = applyTabFilter(list);
+
+      $("guestCount").textContent = list.length ? (list.length + " people") : "";
+
+      if (!list.length) {
+        showState("No guests found.");
+        return;
+      }
+
+      const grid = document.createElement("div");
+      grid.className = "guest-grid";
+
+      for (const g of list) {
+        const card = document.createElement("div");
+        card.className = "guest-card" + (g.checkedIn ? " checked-in" : "");
+        card.setAttribute("role", "button");
+        card.setAttribute("tabindex", "0");
+        card.setAttribute("aria-label", "Open " + g.name);
+
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        if (g.photo) {
+          const img = document.createElement("img");
+          img.src = g.photo;
+          img.alt = g.name;
+          img.loading = "lazy";
+          tile.appendChild(img);
+        } else {
+          const init = document.createElement("div");
+          init.className = "initial";
+          init.textContent = (g.name || "U").charAt(0);
+          tile.appendChild(init);
+        }
+
+        const meta = document.createElement("div");
+        meta.className = "card-meta";
+        const nm = document.createElement("div");
+        nm.className = "card-name";
+        nm.textContent = g.name;
+        meta.appendChild(nm);
+
+        const ty = document.createElement("div");
+        ty.className = "card-type";
+        ty.textContent = g.list || " ";
+        meta.appendChild(ty);
+
+        card.appendChild(tile);
+        card.appendChild(meta);
+
+        // Reliable tap on iPhone and iPad
+        const open = () => openDetail(g);
+        card.addEventListener("pointerup", (e) => {
+          if (e && typeof e.button === "number" && e.button !== 0) return;
+          open();
+        });
+        card.addEventListener("click", open);
+        card.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            open();
+          }
+        });
+
+        grid.appendChild(card);
+      }
+
+      $("mainContent").innerHTML = "";
+      $("mainContent").appendChild(grid);
+    }
+
+    function openSheet() {
+      $("overlay").classList.add("open");
+      $("sheet").classList.add("open");
+    }
+
+    function closeSheet() {
+      $("sheet").classList.remove("open");
+      $("overlay").classList.remove("open");
+      $("detailRoot").innerHTML = "";
+      state.currentGuest = null;
+    }
+
+    function detailHTML(g) {
+      const ig = g.instagram ? `https://instagram.com/${g.instagram}` : "";
+      const igLabel = g.instagram ? `@${g.instagram}` : "";
+
+      const tags = (g.tags && g.tags.length)
+        ? `<div class="section-title">Tags</div><div class="linkrow">${
+            g.tags.map(t => `<span class="pill"><strong>${escapeHtml(t)}</strong></span>`).join("")
+          }</div>`
+        : "";
+
+      const ticket = g.ticketType
+        ? `<div class="section-title">Ticket Type</div><div class="linkrow"><span class="pill"><strong>${escapeHtml(g.ticketType)}</strong></span></div>`
+        : "";
+
+      return `
+        <div class="detail-header">
+          <div class="avatar">
+            ${g.photo ? `<img src="${escapeAttr(g.photo)}" alt="${escapeAttr(g.name)}" />` : `${escapeHtml((g.name||"U").charAt(0))}`}
+          </div>
+          <div class="detail-name">${escapeHtml(g.name)}</div>
+          <div class="detail-badge">${escapeHtml(g.list || "")}</div>
+        </div>
+
+        <div class="detail-body">
+          <div class="section-title">Contact</div>
+          <div class="linkrow">
+            ${g.email ? `<a class="pill" href="mailto:${escapeAttr(g.email)}">✉️ <strong>${escapeHtml(g.email)}</strong></a>` : ""}
+            ${g.phone ? `<a class="pill" href="tel:${escapeAttr(g.phone)}">📞 <strong>${escapeHtml(g.phone)}</strong></a>` : ""}
+            ${ig ? `<a class="pill" target="_blank" rel="noopener" href="${escapeAttr(ig)}">📸 <strong>${escapeHtml(igLabel)}</strong></a>` : ""}
+          </div>
+
+          ${ticket}
+          ${tags}
+
+          <div class="section-title">Check-In</div>
+
+          ${toggleRow("Checked In", "checkedIn", g.checkedIn, "✓")}
+          ${toggleRow("VIP Wristband", "vip", g.vip, "🎗️")}
+          ${toggleRow("NDA Signed", "ndaSigned", g.ndaSigned, "✍️")}
+          ${toggleRow("STI Verified", "sti", g.sti, "🧪")}
+
+          <div class="field">
+            <label>Coat Check #</label>
+            <input id="coat" placeholder="e.g. 69" value="${escapeAttr(g.coat)}" />
+          </div>
+
+          <div class="field">
+            <label>Door Notes</label>
+            <textarea id="notes" placeholder="Enter any notes">${escapeHtml(g.notes)}</textarea>
+          </div>
+
+          <button class="save" id="saveBtn" type="button">Save</button>
+        </div>
+      `;
+    }
+
+    function toggleRow(label, key, checked, icon) {
+      const id = "t_" + key;
+      return `
+        <div class="row">
+          <div class="row-label">${icon} ${escapeHtml(label)}</div>
+          <label class="toggle">
+            <input type="checkbox" id="${id}" ${checked ? "checked" : ""} />
+            <span class="slider"></span>
+          </label>
+        </div>
+      `;
+    }
+
+    function openDetail(g) {
+      state.currentGuest = { ...g };
+      $("detailRoot").innerHTML = detailHTML(state.currentGuest);
+
+      $("saveBtn").addEventListener("click", saveDetail);
+      openSheet();
+    }
+
+    async function saveDetail() {
+      const g = state.currentGuest;
+      if (!g) return;
+
+      const updated = {
+        "Checked In": !!$("t_checkedIn").checked,
+        "VIP Wristband": !!$("t_vip").checked,
+        "NDA Signed": !!$("t_ndaSigned").checked,
+        "STI Verified": !!$("t_sti").checked,
+        "Coat Check #": $("coat").value.trim(),
+        "Door Notes": $("notes").value.trim()
+      };
+
+      const btn = $("saveBtn");
+      btn.textContent = "Saving...";
+      btn.disabled = true;
+
+      try {
+        await api(`/api/record?table=${encodeURIComponent(state.table)}&id=${encodeURIComponent(g.id)}`, {
+          method: "PATCH",
+          body: JSON.stringify({ fields: updated })
+        });
+
+        // Update local state immediately
+        const idx = state.guests.findIndex(x => x.id === g.id);
+        if (idx >= 0) {
+          const merged = { ...state.guests[idx] };
+          merged.checkedIn = updated["Checked In"];
+          merged.vip = updated["VIP Wristband"];
+          merged.ndaSigned = updated["NDA Signed"];
+          merged.sti = updated["STI Verified"];
+          merged.coat = updated["Coat Check #"];
+          merged.notes = updated["Door Notes"];
+          state.guests[idx] = merged;
+        }
+
+        btn.textContent = "Saved ✓";
+        setTimeout(() => {
+          closeSheet();
+          render();
+        }, 450);
+
+      } catch (e) {
+        btn.textContent = "Error, try again";
+        btn.disabled = false;
+      }
+    }
+
+    function escapeHtml(s) {
+      return String(s ?? "")
+        .replaceAll("&","&amp;")
+        .replaceAll("<","&lt;")
+        .replaceAll(">","&gt;")
+        .replaceAll('"',"&quot;")
+        .replaceAll("'","&#039;");
+    }
+    function escapeAttr(s) {
+      return escapeHtml(s).replaceAll("\n"," ").replaceAll("\r"," ");
+    }
+
+    async function loadEvents() {
+      // Expected response: { events: [{ name: "...", table: "..." }, ...] }
+      const data = await api("/api/events");
+      state.events = Array.isArray(data.events) ? data.events : [];
+      if (!state.events.length) throw new Error("No events returned.");
+    }
+
+    function populateEventSelect() {
+      const sel = $("eventSelect");
+      sel.innerHTML = "";
+      for (const ev of state.events) {
+        const opt = document.createElement("option");
+        opt.value = ev.table;
+        opt.textContent = ev.name;
+        sel.appendChild(opt);
+      }
+      state.table = sel.value || (state.events[0] ? state.events[0].table : "");
+      const current = state.events.find(e => e.table === state.table) || state.events[0];
+      $("eventName").textContent = current ? current.name : "";
+    }
+
+    async function loadGuests() {
+      showLoading("Loading guest list...");
+      const data = await api(`/api/records?table=${encodeURIComponent(state.table)}`);
+      const records = Array.isArray(data.records) ? data.records : [];
+      state.guests = records.map(guestFromRecord);
+      render();
+    }
+
+    async function bootstrap() {
+      try {
+        showLoading("Loading events...");
+        await loadEvents();
+        populateEventSelect();
+        await loadGuests();
+      } catch (e) {
+        showState("Could not load. Check API_BASE and your Worker.");
+      }
+    }
+
+    // Wire UI
+    document.querySelectorAll(".tab").forEach(btn => {
+      btn.addEventListener("click", () => {
+        state.tab = btn.dataset.tab;
+        setTabs();
+        render();
+      });
+    });
+
+    $("eventSelect").addEventListener("change", async (e) => {
+      state.table = e.target.value;
+      const current = state.events.find(x => x.table === state.table);
+      $("eventName").textContent = current ? current.name : "";
+      await loadGuests();
+    });
+
+    $("searchInput").addEventListener("input", (e) => {
+      state.query = e.target.value || "";
+      render();
+    });
+
+    $("overlay").addEventListener("click", closeSheet);
+
+    $("logoutBtn").addEventListener("click", () => {
+      clearAuth();
+      openLogin("Signed out.");
+    });
+
+    $("loginBtn").addEventListener("click", login);
+    $("loginPass").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") login();
+    });
+
+    // Start
+    (async function start() {
+      const ok = await tryExistingAuth();
+      if (!ok) openLogin("");
+      else await bootstrap();
+    })();
+  </script>
 </body>
 </html>
