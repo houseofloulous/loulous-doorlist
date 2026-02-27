@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +28,7 @@
     overflow-x: hidden;
   }
 
+  /* HEADER */
   .header {
     background: var(--near-black);
     padding: 16px 20px 0;
@@ -66,6 +68,7 @@
     font-weight: 300;
   }
 
+  /* TABS */
   .tabs {
     display: flex;
     gap: 0;
@@ -97,6 +100,7 @@
 
   .tab-icon { margin-right: 5px; }
 
+  /* SEARCH */
   .search-bar {
     padding: 12px 20px;
     background: var(--surface);
@@ -122,6 +126,7 @@
   .search-input:focus { border-color: var(--terracotta); }
   .search-input::placeholder { color: #aaa; }
 
+  /* GRID */
   .guest-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -136,6 +141,7 @@
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
     position: relative;
+    height: 200px;
     display: flex;
     flex-direction: column;
     border-radius: 10px;
@@ -143,6 +149,7 @@
   }
 
   .guest-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+
   .guest-card:active { transform: scale(0.97); }
 
   .guest-card.checked-in::after {
@@ -163,41 +170,30 @@
     z-index: 2;
   }
 
-  .guest-photo-wrap {
-    width: 100%;
-    padding-top: 100%;
-    position: relative;
-    overflow: hidden;
-    border-radius: 10px 10px 0 0;
-    background: var(--cream-dark);
-  }
-
   .guest-photo {
-    position: absolute;
-    top: 0; left: 0;
     width: 100%;
-    height: 100%;
+    height: 155px;
     object-fit: cover;
     object-position: top center;
+    background: var(--cream-dark);
     display: block;
+    flex-shrink: 0;
+    border-radius: 10px 10px 0 0;
   }
 
   .guest-photo-placeholder {
     width: 100%;
-    padding-top: 100%;
-    position: relative;
+    height: 155px;
     background: linear-gradient(135deg, var(--cream-dark), var(--cream));
-    border-radius: 10px 10px 0 0;
-  }
-
-  .guest-photo-placeholder span {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'Playfair Display', serif;
     font-size: 28px;
     color: var(--brown);
     opacity: 0.6;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
   }
 
   .guest-card-info {
@@ -236,6 +232,7 @@
     .guest-grid { grid-template-columns: repeat(6, 1fr); }
   }
 
+  /* LOADING */
   .loading {
     display: flex;
     flex-direction: column;
@@ -272,6 +269,7 @@
     font-style: italic;
   }
 
+  /* DETAIL VIEW */
   .detail-overlay {
     position: fixed;
     inset: 0;
@@ -372,7 +370,9 @@
   .badge-collaborator { background: #EBFFF0; color: #2AE85A; }
   .badge-patron { background: #FFF8EB; color: #C9890A; }
 
-  .detail-section { padding: 20px 24px 0; }
+  .detail-section {
+    padding: 20px 24px 0;
+  }
 
   .detail-section-title {
     font-size: 10px;
@@ -384,6 +384,7 @@
     font-weight: 500;
   }
 
+  /* TOGGLE ROWS */
   .toggle-row {
     display: flex;
     align-items: center;
@@ -436,6 +437,7 @@
   .toggle input:checked + .toggle-slider { background: var(--terracotta); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(22px); }
 
+  /* TEXT INPUTS */
   .detail-input-row {
     padding: 14px 0;
     border-bottom: 1px solid var(--cream-dark);
@@ -474,6 +476,7 @@
     line-height: 1.5;
   }
 
+  /* SAVE BUTTON */
   .save-btn {
     margin: 24px 24px 40px;
     width: calc(100% - 48px);
@@ -492,8 +495,10 @@
   }
 
   .save-btn:active { transform: scale(0.98); background: var(--terracotta-light); }
+
   .save-btn.saving { opacity: 0.7; }
 
+  /* CONTACT INFO */
   .contact-info {
     padding: 0 24px 4px;
     display: flex;
@@ -509,6 +514,7 @@
     gap: 6px;
   }
 
+  /* ERROR */
   .error-state {
     padding: 40px 20px;
     text-align: center;
@@ -517,6 +523,7 @@
     font-size: 18px;
   }
 
+  /* EVENT SELECTOR */
   .event-selector {
     padding: 16px 20px;
     background: var(--near-black);
@@ -542,6 +549,8 @@
   }
 
   .event-select option { background: var(--near-black); color: var(--cream); }
+
+
 </style>
 </head>
 <body>
@@ -579,6 +588,7 @@
   </div>
 </div>
 
+<!-- Detail Sheet -->
 <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
 <div class="detail-sheet" id="detailSheet">
   <div class="detail-handle"></div>
@@ -589,10 +599,11 @@
 const TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
 const BASE_ID = 'appY6p2HwRtDmOvAf';
 
+// Door List tables — add new ones here as you create them
 const DOOR_LIST_TABLES = [
-  { name: "L'Atelier | March 28th", table: "3/28 Door List" },
-  { name: "Do Not Disturb II | Feb 28th", table: "2/28 Door List" },
-  { name: "Do Not Disturb I | Dec 13th", table: "12/13 Door List" },
+  { name: "L'Atelier — 3/28", table: "3/28 Door List" },
+  { name: "Do Not Disturb II — 2/28", table: "2/28 Door List" },
+  { name: "Do Not Disturb I — 12/13", table: "12/13 Door List" },
 ];
 
 let allGuests = [];
@@ -621,8 +632,9 @@ async function fetchAll(table, formula = '') {
 }
 
 async function init() {
+  // Populate event selector
   const sel = document.getElementById('eventSelect');
-  DOOR_LIST_TABLES.forEach((e) => {
+  DOOR_LIST_TABLES.forEach((e, i) => {
     const opt = document.createElement('option');
     opt.value = e.table;
     opt.textContent = e.name;
@@ -645,6 +657,7 @@ async function loadGuests() {
   showLoading();
   try {
     const records = await fetchAll(currentTable);
+    if (records.length > 0) console.log('FIELDS:', Object.keys(records[0].fields));
     allGuests = records.map(r => ({
       id: r.id,
       name: r.fields['Full Name'] || 'Unknown',
@@ -660,7 +673,7 @@ async function loadGuests() {
       stiCleared: r.fields['STI Cleared'] || false,
       list: r.fields['List'] || '',
       rsvp: r.fields['RSVP'] || '',
-      instagram: r.fields['Instagram'] || r.fields['Instagram Handle'] || r.fields['IG'] || '',
+      instagram: r.fields['Instagram'] || r.fields['Instagram Handle'] || r.fields['IG'] || r.fields['instagram'] || r.fields['INSTAGRAM'] || r.fields['Instagram URL'] || r.fields['Social'] || '',
     }));
     renderGuests();
   } catch(e) {
@@ -671,18 +684,14 @@ async function loadGuests() {
 function getTabGuests() {
   if (currentTab === 'all') return allGuests;
   if (currentTab === 'nda') return allGuests.filter(g => g.nda !== 'Signed');
-  if (currentTab === 'Guest') return allGuests.filter(g => {
-    const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||'');
-    return !l.toLowerCase().includes('work') && !l.toLowerCase().includes('staff');
-  });
-  if (currentTab === 'Working') return allGuests.filter(g => {
-    const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||'');
-    return l.toLowerCase().includes('work') || l.toLowerCase().includes('staff');
-  });
+  if (currentTab === 'Guest') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return !l.toLowerCase().includes('work') && !l.toLowerCase().includes('staff'); });
+  if (currentTab === 'Working') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return l.toLowerCase().includes('work') || l.toLowerCase().includes('staff'); });
   return allGuests;
 }
 
-function filterGuests(query) { renderGuests(query); }
+function filterGuests(query) {
+  renderGuests(query);
+}
 
 function renderGuests(query = '') {
   let guests = getTabGuests();
@@ -694,7 +703,10 @@ function renderGuests(query = '') {
   const count = guests.length;
   document.getElementById('guestCount').textContent = `${count} ${count === 1 ? 'person' : 'people'}`;
 
-  if (guests.length === 0) { showEmpty('No guests on this list.'); return; }
+  if (guests.length === 0) {
+    showEmpty('No guests on this list.');
+    return;
+  }
 
   const grid = document.createElement('div');
   grid.className = 'guest-grid';
@@ -702,7 +714,7 @@ function renderGuests(query = '') {
   guests.forEach(guest => {
     const card = document.createElement('div');
     card.className = 'guest-card' + (guest.checkedIn ? ' checked-in' : '');
-    card.onclick = () => openDetail(guest);
+    card.dataset.guestId = guest.id;
 
     const cats = Array.isArray(guest.category) ? guest.category : [guest.category];
     const primaryCat = cats[0] || '';
@@ -721,6 +733,13 @@ function renderGuests(query = '') {
 
   document.getElementById('mainContent').innerHTML = '';
   document.getElementById('mainContent').appendChild(grid);
+
+  grid.addEventListener('click', function(e) {
+    const card = e.target.closest('.guest-card');
+    if (!card) return;
+    const guest = allGuests.find(g => g.id === card.dataset.guestId);
+    if (guest) openDetail(guest);
+  });
 }
 
 function setTab(tab) {
@@ -747,6 +766,7 @@ function openDetail(guest) {
       ${guest.photo
         ? `<img class="detail-photo" src="${guest.photo}" alt="${guest.name}">`
         : `<div class="detail-photo-placeholder">${guest.name.charAt(0)}</div>`}
+      <div class="detail-photo-gradient"></div>
     </div>
     <div class="detail-name">${guest.name}</div>
     <div class="detail-meta">${badgesHtml}</div>
@@ -844,6 +864,7 @@ async function saveGuest() {
       })
     });
 
+    // Update local data
     currentGuest.checkedIn = checkedIn;
     currentGuest.nda = ndaSigned ? 'Signed' : 'No';
     currentGuest.stiCleared = stiCleared;
@@ -855,7 +876,10 @@ async function saveGuest() {
     if (idx > -1) allGuests[idx] = { ...currentGuest };
 
     btn.textContent = 'Saved ✓';
-    setTimeout(() => { closeDetail(); renderGuests(); }, 600);
+    setTimeout(() => {
+      closeDetail();
+      renderGuests();
+    }, 600);
   } catch(e) {
     btn.textContent = 'Error — Try Again';
     btn.classList.remove('saving');
