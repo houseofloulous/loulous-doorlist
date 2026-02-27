@@ -5,222 +5,170 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>LouLou's | Door List</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Playfair+Display:wght@400;500;600&display=swap" rel="stylesheet">
-
   <style>
     :root{
-      --cream:#EDE8E0;
-      --cream-dark:#E0D9CE;
-      --terracotta:#E8532A;
-      --near-black:#1C1814;
-      --brown:#5C4A3A;
-      --gold:#C9A96E;
-      --surface:#F5F1EA;
-      --white:#ffffff;
+      --blue:#6E8FF0;
+      --blue2:#5D7EE8;
+      --bg:#F2F4FA;
+      --card:#ffffff;
+      --text:#111827;
+      --muted:#6B7280;
+      --line:#E5E7EB;
+      --pill:#EEF2FF;
     }
 
     *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
     body{
-      background:var(--cream);
-      color:var(--near-black);
-      font-family:'Jost',sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
       min-height:100vh;
-      overflow-x:hidden;
     }
-    a{ color:inherit; }
 
-    .header{
+    .topbar{
+      background:linear-gradient(0deg, var(--blue), var(--blue2));
+      color:white;
+      padding:16px 16px 12px;
       position:sticky;
       top:0;
-      z-index:100;
-      background:var(--near-black);
-      padding:14px 18px 0;
-      box-shadow:0 2px 18px rgba(0,0,0,0.35);
+      z-index:50;
+      box-shadow:0 8px 24px rgba(17,24,39,0.18);
     }
-    .header-top{
+
+    .topbar-row{
       display:flex;
-      align-items:flex-start;
+      align-items:center;
       justify-content:space-between;
-      gap:14px;
-      padding-bottom:10px;
+      gap:12px;
     }
+
     .brand{
-      display:flex;
-      flex-direction:column;
-      gap:2px;
-      min-width:0;
+      font-weight:800;
+      font-size:24px;
+      letter-spacing:0.01em;
     }
-    .logo{
-      font-family:'Playfair Display',serif;
-      font-size:22px;
-      color:var(--terracotta);
-      letter-spacing:0.02em;
-      line-height:1.1;
+
+    .event-title{
+      margin-top:4px;
+      opacity:0.92;
+      font-size:14px;
+      font-weight:600;
+    }
+
+    .count{
+      font-size:13px;
+      opacity:0.95;
       white-space:nowrap;
-    }
-    .event-name{
-      font-family:'Cormorant Garamond',serif;
-      color:rgba(237,232,224,0.78);
-      letter-spacing:0.14em;
-      text-transform:uppercase;
-      font-size:12px;
-      line-height:1.2;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      max-width:60vw;
-    }
-    .stats{
-      display:flex;
-      flex-direction:column;
-      align-items:flex-end;
-      gap:6px;
-    }
-    .guest-count{
-      color:var(--gold);
-      font-size:12px;
-      font-weight:300;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      white-space:nowrap;
-    }
-    .logout-btn{
-      border:1px solid rgba(255,255,255,0.18);
-      background:rgba(255,255,255,0.06);
-      color:rgba(237,232,224,0.82);
-      font-size:11px;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      padding:8px 10px;
-      border-radius:10px;
-      cursor:pointer;
+      font-weight:600;
     }
 
     .tabs{
+      margin-top:12px;
       display:flex;
       gap:10px;
       overflow-x:auto;
-      padding-bottom:10px;
+      padding-bottom:4px;
       scrollbar-width:none;
     }
     .tabs::-webkit-scrollbar{ display:none; }
+
     .tab{
       border:none;
-      background:rgba(255,255,255,0.07);
-      color:rgba(237,232,224,0.72);
+      background:rgba(255,255,255,0.22);
+      color:white;
       padding:10px 14px;
       border-radius:12px;
       cursor:pointer;
-      font-size:11px;
-      font-weight:500;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      white-space:nowrap;
+      font-weight:700;
+      font-size:14px;
       display:flex;
       align-items:center;
       gap:8px;
+      white-space:nowrap;
     }
     .tab.active{
-      background:rgba(232,83,42,0.18);
-      color:var(--terracotta);
-      border:1px solid rgba(232,83,42,0.35);
+      background:white;
+      color:#1F2A44;
     }
 
     .subbar{
+      background:var(--bg);
+      padding:12px 16px;
       position:sticky;
-      top:86px;
-      z-index:90;
-      background:var(--surface);
-      border-bottom:1px solid var(--cream-dark);
-      padding:10px 12px;
+      top:110px;
+      z-index:40;
       display:flex;
       gap:10px;
       align-items:center;
-    }
-    .event-select{
-      flex:0 0 260px;
-      max-width:52vw;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid var(--cream-dark);
-      background:var(--white);
-      font-size:13px;
-      outline:none;
-      cursor:pointer;
-    }
-    .search{
-      flex:1;
-      padding:10px 12px;
-      border-radius:10px;
-      border:1px solid var(--cream-dark);
-      background:var(--white);
-      font-size:14px;
-      outline:none;
-    }
-    .search:focus{ border-color:rgba(232,83,42,0.55); }
-
-    .main{
-      padding:12px;
+      border-bottom:1px solid rgba(229,231,235,0.8);
     }
 
-    .guest-grid{
+    select, input{
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      font-size:16px;
+      outline:none;
+      background:white;
+    }
+    select{ width:220px; max-width:48vw; }
+    input{ flex:1; min-width:0; }
+
+    .content{ padding:16px; }
+
+    .grid{
       display:grid;
       grid-template-columns:repeat(4, 1fr);
-      gap:10px;
+      gap:12px;
     }
-    @media (min-width: 768px){
-      .guest-grid{ grid-template-columns:repeat(6, 1fr); }
-      .subbar{ padding:12px 18px; }
-      .main{ padding:18px; }
-      .header{ padding:16px 18px 0; }
+    @media (min-width: 760px){
+      .grid{ grid-template-columns:repeat(6, 1fr); }
+      .subbar{ top:116px; }
     }
     @media (min-width: 1100px){
-      .guest-grid{ grid-template-columns:repeat(7, 1fr); }
+      .grid{ grid-template-columns:repeat(7, 1fr); }
     }
 
-    .guest-card{
-      background:var(--white);
-      border-radius:14px;
+    .card{
+      background:var(--card);
+      border-radius:16px;
       overflow:hidden;
-      box-shadow:0 2px 10px rgba(0,0,0,0.08);
+      box-shadow:0 8px 20px rgba(17,24,39,0.08);
       cursor:pointer;
       user-select:none;
-      -webkit-user-select:none;
       touch-action:manipulation;
-      transition:transform 120ms ease, box-shadow 120ms ease;
       position:relative;
+      transition:transform 120ms ease;
     }
-    .guest-card:active{ transform:scale(0.98); }
-    .guest-card:focus{ outline:none; box-shadow:0 0 0 2px rgba(232,83,42,0.35), 0 2px 10px rgba(0,0,0,0.12); }
+    .card:active{ transform:scale(0.98); }
 
-    .guest-card.checked-in::after{
+    .card.checked::after{
       content:"✓";
       position:absolute;
-      top:8px;
-      right:8px;
+      top:10px;
+      right:10px;
       width:22px;
       height:22px;
-      border-radius:50%;
-      background:var(--terracotta);
-      color:#fff;
+      border-radius:999px;
+      background:#2563EB;
+      color:white;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-weight:700;
+      font-weight:900;
       font-size:12px;
+      box-shadow:0 6px 14px rgba(37,99,235,0.35);
       z-index:2;
     }
 
-    .tile{
+    .photo{
       width:100%;
-      aspect-ratio:1 / 1;
-      background:var(--cream-dark);
+      aspect-ratio:1/1;
+      background:#DCE6FF;
       position:relative;
       overflow:hidden;
     }
-    .tile img{
+    .photo img{
       position:absolute;
       inset:0;
       width:100%;
@@ -230,607 +178,328 @@
       display:block;
       pointer-events:none;
     }
-    .tile .initial{
+    .initial{
       position:absolute;
       inset:0;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-family:'Playfair Display',serif;
-      font-size:30px;
-      color:rgba(92,74,58,0.6);
+      font-weight:900;
+      font-size:28px;
+      color:#27408F;
+      opacity:0.65;
       pointer-events:none;
     }
 
-    .card-meta{
+    .meta{
       padding:10px 10px 12px;
     }
-    .card-name{
-      font-size:12px;
-      font-weight:500;
-      color:var(--near-black);
+    .name{
+      font-weight:800;
+      font-size:13px;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
-    .card-type{
-      margin-top:3px;
-      font-size:10px;
-      letter-spacing:0.12em;
+    .type{
+      margin-top:4px;
+      font-size:11px;
+      font-weight:800;
+      letter-spacing:0.06em;
       text-transform:uppercase;
-      color:rgba(232,83,42,0.85);
+      color:#3B82F6;
       white-space:nowrap;
       overflow:hidden;
       text-overflow:ellipsis;
     }
 
-    .state{
-      padding:60px 14px;
-      text-align:center;
-      color:var(--brown);
-      font-family:'Cormorant Garamond',serif;
-      font-size:18px;
-    }
-    .spinner{
-      width:36px;
-      height:36px;
-      border:2px solid var(--cream-dark);
-      border-top-color:var(--terracotta);
-      border-radius:50%;
-      margin:0 auto 14px;
-      animation:spin 0.8s linear infinite;
-    }
-    @keyframes spin { to{ transform:rotate(360deg); } }
-
-    /* Detail sheet */
     .overlay{
       position:fixed;
       inset:0;
-      background:rgba(28,24,20,0.6);
+      background:rgba(17,24,39,0.55);
       display:none;
-      z-index:200;
-      backdrop-filter:blur(4px);
+      z-index:100;
     }
     .overlay.open{ display:block; }
 
     .sheet{
       position:fixed;
-      left:0;
-      right:0;
-      bottom:0;
-      background:var(--surface);
+      left:0; right:0; bottom:0;
+      background:white;
       border-radius:22px 22px 0 0;
       max-height:92vh;
       overflow:auto;
       transform:translateY(100%);
-      transition:transform 280ms cubic-bezier(0.32,0.72,0,1);
-      z-index:201;
-      -webkit-overflow-scrolling:touch;
+      transition:transform 220ms cubic-bezier(0.32,0.72,0,1);
+      z-index:101;
+      padding-bottom:24px;
     }
     .sheet.open{ transform:translateY(0); }
 
     .handle{
-      width:40px;
-      height:4px;
-      background:var(--cream-dark);
-      border-radius:4px;
+      width:42px;
+      height:5px;
+      background:#E5E7EB;
+      border-radius:999px;
       margin:12px auto 0;
     }
 
-    .detail-header{
-      padding:18px 18px 0;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      gap:10px;
+    .detail-head{
+      padding:18px 18px 8px;
+      text-align:center;
     }
     .avatar{
-      width:120px;
-      height:120px;
-      border-radius:50%;
+      width:110px;
+      height:110px;
+      border-radius:999px;
+      margin:10px auto 10px;
       overflow:hidden;
-      border:3px solid var(--cream-dark);
-      background:linear-gradient(135deg, var(--cream-dark), var(--cream));
+      background:#EEF2FF;
       display:flex;
       align-items:center;
       justify-content:center;
-      font-family:'Playfair Display',serif;
-      font-size:42px;
-      color:rgba(92,74,58,0.6);
+      font-weight:900;
+      font-size:40px;
+      color:#27408F;
     }
     .avatar img{
       width:100%;
       height:100%;
       object-fit:cover;
       object-position:center;
-      display:block;
     }
     .detail-name{
-      font-family:'Playfair Display',serif;
       font-size:26px;
-      font-weight:500;
-      text-align:center;
-      padding:0 10px;
+      font-weight:900;
+      letter-spacing:0.01em;
     }
-    .detail-badge{
-      font-size:11px;
-      letter-spacing:0.14em;
+    .detail-type{
+      margin-top:6px;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.12em;
       text-transform:uppercase;
-      color:rgba(232,83,42,0.85);
+      color:#3B82F6;
     }
 
-    .detail-body{
-      padding:10px 18px 24px;
+    .section{
+      padding:10px 18px 0;
     }
     .section-title{
-      margin-top:18px;
+      margin-top:12px;
       margin-bottom:10px;
-      font-size:10px;
-      letter-spacing:0.2em;
+      font-size:12px;
+      font-weight:900;
+      letter-spacing:0.16em;
       text-transform:uppercase;
-      color:rgba(92,74,58,0.75);
+      color:#6B7280;
     }
 
     .row{
       display:flex;
       align-items:center;
       justify-content:space-between;
-      gap:12px;
       padding:14px 0;
-      border-bottom:1px solid var(--cream-dark);
+      border-top:1px solid var(--line);
+      gap:12px;
     }
-    .row-label{
-      font-size:15px;
-      color:var(--near-black);
+    .label{
+      font-size:16px;
+      font-weight:800;
       display:flex;
       align-items:center;
       gap:10px;
+      color:#111827;
     }
 
     .toggle{
+      width:54px;
+      height:32px;
       position:relative;
-      width:52px;
-      height:30px;
       flex:0 0 auto;
     }
     .toggle input{ opacity:0; width:0; height:0; }
     .slider{
       position:absolute;
       inset:0;
+      background:#E5E7EB;
       border-radius:999px;
-      background:var(--cream-dark);
       cursor:pointer;
       transition:background 160ms ease;
     }
     .slider::before{
       content:"";
       position:absolute;
-      width:24px;
-      height:24px;
+      width:26px;
+      height:26px;
       left:3px;
       top:3px;
-      background:#fff;
-      border-radius:50%;
-      box-shadow:0 1px 4px rgba(0,0,0,0.15);
+      background:white;
+      border-radius:999px;
+      box-shadow:0 2px 8px rgba(0,0,0,0.12);
       transition:transform 160ms ease;
     }
-    .toggle input:checked + .slider{ background:var(--terracotta); }
+    .toggle input:checked + .slider{ background:#3B82F6; }
     .toggle input:checked + .slider::before{ transform:translateX(22px); }
 
-    .linkrow{
+    .pillrow{
       display:flex;
-      gap:10px;
       flex-wrap:wrap;
-      padding:10px 0 0;
+      gap:10px;
     }
     .pill{
       display:inline-flex;
       align-items:center;
       gap:8px;
+      background:var(--pill);
+      border:1px solid rgba(59,130,246,0.15);
       padding:10px 12px;
       border-radius:999px;
-      border:1px solid var(--cream-dark);
-      background:rgba(255,255,255,0.7);
-      font-size:13px;
-      color:var(--brown);
       text-decoration:none;
+      font-weight:800;
+      color:#1F2A44;
+      font-size:14px;
     }
-    .pill strong{ color:var(--near-black); font-weight:600; }
 
     .field{
-      padding:14px 0;
-      border-bottom:1px solid var(--cream-dark);
+      margin-top:12px;
+      border-top:1px solid var(--line);
+      padding-top:12px;
     }
     .field label{
       display:block;
-      font-size:10px;
+      font-size:12px;
+      font-weight:900;
       letter-spacing:0.16em;
       text-transform:uppercase;
-      color:rgba(92,74,58,0.75);
+      color:#6B7280;
       margin-bottom:8px;
     }
     .field input, .field textarea{
       width:100%;
-      border:1px solid var(--cream-dark);
-      border-radius:12px;
+      border:1px solid var(--line);
+      border-radius:14px;
       padding:12px 12px;
-      background:#fff;
+      font-size:16px;
       outline:none;
-      font-family:'Jost',sans-serif;
-      font-size:15px;
-      color:var(--near-black);
     }
-    .field textarea{ min-height:90px; resize:none; line-height:1.45; }
-    .field input:focus, .field textarea:focus{ border-color:rgba(232,83,42,0.55); }
+    .field textarea{ min-height:90px; resize:none; }
 
     .save{
-      margin-top:18px;
+      margin-top:14px;
       width:100%;
       border:none;
       border-radius:14px;
       padding:16px 14px;
-      background:var(--terracotta);
-      color:#fff;
-      font-size:13px;
-      letter-spacing:0.18em;
-      text-transform:uppercase;
-      font-weight:600;
-      cursor:pointer;
-    }
-    .save:active{ transform:scale(0.99); }
-
-    /* Login modal */
-    .login{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      background:rgba(28,24,20,0.72);
-      z-index:300;
-      padding:18px;
-    }
-    .login.open{ display:flex; }
-    .login-card{
-      width:min(420px, 100%);
-      background:var(--surface);
-      border-radius:18px;
-      padding:18px 16px;
-      box-shadow:0 12px 40px rgba(0,0,0,0.35);
-    }
-    .login-title{
-      font-family:'Playfair Display',serif;
-      font-size:22px;
-      color:var(--near-black);
-      margin-bottom:6px;
-      text-align:center;
-    }
-    .login-sub{
-      text-align:center;
-      color:rgba(92,74,58,0.8);
-      font-size:13px;
-      margin-bottom:14px;
-    }
-    .login-card .field{ border-bottom:none; padding:10px 0; }
-    .login-btn{
-      width:100%;
-      border:none;
-      border-radius:14px;
-      padding:14px 14px;
-      background:var(--near-black);
-      color:rgba(237,232,224,0.92);
-      font-size:12px;
-      letter-spacing:0.18em;
+      background:#2563EB;
+      color:white;
+      font-weight:900;
+      letter-spacing:0.16em;
       text-transform:uppercase;
       cursor:pointer;
-      margin-top:8px;
     }
-    .login-error{
-      margin-top:10px;
-      font-size:13px;
-      color:var(--terracotta);
-      text-align:center;
-      min-height:18px;
-    }
-
-    .hidden{ display:none; }
   </style>
 </head>
 
 <body>
-  <div class="header">
-    <div class="header-top">
-      <div class="brand">
-        <div class="logo">LouLou's</div>
-        <div class="event-name" id="eventName">Loading...</div>
+  <div class="topbar">
+    <div class="topbar-row">
+      <div>
+        <div class="brand">LouLou's</div>
+        <div class="event-title" id="eventTitle">L'Atelier | March 28th</div>
       </div>
-      <div class="stats">
-        <div class="guest-count" id="guestCount"></div>
-        <button class="logout-btn" id="logoutBtn" type="button">Log out</button>
-      </div>
+      <div class="count" id="count">0 people</div>
     </div>
 
-    <div class="tabs" role="tablist" aria-label="Sections">
+    <div class="tabs">
       <button class="tab active" data-tab="door" type="button">👥 Door List</button>
       <button class="tab" data-tab="guests" type="button">🔥 Guests</button>
-      <button class="tab" data-tab="working" type="button">🍸 Working</button>
+      <button class="tab" data-tab="working" type="button">🎭 Working</button>
       <button class="tab" data-tab="ndas" type="button">✍️ NDAs</button>
     </div>
   </div>
 
   <div class="subbar">
-    <select class="event-select" id="eventSelect"></select>
-    <input class="search" id="searchInput" placeholder="Search guests..." />
+    <select id="eventSelect">
+      <option value="atelier">L'Atelier | March 28th</option>
+      <option value="dnd">Do Not Disturb | Feb 28th</option>
+    </select>
+    <input id="search" placeholder="Search guests..." />
   </div>
 
-  <div class="main" id="mainContent">
-    <div class="state">
-      <div class="spinner"></div>
-      Opening the doors...
-    </div>
+  <div class="content" id="content">
+    <div class="grid" id="grid"></div>
   </div>
 
-  <!-- Detail -->
   <div class="overlay" id="overlay"></div>
-  <div class="sheet" id="sheet" aria-modal="true" role="dialog">
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
     <div class="handle"></div>
-    <div id="detailRoot"></div>
-  </div>
-
-  <!-- Login -->
-  <div class="login" id="login">
-    <div class="login-card">
-      <div class="login-title">Staff Access</div>
-      <div class="login-sub">Enter your username and passcode.</div>
-
-      <div class="field">
-        <label>Username</label>
-        <input id="loginUser" autocomplete="username" />
-      </div>
-      <div class="field">
-        <label>Passcode</label>
-        <input id="loginPass" type="password" autocomplete="current-password" />
-      </div>
-
-      <button class="login-btn" id="loginBtn" type="button">Sign In</button>
-      <div class="login-error" id="loginError"></div>
-    </div>
+    <div id="detail"></div>
   </div>
 
   <script>
-    // 1) Set this to your Cloudflare Worker URL, no trailing slash.
-    // Example: https://loulous-door-api.YOURNAME.workers.dev
-    const API_BASE = "https://YOUR-WORKER-URL.workers.dev";
+    const sampleGuests = [
+      { id:"1", name:"Arianna Gilbeaux", type:"Dinner Guest", photo:"", checked:true, vip:true, nda:true, sti:false, email:"", phone:"", instagram:"" },
+      { id:"2", name:"Boykin Curry", type:"After Guests", photo:"", checked:false, vip:false, nda:false, sti:false, email:"", phone:"", instagram:"" },
+      { id:"3", name:"Christina Harley", type:"Dinner Guest", photo:"", checked:false, vip:false, nda:true, sti:true, email:"", phone:"", instagram:"" },
+      { id:"4", name:"Colin Flynn", type:"Working", photo:"", checked:true, vip:false, nda:true, sti:false, email:"", phone:"", instagram:"" },
+      { id:"5", name:"Evan Plomaritis", type:"After Guests", photo:"", checked:false, vip:true, nda:false, sti:false, email:"", phone:"", instagram:"" },
+      { id:"6", name:"Heather Futterman", type:"Dinner Guest", photo:"", checked:false, vip:false, nda:true, sti:true, email:"", phone:"", instagram:"" },
+    ];
 
-    // Airtable fields expected in your Door List table:
-    // Full Name, Photo (attachment), List, Email, Phone, Instagram,
-    // Checked In (checkbox), VIP Wristband (checkbox), NDA Signed (checkbox), STI Verified (checkbox),
-    // Coat Check #, Door Notes, Ticket Type, Tags
-    //
-    // Your Worker should expose:
-    // GET  /api/ping
-    // GET  /api/events
-    // GET  /api/records?table=TABLE_NAME
-    // PATCH /api/record?table=TABLE_NAME&id=RECORD_ID
+    const state = { tab:"door", q:"", guests:[...sampleGuests], current:null };
 
-    const state = {
-      tab: "door",
-      events: [],
-      table: "",
-      guests: [],
-      query: "",
-      currentGuest: null,
-      auth: ""
-    };
+    const grid = document.getElementById("grid");
+    const count = document.getElementById("count");
+    const overlay = document.getElementById("overlay");
+    const sheet = document.getElementById("sheet");
+    const detail = document.getElementById("detail");
 
-    const $ = (id) => document.getElementById(id);
-
-    function setAuth(user, pass) {
-      state.auth = "Basic " + btoa(user + ":" + pass);
-      localStorage.setItem("loulous_auth", state.auth);
+    function isWorking(t){
+      const s = (t||"").toLowerCase();
+      return s.includes("working") || s.includes("staff") || s.includes("work");
     }
 
-    function clearAuth() {
-      state.auth = "";
-      localStorage.removeItem("loulous_auth");
-    }
-
-    function authHeaders() {
-      return { "Authorization": state.auth };
-    }
-
-    async function api(path, opts = {}) {
-      const res = await fetch(API_BASE + path, {
-        ...opts,
-        headers: {
-          ...(opts.headers || {}),
-          ...authHeaders(),
-          "Content-Type": "application/json"
-        }
-      });
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(text || ("HTTP " + res.status));
-      }
-      return res.json();
-    }
-
-    function showLoading(msg) {
-      $("mainContent").innerHTML = `
-        <div class="state">
-          <div class="spinner"></div>
-          ${msg || "Opening the doors..."}
-        </div>`;
-    }
-
-    function showState(msg) {
-      $("mainContent").innerHTML = `<div class="state">${msg}</div>`;
-    }
-
-    function openLogin(errorMsg) {
-      $("login").classList.add("open");
-      $("loginError").textContent = errorMsg || "";
-      $("loginUser").focus();
-    }
-
-    function closeLogin() {
-      $("login").classList.remove("open");
-      $("loginError").textContent = "";
-    }
-
-    async function tryExistingAuth() {
-      const saved = localStorage.getItem("loulous_auth");
-      if (!saved) return false;
-      state.auth = saved;
-      try {
-        await api("/api/ping");
-        return true;
-      } catch {
-        clearAuth();
-        return false;
-      }
-    }
-
-    async function login() {
-      const user = $("loginUser").value.trim();
-      const pass = $("loginPass").value;
-      if (!user || !pass) {
-        $("loginError").textContent = "Please enter both fields.";
-        return;
-      }
-      setAuth(user, pass);
-      try {
-        await api("/api/ping");
-        closeLogin();
-        await bootstrap();
-      } catch (e) {
-        clearAuth();
-        $("loginError").textContent = "Incorrect username or passcode.";
-      }
-    }
-
-    function setTabs() {
-      document.querySelectorAll(".tab").forEach(btn => {
-        btn.classList.toggle("active", btn.dataset.tab === state.tab);
-      });
-    }
-
-    function applyTabFilter(list) {
-      const tab = state.tab;
-
-      if (tab === "door") return list;
-
-      if (tab === "guests") {
-        return list.filter(g => !isWorking(g.list));
-      }
-
-      if (tab === "working") {
-        return list.filter(g => isWorking(g.list));
-      }
-
-      if (tab === "ndas") {
-        // Show anyone who has NOT signed NDA
-        return list.filter(g => !g.ndaSigned);
-      }
-
+    function filtered(){
+      let list = state.guests.slice();
+      if (state.q) list = list.filter(g => (g.name||"").toLowerCase().includes(state.q));
+      if (state.tab === "guests") list = list.filter(g => !isWorking(g.type));
+      if (state.tab === "working") list = list.filter(g => isWorking(g.type));
+      if (state.tab === "ndas") list = list.filter(g => !g.nda);
       return list;
     }
 
-    function isWorking(listVal) {
-      const l = (listVal || "").toLowerCase();
-      return l.includes("work") || l.includes("staff");
-    }
-
-    function normalizeInstagram(val) {
-      if (!val) return "";
-      let v = String(val).trim();
-      if (!v) return "";
-      v = v.replace(/^@/, "");
-      v = v.replace(/^https?:\/\/(www\.)?instagram\.com\//, "");
-      v = v.replace(/\/$/, "");
-      return v;
-    }
-
-    function guestFromRecord(r) {
-      const f = r.fields || {};
-      const photoUrl = Array.isArray(f["Photo"]) && f["Photo"][0] && f["Photo"][0].url ? f["Photo"][0].url : "";
-      return {
-        id: r.id,
-        name: f["Full Name"] || "Unknown",
-        photo: photoUrl,
-        list: f["List"] || "",
-        email: f["Email"] || "",
-        phone: f["Phone"] || "",
-        instagram: normalizeInstagram(f["Instagram"] || ""),
-        checkedIn: !!f["Checked In"],
-        vip: !!f["VIP Wristband"],
-        ndaSigned: !!f["NDA Signed"],
-        sti: !!f["STI Verified"],
-        coat: f["Coat Check #"] || "",
-        notes: f["Door Notes"] || "",
-        ticketType: f["Ticket Type"] || "",
-        tags: Array.isArray(f["Tags"]) ? f["Tags"] : []
-      };
-    }
-
-    function render() {
-      const q = state.query.trim().toLowerCase();
-
-      let list = state.guests.slice();
-      if (q) {
-        list = list.filter(g => (g.name || "").toLowerCase().includes(q));
-      }
-
-      list = applyTabFilter(list);
-
-      $("guestCount").textContent = list.length ? (list.length + " people") : "";
-
-      if (!list.length) {
-        showState("No guests found.");
-        return;
-      }
-
-      const grid = document.createElement("div");
-      grid.className = "guest-grid";
-
-      for (const g of list) {
+    function render(){
+      const list = filtered();
+      count.textContent = list.length + " people";
+      grid.innerHTML = "";
+      for (const g of list){
         const card = document.createElement("div");
-        card.className = "guest-card" + (g.checkedIn ? " checked-in" : "");
-        card.setAttribute("role", "button");
-        card.setAttribute("tabindex", "0");
-        card.setAttribute("aria-label", "Open " + g.name);
+        card.className = "card" + (g.checked ? " checked" : "");
+        card.setAttribute("role","button");
+        card.setAttribute("tabindex","0");
 
-        const tile = document.createElement("div");
-        tile.className = "tile";
-        if (g.photo) {
+        const photo = document.createElement("div");
+        photo.className = "photo";
+        if (g.photo){
           const img = document.createElement("img");
           img.src = g.photo;
           img.alt = g.name;
-          img.loading = "lazy";
-          tile.appendChild(img);
+          photo.appendChild(img);
         } else {
           const init = document.createElement("div");
           init.className = "initial";
-          init.textContent = (g.name || "U").charAt(0);
-          tile.appendChild(init);
+          init.textContent = (g.name||"U").charAt(0);
+          photo.appendChild(init);
         }
 
         const meta = document.createElement("div");
-        meta.className = "card-meta";
-        const nm = document.createElement("div");
-        nm.className = "card-name";
-        nm.textContent = g.name;
-        meta.appendChild(nm);
+        meta.className = "meta";
+        meta.innerHTML = `<div class="name">${g.name}</div><div class="type">${g.type}</div>`;
 
-        const ty = document.createElement("div");
-        ty.className = "card-type";
-        ty.textContent = g.list || " ";
-        meta.appendChild(ty);
-
-        card.appendChild(tile);
+        card.appendChild(photo);
         card.appendChild(meta);
 
-        // Reliable tap on iPhone and iPad
         const open = () => openDetail(g);
         card.addEventListener("pointerup", (e) => {
           if (e && typeof e.button === "number" && e.button !== 0) return;
@@ -838,247 +507,95 @@
         });
         card.addEventListener("click", open);
         card.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            open();
-          }
+          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
         });
 
         grid.appendChild(card);
       }
-
-      $("mainContent").innerHTML = "";
-      $("mainContent").appendChild(grid);
     }
 
-    function openSheet() {
-      $("overlay").classList.add("open");
-      $("sheet").classList.add("open");
-    }
+    function openDetail(g){
+      state.current = g;
 
-    function closeSheet() {
-      $("sheet").classList.remove("open");
-      $("overlay").classList.remove("open");
-      $("detailRoot").innerHTML = "";
-      state.currentGuest = null;
-    }
-
-    function detailHTML(g) {
-      const ig = g.instagram ? `https://instagram.com/${g.instagram}` : "";
-      const igLabel = g.instagram ? `@${g.instagram}` : "";
-
-      const tags = (g.tags && g.tags.length)
-        ? `<div class="section-title">Tags</div><div class="linkrow">${
-            g.tags.map(t => `<span class="pill"><strong>${escapeHtml(t)}</strong></span>`).join("")
-          }</div>`
-        : "";
-
-      const ticket = g.ticketType
-        ? `<div class="section-title">Ticket Type</div><div class="linkrow"><span class="pill"><strong>${escapeHtml(g.ticketType)}</strong></span></div>`
-        : "";
-
-      return `
-        <div class="detail-header">
-          <div class="avatar">
-            ${g.photo ? `<img src="${escapeAttr(g.photo)}" alt="${escapeAttr(g.name)}" />` : `${escapeHtml((g.name||"U").charAt(0))}`}
-          </div>
-          <div class="detail-name">${escapeHtml(g.name)}</div>
-          <div class="detail-badge">${escapeHtml(g.list || "")}</div>
+      detail.innerHTML = `
+        <div class="detail-head">
+          <div class="avatar">${g.photo ? `<img src="${g.photo}" alt="${g.name}" />` : (g.name||"U").charAt(0)}</div>
+          <div class="detail-name">${g.name}</div>
+          <div class="detail-type">${g.type}</div>
         </div>
 
-        <div class="detail-body">
-          <div class="section-title">Contact</div>
-          <div class="linkrow">
-            ${g.email ? `<a class="pill" href="mailto:${escapeAttr(g.email)}">✉️ <strong>${escapeHtml(g.email)}</strong></a>` : ""}
-            ${g.phone ? `<a class="pill" href="tel:${escapeAttr(g.phone)}">📞 <strong>${escapeHtml(g.phone)}</strong></a>` : ""}
-            ${ig ? `<a class="pill" target="_blank" rel="noopener" href="${escapeAttr(ig)}">📸 <strong>${escapeHtml(igLabel)}</strong></a>` : ""}
-          </div>
-
-          ${ticket}
-          ${tags}
-
+        <div class="section">
           <div class="section-title">Check-In</div>
 
-          ${toggleRow("Checked In", "checkedIn", g.checkedIn, "✓")}
-          ${toggleRow("VIP Wristband", "vip", g.vip, "🎗️")}
-          ${toggleRow("NDA Signed", "ndaSigned", g.ndaSigned, "✍️")}
-          ${toggleRow("STI Verified", "sti", g.sti, "🧪")}
+          ${toggleRow("✓ Checked In", "checked", g.checked)}
+          ${toggleRow("🎗️ VIP Wristband", "vip", g.vip)}
+          ${toggleRow("✍️ NDA Signed", "nda", g.nda)}
+          ${toggleRow("🧪 STI Verified", "sti", g.sti)}
 
           <div class="field">
             <label>Coat Check #</label>
-            <input id="coat" placeholder="e.g. 69" value="${escapeAttr(g.coat)}" />
+            <input id="coat" placeholder="e.g. 69" value="${g.coat || ""}">
           </div>
 
           <div class="field">
             <label>Door Notes</label>
-            <textarea id="notes" placeholder="Enter any notes">${escapeHtml(g.notes)}</textarea>
+            <textarea id="notes" placeholder="Enter any notes">${g.notes || ""}</textarea>
           </div>
 
           <button class="save" id="saveBtn" type="button">Save</button>
         </div>
       `;
+
+      document.getElementById("saveBtn").addEventListener("click", () => {
+        g.checked = document.getElementById("t_checked").checked;
+        g.vip = document.getElementById("t_vip").checked;
+        g.nda = document.getElementById("t_nda").checked;
+        g.sti = document.getElementById("t_sti").checked;
+        g.coat = document.getElementById("coat").value.trim();
+        g.notes = document.getElementById("notes").value.trim();
+        closeDetail();
+        render();
+      });
+
+      overlay.classList.add("open");
+      sheet.classList.add("open");
     }
 
-    function toggleRow(label, key, checked, icon) {
-      const id = "t_" + key;
+    function toggleRow(label, key, checked){
       return `
         <div class="row">
-          <div class="row-label">${icon} ${escapeHtml(label)}</div>
+          <div class="label">${label}</div>
           <label class="toggle">
-            <input type="checkbox" id="${id}" ${checked ? "checked" : ""} />
+            <input type="checkbox" id="t_${key}" ${checked ? "checked" : ""}>
             <span class="slider"></span>
           </label>
         </div>
       `;
     }
 
-    function openDetail(g) {
-      state.currentGuest = { ...g };
-      $("detailRoot").innerHTML = detailHTML(state.currentGuest);
-
-      $("saveBtn").addEventListener("click", saveDetail);
-      openSheet();
+    function closeDetail(){
+      sheet.classList.remove("open");
+      overlay.classList.remove("open");
+      detail.innerHTML = "";
+      state.current = null;
     }
 
-    async function saveDetail() {
-      const g = state.currentGuest;
-      if (!g) return;
+    overlay.addEventListener("click", closeDetail);
 
-      const updated = {
-        "Checked In": !!$("t_checkedIn").checked,
-        "VIP Wristband": !!$("t_vip").checked,
-        "NDA Signed": !!$("t_ndaSigned").checked,
-        "STI Verified": !!$("t_sti").checked,
-        "Coat Check #": $("coat").value.trim(),
-        "Door Notes": $("notes").value.trim()
-      };
-
-      const btn = $("saveBtn");
-      btn.textContent = "Saving...";
-      btn.disabled = true;
-
-      try {
-        await api(`/api/record?table=${encodeURIComponent(state.table)}&id=${encodeURIComponent(g.id)}`, {
-          method: "PATCH",
-          body: JSON.stringify({ fields: updated })
-        });
-
-        // Update local state immediately
-        const idx = state.guests.findIndex(x => x.id === g.id);
-        if (idx >= 0) {
-          const merged = { ...state.guests[idx] };
-          merged.checkedIn = updated["Checked In"];
-          merged.vip = updated["VIP Wristband"];
-          merged.ndaSigned = updated["NDA Signed"];
-          merged.sti = updated["STI Verified"];
-          merged.coat = updated["Coat Check #"];
-          merged.notes = updated["Door Notes"];
-          state.guests[idx] = merged;
-        }
-
-        btn.textContent = "Saved ✓";
-        setTimeout(() => {
-          closeSheet();
-          render();
-        }, 450);
-
-      } catch (e) {
-        btn.textContent = "Error, try again";
-        btn.disabled = false;
-      }
-    }
-
-    function escapeHtml(s) {
-      return String(s ?? "")
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-    }
-    function escapeAttr(s) {
-      return escapeHtml(s).replaceAll("\n"," ").replaceAll("\r"," ");
-    }
-
-    async function loadEvents() {
-      // Expected response: { events: [{ name: "...", table: "..." }, ...] }
-      const data = await api("/api/events");
-      state.events = Array.isArray(data.events) ? data.events : [];
-      if (!state.events.length) throw new Error("No events returned.");
-    }
-
-    function populateEventSelect() {
-      const sel = $("eventSelect");
-      sel.innerHTML = "";
-      for (const ev of state.events) {
-        const opt = document.createElement("option");
-        opt.value = ev.table;
-        opt.textContent = ev.name;
-        sel.appendChild(opt);
-      }
-      state.table = sel.value || (state.events[0] ? state.events[0].table : "");
-      const current = state.events.find(e => e.table === state.table) || state.events[0];
-      $("eventName").textContent = current ? current.name : "";
-    }
-
-    async function loadGuests() {
-      showLoading("Loading guest list...");
-      const data = await api(`/api/records?table=${encodeURIComponent(state.table)}`);
-      const records = Array.isArray(data.records) ? data.records : [];
-      state.guests = records.map(guestFromRecord);
-      render();
-    }
-
-    async function bootstrap() {
-      try {
-        showLoading("Loading events...");
-        await loadEvents();
-        populateEventSelect();
-        await loadGuests();
-      } catch (e) {
-        showState("Could not load. Check API_BASE and your Worker.");
-      }
-    }
-
-    // Wire UI
     document.querySelectorAll(".tab").forEach(btn => {
       btn.addEventListener("click", () => {
         state.tab = btn.dataset.tab;
-        setTabs();
+        document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === btn));
         render();
       });
     });
 
-    $("eventSelect").addEventListener("change", async (e) => {
-      state.table = e.target.value;
-      const current = state.events.find(x => x.table === state.table);
-      $("eventName").textContent = current ? current.name : "";
-      await loadGuests();
-    });
-
-    $("searchInput").addEventListener("input", (e) => {
-      state.query = e.target.value || "";
+    document.getElementById("search").addEventListener("input", (e) => {
+      state.q = (e.target.value || "").trim().toLowerCase();
       render();
     });
 
-    $("overlay").addEventListener("click", closeSheet);
-
-    $("logoutBtn").addEventListener("click", () => {
-      clearAuth();
-      openLogin("Signed out.");
-    });
-
-    $("loginBtn").addEventListener("click", login);
-    $("loginPass").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") login();
-    });
-
-    // Start
-    (async function start() {
-      const ok = await tryExistingAuth();
-      if (!ok) openLogin("");
-      else await bootstrap();
-    })();
+    render();
   </script>
 </body>
 </html>
