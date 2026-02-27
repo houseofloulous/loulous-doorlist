@@ -27,7 +27,6 @@
     overflow-x: hidden;
   }
 
-  /* HEADER */
   .header {
     background: var(--near-black);
     padding: 16px 20px 0;
@@ -67,7 +66,6 @@
     font-weight: 300;
   }
 
-  /* TABS */
   .tabs {
     display: flex;
     gap: 0;
@@ -99,7 +97,6 @@
 
   .tab-icon { margin-right: 5px; }
 
-  /* SEARCH */
   .search-bar {
     padding: 12px 20px;
     background: var(--surface);
@@ -125,27 +122,28 @@
   .search-input:focus { border-color: var(--terracotta); }
   .search-input::placeholder { color: #aaa; }
 
-  /* GRID */
   .guest-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 2px;
-    padding: 2px;
-    background: var(--cream-dark);
+    gap: 10px;
+    padding: 12px;
+    background: var(--cream);
   }
 
   .guest-card {
     background: white;
     overflow: hidden;
     cursor: pointer;
-    transition: opacity 0.15s;
+    transition: transform 0.15s, box-shadow 0.15s;
     position: relative;
-    aspect-ratio: 0.8;
     display: flex;
     flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   }
 
-  .guest-card:active { opacity: 0.75; }
+  .guest-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+  .guest-card:active { transform: scale(0.97); }
 
   .guest-card.checked-in::after {
     content: '✓';
@@ -165,23 +163,37 @@
     z-index: 2;
   }
 
-  .guest-photo {
+  .guest-photo-wrap {
     width: 100%;
-    flex: 1;
+    padding-top: 100%;
+    position: relative;
+    overflow: hidden;
+    border-radius: 10px 10px 0 0;
+    background: var(--cream-dark);
+  }
+
+  .guest-photo {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
     object-fit: cover;
     object-position: top center;
-    background: var(--cream-dark);
     display: block;
-    min-height: 0;
   }
 
   .guest-photo-placeholder {
     width: 100%;
-    flex: 1;
+    padding-top: 100%;
+    position: relative;
     background: linear-gradient(135deg, var(--cream-dark), var(--cream));
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .guest-photo-placeholder span {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
     font-family: 'Playfair Display', serif;
     font-size: 28px;
     color: var(--brown);
@@ -224,7 +236,6 @@
     .guest-grid { grid-template-columns: repeat(6, 1fr); }
   }
 
-  /* LOADING */
   .loading {
     display: flex;
     flex-direction: column;
@@ -261,7 +272,6 @@
     font-style: italic;
   }
 
-  /* DETAIL VIEW */
   .detail-overlay {
     position: fixed;
     inset: 0;
@@ -362,9 +372,7 @@
   .badge-collaborator { background: #EBFFF0; color: #2AE85A; }
   .badge-patron { background: #FFF8EB; color: #C9890A; }
 
-  .detail-section {
-    padding: 20px 24px 0;
-  }
+  .detail-section { padding: 20px 24px 0; }
 
   .detail-section-title {
     font-size: 10px;
@@ -376,7 +384,6 @@
     font-weight: 500;
   }
 
-  /* TOGGLE ROWS */
   .toggle-row {
     display: flex;
     align-items: center;
@@ -429,7 +436,6 @@
   .toggle input:checked + .toggle-slider { background: var(--terracotta); }
   .toggle input:checked + .toggle-slider:before { transform: translateX(22px); }
 
-  /* TEXT INPUTS */
   .detail-input-row {
     padding: 14px 0;
     border-bottom: 1px solid var(--cream-dark);
@@ -468,7 +474,6 @@
     line-height: 1.5;
   }
 
-  /* SAVE BUTTON */
   .save-btn {
     margin: 24px 24px 40px;
     width: calc(100% - 48px);
@@ -487,10 +492,8 @@
   }
 
   .save-btn:active { transform: scale(0.98); background: var(--terracotta-light); }
-
   .save-btn.saving { opacity: 0.7; }
 
-  /* CONTACT INFO */
   .contact-info {
     padding: 0 24px 4px;
     display: flex;
@@ -506,7 +509,6 @@
     gap: 6px;
   }
 
-  /* ERROR */
   .error-state {
     padding: 40px 20px;
     text-align: center;
@@ -515,7 +517,6 @@
     font-size: 18px;
   }
 
-  /* EVENT SELECTOR */
   .event-selector {
     padding: 16px 20px;
     background: var(--near-black);
@@ -541,8 +542,6 @@
   }
 
   .event-select option { background: var(--near-black); color: var(--cream); }
-
-
 </style>
 </head>
 <body>
@@ -580,7 +579,6 @@
   </div>
 </div>
 
-<!-- Detail Sheet -->
 <div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
 <div class="detail-sheet" id="detailSheet">
   <div class="detail-handle"></div>
@@ -591,11 +589,10 @@
 const TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
 const BASE_ID = 'appY6p2HwRtDmOvAf';
 
-// Door List tables — add new ones here as you create them
 const DOOR_LIST_TABLES = [
   { name: "L'Atelier | March 28th", table: "3/28 Door List" },
-  { name: "Do Not Disturb II — 2/28", table: "2/28 Door List" },
-  { name: "Do Not Disturb I — 12/13", table: "12/13 Door List" },
+  { name: "Do Not Disturb II | Feb 28th", table: "2/28 Door List" },
+  { name: "Do Not Disturb I | Dec 13th", table: "12/13 Door List" },
 ];
 
 let allGuests = [];
@@ -624,9 +621,8 @@ async function fetchAll(table, formula = '') {
 }
 
 async function init() {
-  // Populate event selector
   const sel = document.getElementById('eventSelect');
-  DOOR_LIST_TABLES.forEach((e, i) => {
+  DOOR_LIST_TABLES.forEach((e) => {
     const opt = document.createElement('option');
     opt.value = e.table;
     opt.textContent = e.name;
@@ -664,6 +660,7 @@ async function loadGuests() {
       stiCleared: r.fields['STI Cleared'] || false,
       list: r.fields['List'] || '',
       rsvp: r.fields['RSVP'] || '',
+      instagram: r.fields['Instagram'] || r.fields['Instagram Handle'] || r.fields['IG'] || '',
     }));
     renderGuests();
   } catch(e) {
@@ -674,14 +671,18 @@ async function loadGuests() {
 function getTabGuests() {
   if (currentTab === 'all') return allGuests;
   if (currentTab === 'nda') return allGuests.filter(g => g.nda !== 'Signed');
-  if (currentTab === 'Guest') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return !l.toLowerCase().includes('work') && !l.toLowerCase().includes('staff'); });
-  if (currentTab === 'Working') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return l.toLowerCase().includes('work') || l.toLowerCase().includes('staff'); });
+  if (currentTab === 'Guest') return allGuests.filter(g => {
+    const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||'');
+    return !l.toLowerCase().includes('work') && !l.toLowerCase().includes('staff');
+  });
+  if (currentTab === 'Working') return allGuests.filter(g => {
+    const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||'');
+    return l.toLowerCase().includes('work') || l.toLowerCase().includes('staff');
+  });
   return allGuests;
 }
 
-function filterGuests(query) {
-  renderGuests(query);
-}
+function filterGuests(query) { renderGuests(query); }
 
 function renderGuests(query = '') {
   let guests = getTabGuests();
@@ -693,10 +694,7 @@ function renderGuests(query = '') {
   const count = guests.length;
   document.getElementById('guestCount').textContent = `${count} ${count === 1 ? 'person' : 'people'}`;
 
-  if (guests.length === 0) {
-    showEmpty('No guests on this list.');
-    return;
-  }
+  if (guests.length === 0) { showEmpty('No guests on this list.'); return; }
 
   const grid = document.createElement('div');
   grid.className = 'guest-grid';
@@ -711,8 +709,8 @@ function renderGuests(query = '') {
 
     card.innerHTML = `
       ${guest.photo
-        ? `<img class="guest-photo" src="${guest.photo}" alt="${guest.name}" loading="lazy">`
-        : `<div class="guest-photo-placeholder">${guest.name.charAt(0)}</div>`}
+        ? `<div class="guest-photo-wrap"><img class="guest-photo" src="${guest.photo}" alt="${guest.name}" loading="lazy"></div>`
+        : `<div class="guest-photo-placeholder"><span>${guest.name.charAt(0)}</span></div>`}
       <div class="guest-card-info">
         <div class="guest-card-name">${guest.name}</div>
         ${primaryCat ? `<div class="guest-card-type">${primaryCat}</div>` : ''}
@@ -749,15 +747,15 @@ function openDetail(guest) {
       ${guest.photo
         ? `<img class="detail-photo" src="${guest.photo}" alt="${guest.name}">`
         : `<div class="detail-photo-placeholder">${guest.name.charAt(0)}</div>`}
-      <div class="detail-photo-gradient"></div>
     </div>
     <div class="detail-name">${guest.name}</div>
     <div class="detail-meta">${badgesHtml}</div>
 
-    ${guest.email || guest.phone ? `
+    ${guest.email || guest.phone || guest.instagram ? `
     <div class="contact-info" style="margin-top:12px;">
-      ${guest.phone ? `<div class="contact-item">📞 ${guest.phone}</div>` : ''}
-      ${guest.email ? `<div class="contact-item">✉️ ${guest.email}</div>` : ''}
+      ${guest.phone ? `<div class="contact-item">📞 <a href="tel:${guest.phone}" style="color:var(--brown);text-decoration:none;">${guest.phone}</a></div>` : ''}
+      ${guest.email ? `<div class="contact-item">✉️ <a href="mailto:${guest.email}" style="color:var(--terracotta);text-decoration:none;">${guest.email}</a></div>` : ''}
+      ${guest.instagram ? `<div class="contact-item">📸 <a href="${guest.instagram}" target="_blank" style="color:var(--brown);text-decoration:none;">${guest.instagram.replace('https://www.instagram.com/','@').replace('https://instagram.com/','@').replace(/\/$/,'')}</a></div>` : ''}
     </div>` : ''}
 
     <div class="detail-section">
@@ -774,9 +772,12 @@ function openDetail(guest) {
       <div class="toggle-row">
         <div class="toggle-label"><span class="toggle-emoji">✍️</span> NDA Signed</div>
         <label class="toggle">
-          <input type="checkbox" id="chkNDA" ${guest.nda === 'Signed' ? 'checked' : ''}>
+          <input type="checkbox" id="chkNDA" onchange="document.getElementById('ndaLinkRow').style.display=this.checked?'none':''" ${guest.nda === 'Signed' ? 'checked' : ''}>
           <span class="toggle-slider"></span>
         </label>
+      </div>
+      <div class="toggle-row" id="ndaLinkRow" style="background:#fff8f6;${guest.nda === 'Signed' ? 'display:none;' : ''}">
+        <div class="toggle-label" style="font-size:13px;color:var(--terracotta);">🚩 If NDA is unsigned, please <a href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank" style="color:var(--terracotta);font-weight:500;">click here</a> and have them sign:</div>
       </div>
 
       <div class="toggle-row">
@@ -789,12 +790,12 @@ function openDetail(guest) {
 
       <div class="detail-input-row">
         <div class="detail-input-label">🧥 Coat Check #</div>
-        <input class="detail-input" id="inpCoat" type="text" value="${guest.coatCheck}" placeholder="e.g. #12">
+        <input class="detail-input" id="inpCoat" type="text" value="${guest.coatCheck}" placeholder="e.g. 69">
       </div>
 
       <div class="detail-input-row">
         <div class="detail-input-label">📱 Phone Check #</div>
-        <input class="detail-input" id="inpPhone" type="text" value="${guest.phoneCheck}" placeholder="e.g. #12">
+        <input class="detail-input" id="inpPhone" type="text" value="${guest.phoneCheck}" placeholder="e.g. 69">
       </div>
 
       <div class="detail-input-row">
@@ -843,7 +844,6 @@ async function saveGuest() {
       })
     });
 
-    // Update local data
     currentGuest.checkedIn = checkedIn;
     currentGuest.nda = ndaSigned ? 'Signed' : 'No';
     currentGuest.stiCleared = stiCleared;
@@ -855,10 +855,7 @@ async function saveGuest() {
     if (idx > -1) allGuests[idx] = { ...currentGuest };
 
     btn.textContent = 'Saved ✓';
-    setTimeout(() => {
-      closeDetail();
-      renderGuests();
-    }, 600);
+    setTimeout(() => { closeDetail(); renderGuests(); }, 600);
   } catch(e) {
     btn.textContent = 'Error — Try Again';
     btn.classList.remove('saving');
