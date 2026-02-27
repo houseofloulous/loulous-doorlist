@@ -6,104 +6,386 @@
 <title>LouLou's — Door List</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --cream: #EDE8E0;
-    --cream-dark: #E0D9CE;
-    --terracotta: #E8532A;
-    --terracotta-light: #F07050;
-    --near-black: #1C1814;
-    --brown: #5C4A3A;
-    --gold: #C9A96E;
-    --surface: #F5F1EA;
+  <script>
+var TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
+var BASE_ID = 'appY6p2HwRtDmOvAf';
+
+var EVENTS = [
+  { name: "L'Atelier | March 28th", table: "3/28 Door List" },
+  { name: "Do Not Disturb II | Feb 28th", table: "2/28 Door List" },
+  { name: "Do Not Disturb I | Dec 13th", table: "12/13 Door List" }
+];
+
+var allGuests = [];
+var currentTab = 'all';
+var currentTable = EVENTS[0].table;
+var currentGuest = null;
+
+function apiHeaders() {
+  return { 'Authorization': 'Bearer ' + TOKEN, 'Content-Type': 'application/json' };
+}
+
+function fetchAll(table, callback) {
+  var records = [];
+  function fetchPage(offset) {
+    var url = 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(table) + '?pageSize=100';
+    if (offset) url += '&offset=' + offset;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url);
+    xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
+    xhr.onload = function() {
+      var data = JSON.parse(xhr.responseText);
+      if (data.error) { callback(null, data.error.message); return; }
+      records = records.concat(data.records);
+      if (data.offset) { fetchPage(data.offset); } else { callback(records, null); }
+    };
+    xhr.onerror = function() { callback(null, 'Network error'); };
+    xhr.send();
   }
-  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { background:var(--cream); color:var(--near-black); font-family:'Jost',sans-serif; min-height:100vh; overflow-x:hidden; }
+  fetchPage(null);
+}
 
-  .header { background:var(--near-black); padding:16px 20px 0; position:sticky; top:0; z-index:100; box-shadow:0 2px 20px rgba(0,0,0,0.3); }
-  .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; }
-  .logo { font-family:'Playfair Display',serif; font-size:22px; color:var(--terracotta); letter-spacing:0.02em; }
-  .event-name { font-family:'Cormorant Garamond',serif; font-size:13px; color:var(--cream); opacity:0.7; letter-spacing:0.15em; text-transform:uppercase; }
-  .guest-count { font-size:12px; color:var(--gold); letter-spacing:0.1em; font-weight:300; }
+function init() {
+  var sel = document.getElementById('eventSelect');
+  for (var i = 0; i < EVENTS.length; i++) {
+    var opt = document.createElement('option');
+    opt.value = EVENTS[i].table;
+    opt.textContent = EVENTS[i].name;
+    sel.appendChild(opt);
+  }
+  sel.value = EVENTS[0].table;
+  document.getElementById('currentEventName').textContent = EVENTS[0].name;
+  loadGuests();
+}
 
-  .tabs { display:flex; overflow-x:auto; scrollbar-width:none; }
-  .tabs::-webkit-scrollbar { display:none; }
-  .tab { padding:10px 18px; font-family:'Jost',sans-serif; font-size:11px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:rgba(237,232,224,0.5); border:none; background:none; cursor:pointer; border-bottom:2px solid transparent; white-space:nowrap; transition:all 0.2s; }
-  .tab.active { color:var(--terracotta); border-bottom-color:var(--terracotta); }
+function onEventChange() {
+  var sel = document.getElementById('eventSelect');
+  currentTable = sel.value;
+  for (var i = 0; i < EVENTS.length; i++) {
+    if (EVENTS[i].table === currentTable) {
+      document.getElementById('currentEventName').textContent = EVENTS[i].name;
+      break;
+    }
+  }
+  loadGuests();
+}
 
-  .event-selector { padding:16px 20px; background:var(--near-black); border-bottom:1px solid rgba(255,255,255,0.1); }
-  .event-select { width:100%; padding:10px 14px; background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); border-radius:8px; color:var(--cream); font-family:'Jost',sans-serif; font-size:14px; outline:none; cursor:pointer; appearance:none; background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23EDE8E0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat:no-repeat; background-position:right 14px center; padding-right:36px; }
-  .event-select option { background:var(--near-black); color:var(--cream); }
+function loadGuests() {
+  showLoading();
+  fetchAll(currentTable, function(records, err) {
+    if (err) { showError('Error: ' + err); return; }
+    allGuests = [];
+    for (var i = 0; i < records.length; i++) {
+      var f = records[i].fields;
+      allGuests.push({
+        id: records[i].id,
+        name: f['Full Name'] || 'Unknown',
+        photo: f['Photo'] ? f['Photo'][0].url : null,
+        list: f['List'] || '',
+        email: f['Email'] || '',
+        phone: f['Phone'] || '',
+        instagram: f['Instagram'] || '',
+        checkedIn: f['Checked In'] || false,
+        coatCheck: f['Coat Check #'] || '',
+        phoneCheck: f['Phone Check #'] || '',
+        doorNotes: f['Door Notes'] || '',
+        nda: f['NDA'] || '',
+        stiCleared: f['STI Cleared'] || false
+      });
+    }
+    renderGuests('');
+  });
+}
 
-  .search-bar { padding:12px 20px; background:var(--surface); border-bottom:1px solid var(--cream-dark); position:sticky; top:97px; z-index:99; }
-  .search-input { width:100%; padding:10px 16px; background:white; border:1px solid var(--cream-dark); border-radius:8px; font-family:'Jost',sans-serif; font-size:14px; color:var(--near-black); outline:none; transition:border-color 0.2s; }
-  .search-input:focus { border-color:var(--terracotta); }
-  .search-input::placeholder { color:#aaa; }
+function getTabGuests() {
+  if (currentTab === 'all') return allGuests;
+  if (currentTab === 'nda') return allGuests.filter(function(g) { return g.nda !== 'Signed'; });
+  if (currentTab === 'Guest') return allGuests.filter(function(g) {
+    var l = (g.list || '').toLowerCase();
+    return !l.includes('work') && !l.includes('staff');
+  });
+  if (currentTab === 'Working') return allGuests.filter(function(g) {
+    var l = (g.list || '').toLowerCase();
+    return l.includes('work') || l.includes('staff');
+  });
+  return allGuests;
+}
 
-  .guest-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; padding:12px; background:var(--cream); }
-  @media(min-width:768px) { .guest-grid { grid-template-columns:repeat(5,1fr); } }
-  @media(min-width:1100px) { .guest-grid { grid-template-columns:repeat(6,1fr); } }
+function filterGuests(query) { renderGuests(query); }
 
-  .guest-card { background:white; overflow:hidden; cursor:pointer; position:relative; display:flex; flex-direction:column; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); transition:transform 0.15s,box-shadow 0.15s; }
-  .guest-card:hover { box-shadow:0 4px 16px rgba(0,0,0,0.13); }
-  .guest-card:active { transform:scale(0.97); }
-  .guest-card.checked-in::after { content:'✓'; position:absolute; top:6px; right:6px; background:var(--terracotta); color:white; width:22px; height:22px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; z-index:2; }
+function wireCardOpen(card, guest) {
+  // pointerup is more reliable on iOS than click (especially inside scrollable grids)
+  card.addEventListener('pointerup', function(ev) {
+    if (ev && typeof ev.button === 'number' && ev.button !== 0) return;
+    openDetail(guest);
+  });
 
-  .guest-photo-wrap { width:100%; padding-top:110%; position:relative; overflow:hidden; border-radius:10px 10px 0 0; background:var(--cream-dark); flex-shrink:0; }
-  .guest-photo { position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; object-position:top center; display:block; }
-  .guest-photo-placeholder { width:100%; padding-top:110%; position:relative; background:linear-gradient(135deg,var(--cream-dark),var(--cream)); border-radius:10px 10px 0 0; flex-shrink:0; }
-  .guest-photo-placeholder span { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-family:'Playfair Display',serif; font-size:28px; color:var(--brown); opacity:0.6; }
+  // Keyboard support (desktop)
+  card.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      ev.preventDefault();
+      openDetail(guest);
+    }
+  });
+}
 
-  .guest-card-info { padding:7px 8px 8px; background:white; flex-shrink:0; }
-  .guest-card-name { font-family:'Jost',sans-serif; font-size:11px; font-weight:400; color:var(--near-black); line-height:1.3; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .guest-card-type { font-size:9px; letter-spacing:0.08em; text-transform:uppercase; color:var(--terracotta); margin-top:1px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+function renderGuests(query) {
+  var guests = getTabGuests();
+  if (query) {
+    var q = query.toLowerCase();
+    guests = guests.filter(function(g) { return g.name.toLowerCase().includes(q); });
+  }
+  document.getElementById('guestCount').textContent = guests.length + ' people';
+  if (guests.length === 0) { showEmpty('No guests on this list.'); return; }
 
-  .loading { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:60px 20px; gap:16px; }
-  .loading-spinner { width:36px; height:36px; border:2px solid var(--cream-dark); border-top-color:var(--terracotta); border-radius:50%; animation:spin 0.8s linear infinite; }
-  @keyframes spin { to { transform:rotate(360deg); } }
-  .loading-text { font-family:'Cormorant Garamond',serif; font-size:16px; color:var(--brown); letter-spacing:0.1em; }
-  .empty-state { text-align:center; padding:60px 20px; font-family:'Cormorant Garamond',serif; font-size:18px; color:var(--brown); font-style:italic; }
-  .error-state { padding:40px 20px; text-align:center; color:var(--terracotta); font-family:'Cormorant Garamond',serif; font-size:18px; }
+  var grid = document.createElement('div');
+  grid.className = 'guest-grid';
 
-  .detail-overlay { position:fixed; inset:0; background:rgba(28,24,20,0.6); z-index:200; display:none; backdrop-filter:blur(4px); }
-  .detail-overlay.open { display:block; }
-  .detail-sheet { position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-radius:20px 20px 0 0; z-index:201; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.35s cubic-bezier(0.32,0.72,0,1); }
-  .detail-sheet.open { transform:translateY(0); }
-  .detail-handle { width:36px; height:4px; background:var(--cream-dark); border-radius:2px; margin:12px auto 0; }
+  for (var i = 0; i < guests.length; i++) {
+    (function(guest) {
+      var card = document.createElement('div');
+      card.className = 'guest-card' + (guest.checkedIn ? ' checked-in' : '');
+      card.setAttribute('role', 'button');
+      card.setAttribute('tabindex', '0');
+      card.setAttribute('aria-label', 'Open ' + guest.name);
 
-  .detail-photo-wrap { display:flex; justify-content:center; padding:24px 24px 0; }
-  .detail-photo { width:120px; height:120px; border-radius:50%; object-fit:cover; object-position:top center; border:3px solid var(--cream-dark); }
-  .detail-photo-placeholder { width:120px; height:120px; border-radius:50%; background:linear-gradient(135deg,var(--cream-dark),var(--cream)); display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:42px; color:var(--brown); opacity:0.6; border:3px solid var(--cream-dark); }
-  .detail-name { font-family:'Playfair Display',serif; font-size:24px; font-weight:400; color:var(--near-black); padding:0 24px; margin-top:14px; text-align:center; }
-  .detail-meta { display:flex; gap:8px; padding:6px 24px 0; flex-wrap:wrap; justify-content:center; }
-  .detail-badge { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; padding:3px 10px; border-radius:20px; font-weight:500; }
-  .badge-guest { background:#FFF0EB; color:var(--terracotta); }
-  .badge-working { background:#EBF5FF; color:#2A6AE8; }
+      var photoWrap = document.createElement('div');
+      if (guest.photo) {
+        photoWrap.className = 'guest-photo-wrap';
+        var img = document.createElement('img');
+        img.className = 'guest-photo';
+        img.src = guest.photo;
+        img.alt = guest.name;
+        img.loading = 'lazy';
+        photoWrap.appendChild(img);
+      } else {
+        photoWrap.className = 'guest-photo-placeholder';
+        var span = document.createElement('span');
+        span.textContent = guest.name.charAt(0);
+        photoWrap.appendChild(span);
+      }
+      card.appendChild(photoWrap);
 
-  .contact-info { padding:12px 24px 4px; display:flex; flex-direction:column; gap:6px; }
-  .contact-item { font-size:14px; color:var(--brown); display:flex; align-items:center; gap:8px; }
+      var info = document.createElement('div');
+      info.className = 'guest-card-info';
+      var nameEl = document.createElement('div');
+      nameEl.className = 'guest-card-name';
+      nameEl.textContent = guest.name;
+      info.appendChild(nameEl);
+      if (guest.list) {
+        var typeEl = document.createElement('div');
+        typeEl.className = 'guest-card-type';
+        typeEl.textContent = guest.list;
+        info.appendChild(typeEl);
+      }
+      card.appendChild(info);
 
-  .detail-section { padding:20px 24px 0; }
-  .detail-section-title { font-size:10px; letter-spacing:0.2em; text-transform:uppercase; color:var(--brown); opacity:0.6; margin-bottom:12px; font-weight:500; }
+      // IMPORTANT: use our reliable handler
+      wireCardOpen(card, guest);
 
-  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--cream-dark); }
-  .toggle-label { font-family:'Jost',sans-serif; font-size:15px; color:var(--near-black); display:flex; align-items:center; gap:8px; }
-  .toggle { position:relative; width:50px; height:28px; }
-  .toggle input { opacity:0; width:0; height:0; }
-  .toggle-slider { position:absolute; inset:0; background:var(--cream-dark); border-radius:28px; cursor:pointer; transition:background 0.2s; }
-  .toggle-slider:before { content:''; position:absolute; height:22px; width:22px; left:3px; top:3px; background:white; border-radius:50%; transition:transform 0.2s; box-shadow:0 1px 4px rgba(0,0,0,0.15); }
-  .toggle input:checked + .toggle-slider { background:var(--terracotta); }
-  .toggle input:checked + .toggle-slider:before { transform:translateX(22px); }
+      grid.appendChild(card);
+    })(guests[i]);
+  }
 
-  .detail-input-row { padding:14px 0; border-bottom:1px solid var(--cream-dark); }
-  .detail-input-label { font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--brown); opacity:0.7; margin-bottom:6px; }
-  .detail-input { width:100%; padding:10px 14px; background:white; border:1px solid var(--cream-dark); border-radius:8px; font-family:'Jost',sans-serif; font-size:15px; color:var(--near-black); outline:none; transition:border-color 0.2s; }
-  .detail-input:focus { border-color:var(--terracotta); }
-  .detail-textarea { resize:none; min-height:80px; line-height:1.5; }
+  var content = document.getElementById('mainContent');
+  content.innerHTML = '';
+  content.appendChild(grid);
+}
 
-  .save-btn { margin:24px 24px 40px; width:calc(100% - 48px); padding:16px; background:var(--terracotta); color:white; border:none; border-radius:12px; font-family:'Jost',sans-serif; font-size:14px; font-weight:500; letter-spacing:0.15em; text-transform:uppercase; cursor:pointer; transition:background 0.2s,transform 0.1s; }
-  .save-btn:active { transform:scale(0.98); }
-  .nda-unsigned-row { background:#fff8f6; padding:12px 0; border-bottom:1px solid var(--cream-dark); }
-  .nda-unsigned-row div { font-size:13px; color:var(--terracotta); padding:0; }
+function setTab(tab) {
+  currentTab = tab;
+  var tabs = document.querySelectorAll('.tab');
+  for (var i = 0; i < tabs.length; i++) {
+    tabs[i].classList.toggle('active', tabs[i].dataset.tab === tab);
+  }
+  renderGuests('');
+}
+
+function openDetail(guest) {
+  currentGuest = guest;
+  var dc = document.getElementById('detailContent');
+  dc.innerHTML = '';
+
+  // Photo
+  var photoWrap = document.createElement('div');
+  photoWrap.className = 'detail-photo-wrap';
+  if (guest.photo) {
+    var img = document.createElement('img');
+    img.className = 'detail-photo';
+    img.src = guest.photo;
+    img.alt = guest.name;
+    photoWrap.appendChild(img);
+  } else {
+    var ph = document.createElement('div');
+    ph.className = 'detail-photo-placeholder';
+    ph.textContent = guest.name.charAt(0);
+    photoWrap.appendChild(ph);
+  }
+  dc.appendChild(photoWrap);
+
+  // Name
+  var nameEl = document.createElement('div');
+  nameEl.className = 'detail-name';
+  nameEl.textContent = guest.name;
+  dc.appendChild(nameEl);
+
+  // Badge
+  if (guest.list) {
+    var meta = document.createElement('div');
+    meta.className = 'detail-meta';
+    var badge = document.createElement('span');
+    badge.className = 'detail-badge ' + ((guest.list || '').toLowerCase().includes('work') ? 'badge-working' : 'badge-guest');
+    badge.textContent = guest.list;
+    meta.appendChild(badge);
+    dc.appendChild(meta);
+  }
+
+  // Contact info
+  if (guest.phone || guest.email || guest.instagram) {
+    var contact = document.createElement('div');
+    contact.className = 'contact-info';
+    if (guest.phone) {
+      var p = document.createElement('div');
+      p.className = 'contact-item';
+      p.innerHTML = '📞 <a href="tel:' + guest.phone + '" style="color:var(--brown);text-decoration:none;">' + guest.phone + '</a>';
+      contact.appendChild(p);
+    }
+    if (guest.email) {
+      var e = document.createElement('div');
+      e.className = 'contact-item';
+      e.innerHTML = '✉️ <a href="mailto:' + guest.email + '" style="color:var(--terracotta);text-decoration:none;">' + guest.email + '</a>';
+      contact.appendChild(e);
+    }
+    if (guest.instagram) {
+      var ig = document.createElement('div');
+      ig.className = 'contact-item';
+      var igHandle = guest.instagram.replace('https://www.instagram.com/','@').replace('https://instagram.com/','@').replace(/\/$/,'');
+      ig.innerHTML = '📸 <a href="' + guest.instagram + '" target="_blank" style="color:var(--brown);text-decoration:none;">' + igHandle + '</a>';
+      contact.appendChild(ig);
+    }
+    dc.appendChild(contact);
+  }
+
+  // Check-in section
+  var section = document.createElement('div');
+  section.className = 'detail-section';
+  section.innerHTML = '<div class="detail-section-title">Check-In</div>';
+
+  // Checked In toggle
+  section.appendChild(makeToggle('✓ Checked In', 'chkCheckedIn', guest.checkedIn));
+
+  // NDA toggle
+  section.appendChild(makeToggle('✍️ NDA Signed', 'chkNDA', guest.nda === 'Signed'));
+
+  // NDA unsigned row
+  var ndaRow = document.createElement('div');
+  ndaRow.id = 'ndaLinkRow';
+  ndaRow.className = 'nda-unsigned-row';
+  ndaRow.style.display = guest.nda === 'Signed' ? 'none' : 'block';
+  ndaRow.innerHTML = '<div>🚩 If NDA is unsigned, please <a href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank" style="color:var(--terracotta);font-weight:500;">click here</a> and have them sign:</div>';
+  section.appendChild(ndaRow);
+
+  // Wire NDA toggle to show/hide row
+  var ndaChk = section.querySelector('#chkNDA');
+  ndaChk.addEventListener('change', function() {
+    ndaRow.style.display = this.checked ? 'none' : 'block';
+  });
+
+  // STI toggle
+  section.appendChild(makeToggle('🧪 STI Cleared', 'chkSTI', guest.stiCleared));
+
+  // Coat check
+  section.appendChild(makeInput('🧥 Coat Check #', 'inpCoat', guest.coatCheck, 'e.g. 69'));
+  section.appendChild(makeInput('📱 Phone Check #', 'inpPhone', guest.phoneCheck, 'e.g. 69'));
+  section.appendChild(makeTextarea('📋 Door Notes', 'inpNotes', guest.doorNotes));
+
+  dc.appendChild(section);
+
+  // Save button
+  var btn = document.createElement('button');
+  btn.className = 'save-btn';
+  btn.textContent = 'Save Changes';
+  btn.onclick = saveGuest;
+  dc.appendChild(btn);
+
+  document.getElementById('detailOverlay').classList.add('open');
+  setTimeout(function() { document.getElementById('detailSheet').classList.add('open'); }, 10);
+}
+
+function makeToggle(label, id, checked) {
+  var row = document.createElement('div');
+  row.className = 'toggle-row';
+  row.innerHTML = '<div class="toggle-label">' + label + '</div><label class="toggle"><input type="checkbox" id="' + id + '"' + (checked ? ' checked' : '') + '><span class="toggle-slider"></span></label>';
+  return row;
+}
+
+function makeInput(label, id, value, placeholder) {
+  var row = document.createElement('div');
+  row.className = 'detail-input-row';
+  row.innerHTML = '<div class="detail-input-label">' + label + '</div><input class="detail-input" id="' + id + '" type="text" value="' + (value||'') + '" placeholder="' + placeholder + '">';
+  return row;
+}
+
+function makeTextarea(label, id, value) {
+  var row = document.createElement('div');
+  row.className = 'detail-input-row';
+  row.innerHTML = '<div class="detail-input-label">' + label + '</div><textarea class="detail-input detail-textarea" id="' + id + '" placeholder="Any notes...">' + (value||'') + '</textarea>';
+  return row;
+}
+
+function closeDetail() {
+  document.getElementById('detailSheet').classList.remove('open');
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+function saveGuest() {
+  var btn = document.querySelector('.save-btn');
+  btn.textContent = 'Saving...';
+
+  var checkedIn = document.getElementById('chkCheckedIn').checked;
+  var ndaSigned = document.getElementById('chkNDA').checked;
+  var stiCleared = document.getElementById('chkSTI').checked;
+  var coatCheck = document.getElementById('inpCoat').value;
+  var phoneCheck = document.getElementById('inpPhone').value;
+  var doorNotes = document.getElementById('inpNotes').value;
+
+  var xhr = new XMLHttpRequest();
+  xhr.open('PATCH', 'https://api.airtable.com/v0/' + BASE_ID + '/' + encodeURIComponent(currentTable) + '/' + currentGuest.id);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + TOKEN);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    currentGuest.checkedIn = checkedIn;
+    currentGuest.nda = ndaSigned ? 'Signed' : 'No';
+    currentGuest.stiCleared = stiCleared;
+    currentGuest.coatCheck = coatCheck;
+    currentGuest.phoneCheck = phoneCheck;
+    currentGuest.doorNotes = doorNotes;
+    for (var i = 0; i < allGuests.length; i++) {
+      if (allGuests[i].id === currentGuest.id) { allGuests[i] = currentGuest; break; }
+    }
+    btn.textContent = 'Saved ✓';
+    setTimeout(function() { closeDetail(); renderGuests(''); }, 600);
+  };
+  xhr.onerror = function() { btn.textContent = 'Error — Try Again'; };
+  xhr.send(JSON.stringify({ fields: { 'Checked In': checkedIn, 'NDA': ndaSigned ? 'Signed' : 'No', 'STI Cleared': stiCleared, 'Coat Check #': coatCheck, 'Phone Check #': phoneCheck, 'Door Notes': doorNotes } }));
+}
+
+function showLoading() {
+  document.getElementById('mainContent').innerHTML =
+    '<div class="loading"><div class="loading-spinner"></div><div class="loading-text">Opening the doors...</div></div>';
+}
+
+function showEmpty(msg) {
+  document.getElementById('mainContent').innerHTML = '<div class="empty-state">' + msg + '</div>';
+  document.getElementById('guestCount').textContent = '';
+}
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML = '<div class="error-state">' + msg + '</div>';
+}
+
+init();
+</script>
 </style>
 </head>
 <body>
