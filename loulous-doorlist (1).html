@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>LouLou's — Door List</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #EDE8E0;
+    --cream-dark: #E0D9CE;
+    --terracotta: #E8532A;
+    --terracotta-light: #F07050;
+    --near-black: #1C1814;
+    --brown: #5C4A3A;
+    --gold: #C9A96E;
+    --surface: #F5F1EA;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    background: var(--cream);
+    color: var(--near-black);
+    font-family: 'Jost', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--near-black);
+    padding: 16px 20px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+  }
+
+  .header-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--terracotta);
+    letter-spacing: 0.02em;
+  }
+
+  .event-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 13px;
+    color: var(--cream);
+    opacity: 0.7;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .guest-count {
+    font-size: 12px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    font-weight: 300;
+  }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 10px 18px;
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(237,232,224,0.5);
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  .tab.active {
+    color: var(--terracotta);
+    border-bottom-color: var(--terracotta);
+  }
+
+  .tab-icon { margin-right: 5px; }
+
+  /* SEARCH */
+  .search-bar {
+    padding: 12px 20px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--cream-dark);
+    position: sticky;
+    top: 97px;
+    z-index: 99;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 10px 16px;
+    background: white;
+    border: 1px solid var(--cream-dark);
+    border-radius: 8px;
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    color: var(--near-black);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .search-input:focus { border-color: var(--terracotta); }
+  .search-input::placeholder { color: #aaa; }
+
+  /* GRID */
+  .guest-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    padding: 12px;
+    background: var(--cream);
+  }
+
+  .guest-card {
+    background: white;
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    height: 200px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+
+  .guest-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.13); }
+
+  .guest-card:active { transform: scale(0.97); }
+
+  .guest-card.checked-in::after {
+    content: '✓';
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: var(--terracotta);
+    color: white;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 2;
+  }
+
+  .guest-photo {
+    width: 100%;
+    height: 155px;
+    object-fit: cover;
+    object-position: top center;
+    background: var(--cream-dark);
+    display: block;
+    flex-shrink: 0;
+    border-radius: 10px 10px 0 0;
+  }
+
+  .guest-photo-placeholder {
+    width: 100%;
+    height: 155px;
+    background: linear-gradient(135deg, var(--cream-dark), var(--cream));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    color: var(--brown);
+    opacity: 0.6;
+    border-radius: 10px 10px 0 0;
+    flex-shrink: 0;
+  }
+
+  .guest-card-info {
+    padding: 7px 8px 8px;
+    background: white;
+    flex-shrink: 0;
+  }
+
+  .guest-card-name {
+    font-family: 'Jost', sans-serif;
+    font-size: 11px;
+    font-weight: 400;
+    color: var(--near-black);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .guest-card-type {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--terracotta);
+    margin-top: 1px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  @media (min-width: 768px) {
+    .guest-grid { grid-template-columns: repeat(5, 1fr); }
+  }
+  @media (min-width: 1100px) {
+    .guest-grid { grid-template-columns: repeat(6, 1fr); }
+  }
+
+  /* LOADING */
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+  }
+
+  .loading-spinner {
+    width: 36px;
+    height: 36px;
+    border: 2px solid var(--cream-dark);
+    border-top-color: var(--terracotta);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loading-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 16px;
+    color: var(--brown);
+    letter-spacing: 0.1em;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    color: var(--brown);
+    font-style: italic;
+  }
+
+  /* DETAIL VIEW */
+  .detail-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(28,24,20,0.6);
+    z-index: 200;
+    display: none;
+    backdrop-filter: blur(4px);
+  }
+
+  .detail-overlay.open { display: block; }
+
+  .detail-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    z-index: 201;
+    max-height: 92vh;
+    overflow-y: auto;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .detail-sheet.open { transform: translateY(0); }
+
+  .detail-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--cream-dark);
+    border-radius: 2px;
+    margin: 12px auto 0;
+  }
+
+  .detail-photo-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 24px 24px 0;
+  }
+
+  .detail-photo {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: top center;
+    border: 3px solid var(--cream-dark);
+  }
+
+  .detail-photo-placeholder {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--cream-dark), var(--cream));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 42px;
+    color: var(--brown);
+    opacity: 0.6;
+    border: 3px solid var(--cream-dark);
+  }
+
+  .detail-photo-gradient { display: none; }
+
+  .detail-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 24px;
+    font-weight: 400;
+    color: var(--near-black);
+    padding: 0 24px;
+    margin-top: 14px;
+    text-align: center;
+  }
+
+  .detail-meta {
+    display: flex;
+    gap: 8px;
+    padding: 6px 24px 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .detail-badge {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+
+  .badge-guest { background: #FFF0EB; color: var(--terracotta); }
+  .badge-working { background: #EBF5FF; color: #2A6AE8; }
+  .badge-performer { background: #F5EBF5; color: #8A2AE8; }
+  .badge-collaborator { background: #EBFFF0; color: #2AE85A; }
+  .badge-patron { background: #FFF8EB; color: #C9890A; }
+
+  .detail-section {
+    padding: 20px 24px 0;
+  }
+
+  .detail-section-title {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--brown);
+    opacity: 0.6;
+    margin-bottom: 12px;
+    font-weight: 500;
+  }
+
+  /* TOGGLE ROWS */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  .toggle-label {
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    color: var(--near-black);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .toggle-emoji { font-size: 18px; }
+
+  .toggle {
+    position: relative;
+    width: 50px;
+    height: 28px;
+  }
+
+  .toggle input { opacity: 0; width: 0; height: 0; }
+
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: var(--cream-dark);
+    border-radius: 28px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+
+  .toggle-slider:before {
+    content: '';
+    position: absolute;
+    height: 22px;
+    width: 22px;
+    left: 3px;
+    top: 3px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  }
+
+  .toggle input:checked + .toggle-slider { background: var(--terracotta); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+  /* TEXT INPUTS */
+  .detail-input-row {
+    padding: 14px 0;
+    border-bottom: 1px solid var(--cream-dark);
+  }
+
+  .detail-input-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--brown);
+    opacity: 0.7;
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .detail-input {
+    width: 100%;
+    padding: 10px 14px;
+    background: white;
+    border: 1px solid var(--cream-dark);
+    border-radius: 8px;
+    font-family: 'Jost', sans-serif;
+    font-size: 15px;
+    color: var(--near-black);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .detail-input:focus { border-color: var(--terracotta); }
+
+  .detail-textarea {
+    resize: none;
+    min-height: 80px;
+    line-height: 1.5;
+  }
+
+  /* SAVE BUTTON */
+  .save-btn {
+    margin: 24px 24px 40px;
+    width: calc(100% - 48px);
+    padding: 16px;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+  }
+
+  .save-btn:active { transform: scale(0.98); background: var(--terracotta-light); }
+
+  .save-btn.saving { opacity: 0.7; }
+
+  /* CONTACT INFO */
+  .contact-info {
+    padding: 0 24px 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .contact-item {
+    font-size: 13px;
+    color: var(--brown);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ERROR */
+  .error-state {
+    padding: 40px 20px;
+    text-align: center;
+    color: var(--terracotta);
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+  }
+
+  /* EVENT SELECTOR */
+  .event-selector {
+    padding: 16px 20px;
+    background: var(--near-black);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .event-select {
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 8px;
+    color: var(--cream);
+    font-family: 'Jost', sans-serif;
+    font-size: 14px;
+    outline: none;
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23EDE8E0' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+  }
+
+  .event-select option { background: var(--near-black); color: var(--cream); }
+
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="logo">LouLou's</div>
+      <div class="event-name" id="currentEventName">Loading...</div>
+    </div>
+    <div class="guest-count" id="guestCount"></div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="all" onclick="setTab('all')"><span class="tab-icon">👥</span>Door List</button>
+    <button class="tab" data-tab="Guest" onclick="setTab('Guest')"><span class="tab-icon">🔥</span>Guests</button>
+    <button class="tab" data-tab="Working" onclick="setTab('Working')"><span class="tab-icon">🎭</span>Working</button>
+    <button class="tab" data-tab="nda" onclick="setTab('nda')"><span class="tab-icon">✍️</span>NDAs</button>
+  </div>
+</div>
+
+<div class="event-selector">
+  <select class="event-select" id="eventSelect" onchange="onEventChange()">
+    <option value="">— Select Event —</option>
+  </select>
+</div>
+
+<div class="search-bar">
+  <input class="search-input" type="search" placeholder="Search guests..." oninput="filterGuests(this.value)" />
+</div>
+
+<div id="mainContent">
+  <div class="loading">
+    <div class="loading-spinner"></div>
+    <div class="loading-text">Opening the doors...</div>
+  </div>
+</div>
+
+<!-- Detail Sheet -->
+<div class="detail-overlay" id="detailOverlay" onclick="closeDetail()"></div>
+<div class="detail-sheet" id="detailSheet">
+  <div class="detail-handle"></div>
+  <div id="detailContent"></div>
+</div>
+
+<script>
+const TOKEN = 'patQHgI1DOfeXw98H.da543b89b12e2aaa5a30980aafb3e5df35c6f87e5c23f7fa9c22e443ff5816f6';
+const BASE_ID = 'appY6p2HwRtDmOvAf';
+
+// Door List tables — add new ones here as you create them
+const DOOR_LIST_TABLES = [
+  { name: "L'Atelier — 3/28", table: "3/28 Door List" },
+  { name: "Do Not Disturb II — 2/28", table: "2/28 Door List" },
+  { name: "Do Not Disturb I — 12/13", table: "12/13 Door List" },
+];
+
+let allGuests = [];
+let currentTab = 'all';
+let currentTable = DOOR_LIST_TABLES[0].table;
+let currentGuest = null;
+
+const headers = {
+  'Authorization': `Bearer ${TOKEN}`,
+  'Content-Type': 'application/json'
+};
+
+async function fetchAll(table, formula = '') {
+  let records = [], offset = null;
+  do {
+    let url = `https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(table)}?pageSize=100`;
+    if (formula) url += `&filterByFormula=${encodeURIComponent(formula)}`;
+    if (offset) url += `&offset=${offset}`;
+    const res = await fetch(url, { headers });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    records = records.concat(data.records);
+    offset = data.offset;
+  } while (offset);
+  return records;
+}
+
+async function init() {
+  // Populate event selector
+  const sel = document.getElementById('eventSelect');
+  DOOR_LIST_TABLES.forEach((e, i) => {
+    const opt = document.createElement('option');
+    opt.value = e.table;
+    opt.textContent = e.name;
+    sel.appendChild(opt);
+  });
+  sel.value = DOOR_LIST_TABLES[0].table;
+  document.getElementById('currentEventName').textContent = DOOR_LIST_TABLES[0].name;
+  await loadGuests();
+}
+
+async function onEventChange() {
+  const sel = document.getElementById('eventSelect');
+  currentTable = sel.value;
+  const evt = DOOR_LIST_TABLES.find(e => e.table === currentTable);
+  document.getElementById('currentEventName').textContent = evt ? evt.name : '';
+  await loadGuests();
+}
+
+async function loadGuests() {
+  showLoading();
+  try {
+    const records = await fetchAll(currentTable);
+    if (records.length > 0) console.log('FIELDS:', Object.keys(records[0].fields));
+    allGuests = records.map(r => ({
+      id: r.id,
+      name: r.fields['Full Name'] || 'Unknown',
+      photo: r.fields['Photo'] ? r.fields['Photo'][0].url : null,
+      category: r.fields['List'] || '',
+      email: r.fields['Email'] || '',
+      phone: r.fields['Phone'] || '',
+      checkedIn: r.fields['Checked In'] || false,
+      coatCheck: r.fields['Coat Check #'] || '',
+      phoneCheck: r.fields['Phone Check #'] || '',
+      doorNotes: r.fields['Door Notes'] || '',
+      nda: r.fields['NDA'] || '',
+      stiCleared: r.fields['STI Cleared'] || false,
+      list: r.fields['List'] || '',
+      rsvp: r.fields['RSVP'] || '',
+      instagram: r.fields['Instagram'] || r.fields['Instagram Handle'] || r.fields['IG'] || r.fields['instagram'] || r.fields['INSTAGRAM'] || r.fields['Instagram URL'] || r.fields['Social'] || '',
+    }));
+    renderGuests();
+  } catch(e) {
+    showError('Error loading guests: ' + e.message);
+  }
+}
+
+function getTabGuests() {
+  if (currentTab === 'all') return allGuests;
+  if (currentTab === 'nda') return allGuests.filter(g => g.nda !== 'Signed');
+  if (currentTab === 'Guest') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return !l.toLowerCase().includes('work') && !l.toLowerCase().includes('staff'); });
+  if (currentTab === 'Working') return allGuests.filter(g => { const l = Array.isArray(g.list) ? g.list.join(' ') : (g.list||''); return l.toLowerCase().includes('work') || l.toLowerCase().includes('staff'); });
+  return allGuests;
+}
+
+function filterGuests(query) {
+  renderGuests(query);
+}
+
+function renderGuests(query = '') {
+  let guests = getTabGuests();
+  if (query) {
+    const q = query.toLowerCase();
+    guests = guests.filter(g => g.name.toLowerCase().includes(q));
+  }
+
+  const count = guests.length;
+  document.getElementById('guestCount').textContent = `${count} ${count === 1 ? 'person' : 'people'}`;
+
+  if (guests.length === 0) {
+    showEmpty('No guests on this list.');
+    return;
+  }
+
+  const grid = document.createElement('div');
+  grid.className = 'guest-grid';
+
+  guests.forEach(guest => {
+    const card = document.createElement('div');
+    card.className = 'guest-card' + (guest.checkedIn ? ' checked-in' : '');
+    card.onclick = () => openDetail(guest);
+
+    const cats = Array.isArray(guest.category) ? guest.category : [guest.category];
+    const primaryCat = cats[0] || '';
+
+    card.innerHTML = `
+      ${guest.photo
+        ? `<div class="guest-photo-wrap"><img class="guest-photo" src="${guest.photo}" alt="${guest.name}" loading="lazy"></div>`
+        : `<div class="guest-photo-placeholder"><span>${guest.name.charAt(0)}</span></div>`}
+      <div class="guest-card-info">
+        <div class="guest-card-name">${guest.name}</div>
+        ${primaryCat ? `<div class="guest-card-type">${primaryCat}</div>` : ''}
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+
+  document.getElementById('mainContent').innerHTML = '';
+  document.getElementById('mainContent').appendChild(grid);
+}
+
+function setTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  renderGuests();
+}
+
+function openDetail(guest) {
+  currentGuest = guest;
+  const cats = Array.isArray(guest.category) ? guest.category : [guest.category];
+  const badgesHtml = cats.filter(Boolean).map(c => {
+    const cls = c.toLowerCase().includes('guest') ? 'badge-guest'
+      : c.toLowerCase().includes('work') ? 'badge-working'
+      : c.toLowerCase().includes('perform') ? 'badge-performer'
+      : c.toLowerCase().includes('collab') ? 'badge-collaborator'
+      : c.toLowerCase().includes('patron') ? 'badge-patron'
+      : 'badge-guest';
+    return `<span class="detail-badge ${cls}">${c}</span>`;
+  }).join('');
+
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-photo-wrap">
+      ${guest.photo
+        ? `<img class="detail-photo" src="${guest.photo}" alt="${guest.name}">`
+        : `<div class="detail-photo-placeholder">${guest.name.charAt(0)}</div>`}
+      <div class="detail-photo-gradient"></div>
+    </div>
+    <div class="detail-name">${guest.name}</div>
+    <div class="detail-meta">${badgesHtml}</div>
+
+    ${guest.email || guest.phone || guest.instagram ? `
+    <div class="contact-info" style="margin-top:12px;">
+      ${guest.phone ? `<div class="contact-item">📞 <a href="tel:${guest.phone}" style="color:var(--brown);text-decoration:none;">${guest.phone}</a></div>` : ''}
+      ${guest.email ? `<div class="contact-item">✉️ <a href="mailto:${guest.email}" style="color:var(--terracotta);text-decoration:none;">${guest.email}</a></div>` : ''}
+      ${guest.instagram ? `<div class="contact-item">📸 <a href="${guest.instagram}" target="_blank" style="color:var(--brown);text-decoration:none;">${guest.instagram.replace('https://www.instagram.com/','@').replace('https://instagram.com/','@').replace(/\/$/,'')}</a></div>` : ''}
+    </div>` : ''}
+
+    <div class="detail-section">
+      <div class="detail-section-title">Check-In</div>
+
+      <div class="toggle-row">
+        <div class="toggle-label"><span class="toggle-emoji">✓</span> Checked In</div>
+        <label class="toggle">
+          <input type="checkbox" id="chkCheckedIn" ${guest.checkedIn ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label"><span class="toggle-emoji">✍️</span> NDA Signed</div>
+        <label class="toggle">
+          <input type="checkbox" id="chkNDA" onchange="document.getElementById('ndaLinkRow').style.display=this.checked?'none':''" ${guest.nda === 'Signed' ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="toggle-row" id="ndaLinkRow" style="background:#fff8f6;${guest.nda === 'Signed' ? 'display:none;' : ''}">
+        <div class="toggle-label" style="font-size:13px;color:var(--terracotta);">🚩 If NDA is unsigned, please <a href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank" style="color:var(--terracotta);font-weight:500;">click here</a> and have them sign:</div>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-label"><span class="toggle-emoji">🧪</span> STI Cleared</div>
+        <label class="toggle">
+          <input type="checkbox" id="chkSTI" ${guest.stiCleared ? 'checked' : ''}>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="detail-input-row">
+        <div class="detail-input-label">🧥 Coat Check #</div>
+        <input class="detail-input" id="inpCoat" type="text" value="${guest.coatCheck}" placeholder="e.g. 69">
+      </div>
+
+      <div class="detail-input-row">
+        <div class="detail-input-label">📱 Phone Check #</div>
+        <input class="detail-input" id="inpPhone" type="text" value="${guest.phoneCheck}" placeholder="e.g. 69">
+      </div>
+
+      <div class="detail-input-row">
+        <div class="detail-input-label">📋 Door Notes</div>
+        <textarea class="detail-input detail-textarea" id="inpNotes" placeholder="Any notes...">${guest.doorNotes}</textarea>
+      </div>
+    </div>
+
+    <button class="save-btn" onclick="saveGuest()">Save Changes</button>
+  `;
+
+  document.getElementById('detailOverlay').classList.add('open');
+  setTimeout(() => document.getElementById('detailSheet').classList.add('open'), 10);
+}
+
+function closeDetail() {
+  document.getElementById('detailSheet').classList.remove('open');
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+async function saveGuest() {
+  const btn = document.querySelector('.save-btn');
+  btn.textContent = 'Saving...';
+  btn.classList.add('saving');
+
+  const checkedIn = document.getElementById('chkCheckedIn').checked;
+  const ndaSigned = document.getElementById('chkNDA').checked;
+  const stiCleared = document.getElementById('chkSTI').checked;
+  const coatCheck = document.getElementById('inpCoat').value;
+  const phoneCheck = document.getElementById('inpPhone').value;
+  const doorNotes = document.getElementById('inpNotes').value;
+
+  try {
+    await fetch(`https://api.airtable.com/v0/${BASE_ID}/${encodeURIComponent(currentTable)}/${currentGuest.id}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        fields: {
+          'Checked In': checkedIn,
+          'NDA': ndaSigned ? 'Signed' : 'No',
+          'STI Cleared': stiCleared,
+          'Coat Check #': coatCheck,
+          'Phone Check #': phoneCheck,
+          'Door Notes': doorNotes,
+        }
+      })
+    });
+
+    // Update local data
+    currentGuest.checkedIn = checkedIn;
+    currentGuest.nda = ndaSigned ? 'Signed' : 'No';
+    currentGuest.stiCleared = stiCleared;
+    currentGuest.coatCheck = coatCheck;
+    currentGuest.phoneCheck = phoneCheck;
+    currentGuest.doorNotes = doorNotes;
+
+    const idx = allGuests.findIndex(g => g.id === currentGuest.id);
+    if (idx > -1) allGuests[idx] = { ...currentGuest };
+
+    btn.textContent = 'Saved ✓';
+    setTimeout(() => {
+      closeDetail();
+      renderGuests();
+    }, 600);
+  } catch(e) {
+    btn.textContent = 'Error — Try Again';
+    btn.classList.remove('saving');
+  }
+}
+
+function showLoading() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      <div class="loading-text">Opening the doors...</div>
+    </div>`;
+}
+
+function showEmpty(msg) {
+  document.getElementById('mainContent').innerHTML = `<div class="empty-state">${msg}</div>`;
+  document.getElementById('guestCount').textContent = '';
+}
+
+function showError(msg) {
+  document.getElementById('mainContent').innerHTML = `<div class="error-state">${msg}</div>`;
+}
+
+init();
+</script>
+</body>
+</html>
