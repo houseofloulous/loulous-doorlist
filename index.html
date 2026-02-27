@@ -584,7 +584,27 @@ function renderGuests(query) {
       }
       card.appendChild(info);
 
-      card.addEventListener('click', function() { openDetail(guest); });
+      card.setAttribute('role', 'button');
+card.tabIndex = 0;
+
+function open() { openDetail(guest); }
+
+// iPhone friendly tap
+card.addEventListener('pointerup', function(e) {
+  if (e && typeof e.button === 'number' && e.button !== 0) return;
+  open();
+});
+
+// fallback
+card.addEventListener('click', open);
+
+// keyboard
+card.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    open();
+  }
+});, function() { openDetail(guest); });
       grid.appendChild(card);
     })(guests[i]);
   }
