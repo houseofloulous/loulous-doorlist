@@ -718,15 +718,37 @@ function renderGuests(query = '') {
     const cats = Array.isArray(guest.category) ? guest.category : [guest.category];
     const primaryCat = cats[0] || '';
 
-    card.innerHTML = `
-      ${guest.photo
-        ? `<div class="guest-photo-wrap"><img class="guest-photo" src="${guest.photo}" alt="${guest.name}" loading="lazy"></div>`
-        : `<div class="guest-photo-placeholder"><span>${guest.name.charAt(0)}</span></div>`}
-      <div class="guest-card-info">
-        <div class="guest-card-name">${guest.name}</div>
-        ${primaryCat ? `<div class="guest-card-type">${primaryCat}</div>` : ''}
-      </div>
-    `;
+    // Build card with DOM methods to avoid template literal corruption
+    const photoWrap = document.createElement('div');
+    if (guest.photo) {
+      photoWrap.className = 'guest-photo-wrap';
+      const img = document.createElement('img');
+      img.className = 'guest-photo';
+      img.src = guest.photo;
+      img.alt = guest.name;
+      img.loading = 'lazy';
+      photoWrap.appendChild(img);
+    } else {
+      photoWrap.className = 'guest-photo-placeholder';
+      const span = document.createElement('span');
+      span.textContent = guest.name.charAt(0);
+      photoWrap.appendChild(span);
+    }
+    card.appendChild(photoWrap);
+
+    const info = document.createElement('div');
+    info.className = 'guest-card-info';
+    const nameEl = document.createElement('div');
+    nameEl.className = 'guest-card-name';
+    nameEl.textContent = guest.name;
+    info.appendChild(nameEl);
+    if (primaryCat) {
+      const typeEl = document.createElement('div');
+      typeEl.className = 'guest-card-type';
+      typeEl.textContent = primaryCat;
+      info.appendChild(typeEl);
+    }
+    card.appendChild(info);
     grid.appendChild(card);
   });
 
