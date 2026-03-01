@@ -1,601 +1,268 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <title>LouLou's | Door List</title>
+<script>
+  // 1) Your Cloudflare Worker base URL (yours is this)
+  const API_BASE = "https://ancient-wave-ed39.concierge-07f.workers.dev";
 
-  <style>
-    :root{
-      --blue:#6E8FF0;
-      --blue2:#5D7EE8;
-      --bg:#F2F4FA;
-      --card:#ffffff;
-      --text:#111827;
-      --muted:#6B7280;
-      --line:#E5E7EB;
-      --pill:#EEF2FF;
-    }
+  // 2) App state (starts empty, loads from Airtable via the Worker)
+  const state = {
+    tab: "door",
+    q: "",
+    guests: [],
+    current: null,
+    events: [],
+    eventId: null,
+    auth: null, // "Basic xxxxx" stored after login
+  };
 
-    *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
-    body{
-      background:var(--bg);
-      color:var(--text);
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-      min-height:100vh;
-    }
+  // 3) Grab DOM nodes (keep your existing ones)
+  const grid = document.getElementById("grid");
+  const count = document.getElementById("count");
+  const overlay = document.getElementById("overlay");
+  const sheet = document.getElementById("sheet");
+  const detail = document.getElementById("detail");
 
-    .topbar{
-      background:linear-gradient(0deg, var(--blue), var(--blue2));
-      color:white;
-      padding:16px 16px 12px;
-      position:sticky;
-      top:0;
-      z-index:50;
-      box-shadow:0 8px 24px rgba(17,24,39,0.18);
-    }
+  // If your event dropdown has a specific id, put it here.
+  // If you don't know it, leave as null and we’ll still load guests for the first event.
+  const eventSelect =
+    document.getElementById("eventSelect") ||
+    document.getElementById("event") ||
+    document.querySelector("select");
 
-    .topbar-row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
+  const searchInput =
+    document.getElementById("search") ||
+    document.querySelector('input[type="search"]') ||
+    document.querySelector('input[placeholder*="Search"]');
 
-    .brand{
-      font-weight:800;
-      font-size:24px;
-      letter-spacing:0.01em;
-    }
+  // 4) Auth helpers
+  function setAuth(username, passcode) {
+    const token = btoa(`${username}:${passcode}`);
+    state.auth = `Basic ${token}`;
+    localStorage.setItem("loulous_auth", state.auth);
+  }
 
-    .event-title{
-      margin-top:4px;
-      opacity:0.92;
-      font-size:14px;
-      font-weight:600;
-    }
+  function loadAuth() {
+    const saved = localStorage.getItem("loulous_auth");
+    if (saved) state.auth = saved;
+  }
 
-    .count{
-      font-size:13px;
-      opacity:0.95;
-      white-space:nowrap;
-      font-weight:600;
+  async function api(path, opts = {}) {
+    const headers = new Headers(opts.headers || {});
+    headers.set("Accept", "application/json");
+
+    // Send auth if we have it (prevents browser popups)
+    if (state.auth) headers.set("Authorization", state.auth);
+
+    // If we're sending JSON
+    if (opts.body && !headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
     }
 
-    .tabs{
-      margin-top:12px;
-      display:flex;
-      gap:10px;
-      overflow-x:auto;
-      padding-bottom:4px;
-      scrollbar-width:none;
-    }
-    .tabs::-webkit-scrollbar{ display:none; }
+    const res = await fetch(`${API_BASE}${path}`, { ...opts, headers });
 
-    .tab{
-      border:none;
-      background:rgba(255,255,255,0.22);
-      color:white;
-      padding:10px 14px;
-      border-radius:12px;
-      cursor:pointer;
-      font-weight:700;
-      font-size:14px;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      white-space:nowrap;
-    }
-    .tab.active{
-      background:white;
-      color:#1F2A44;
+    if (res.status === 401) {
+      // Force the login modal flow (instead of the browser basic-auth popup)
+      throw new Error("unauthorized");
     }
 
-    .subbar{
-      background:var(--bg);
-      padding:12px 16px;
-      position:sticky;
-      top:110px;
-      z-index:40;
-      display:flex;
-      gap:10px;
-      align-items:center;
-      border-bottom:1px solid rgba(229,231,235,0.8);
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`API error ${res.status}: ${text}`);
     }
 
-    select, input{
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:10px 12px;
-      font-size:16px;
-      outline:none;
-      background:white;
-    }
-    select{ width:220px; max-width:48vw; }
-    input{ flex:1; min-width:0; }
+    // Some endpoints may return empty
+    const ct = res.headers.get("content-type") || "";
+    if (!ct.includes("application/json")) return null;
+    return res.json();
+  }
 
-    .content{ padding:16px; }
+  // 5) Minimal login prompt (nice modal later, but this works now)
+  async function ensureAuth() {
+    loadAuth();
+    if (state.auth) return;
 
-    .grid{
-      display:grid;
-      grid-template-columns:repeat(4, 1fr);
-      gap:12px;
-    }
-    @media (min-width: 760px){
-      .grid{ grid-template-columns:repeat(6, 1fr); }
-      .subbar{ top:116px; }
-    }
-    @media (min-width: 1100px){
-      .grid{ grid-template-columns:repeat(7, 1fr); }
-    }
+    const username = prompt("LouLou Staff Username:");
+    const passcode = prompt("Passcode:");
+    if (!username || !passcode) throw new Error("Missing username/passcode");
+    setAuth(username, passcode);
 
-    .card{
-      background:var(--card);
-      border-radius:16px;
-      overflow:hidden;
-      box-shadow:0 8px 20px rgba(17,24,39,0.08);
-      cursor:pointer;
-      user-select:none;
-      touch-action:manipulation;
-      position:relative;
-      transition:transform 120ms ease;
-    }
-    .card:active{ transform:scale(0.98); }
+    // quick verification
+    await api("/api/ping");
+  }
 
-    .card.checked::after{
-      content:"✓";
-      position:absolute;
-      top:10px;
-      right:10px;
-      width:22px;
-      height:22px;
-      border-radius:999px;
-      background:#2563EB;
-      color:white;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      font-size:12px;
-      box-shadow:0 6px 14px rgba(37,99,235,0.35);
-      z-index:2;
-    }
+  // 6) Load events + guests
+  async function loadEvents() {
+    // Expect: [{ id, name, date, guestCount }]
+    const events = await api("/api/events");
+    state.events = Array.isArray(events) ? events : [];
+    if (!state.eventId && state.events.length) state.eventId = state.events[0].id;
 
-    .photo{
-      width:100%;
-      aspect-ratio:1/1;
-      background:#DCE6FF;
-      position:relative;
-      overflow:hidden;
-    }
-    .photo img{
-      position:absolute;
-      inset:0;
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center;
-      display:block;
-      pointer-events:none;
-    }
-    .initial{
-      position:absolute;
-      inset:0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      font-size:28px;
-      color:#27408F;
-      opacity:0.65;
-      pointer-events:none;
-    }
+    // Fill dropdown if it exists
+    if (eventSelect && state.events.length) {
+      eventSelect.innerHTML = state.events
+        .map(
+          (e) =>
+            `<option value="${e.id}" ${
+              e.id === state.eventId ? "selected" : ""
+            }>${escapeHtml(e.name || "Event")}${e.date ? " | " + escapeHtml(e.date) : ""}</option>`
+        )
+        .join("");
 
-    .meta{
-      padding:10px 10px 12px;
+      eventSelect.onchange = async () => {
+        state.eventId = eventSelect.value;
+        await loadGuests();
+      };
     }
-    .name{
-      font-weight:800;
-      font-size:13px;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .type{
-      margin-top:4px;
-      font-size:11px;
-      font-weight:800;
-      letter-spacing:0.06em;
-      text-transform:uppercase;
-      color:#3B82F6;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
+  }
 
-    .overlay{
-      position:fixed;
-      inset:0;
-      background:rgba(17,24,39,0.55);
-      display:none;
-      z-index:100;
-    }
-    .overlay.open{ display:block; }
+  async function loadGuests() {
+    if (!state.eventId) return;
 
-    .sheet{
-      position:fixed;
-      left:0; right:0; bottom:0;
-      background:white;
-      border-radius:22px 22px 0 0;
-      max-height:92vh;
-      overflow:auto;
-      transform:translateY(100%);
-      transition:transform 220ms cubic-bezier(0.32,0.72,0,1);
-      z-index:101;
-      padding-bottom:24px;
-    }
-    .sheet.open{ transform:translateY(0); }
+    // Expect: [{ id, name, type, photo, checked, vip, nda, sti, email, phone, instagram, ... }]
+    const guests = await api(`/api/guests?eventId=${encodeURIComponent(state.eventId)}`);
+    state.guests = Array.isArray(guests) ? guests : [];
 
-    .handle{
-      width:42px;
-      height:5px;
-      background:#E5E7EB;
-      border-radius:999px;
-      margin:12px auto 0;
+    // Re-render using your existing functions if they exist
+    if (typeof render === "function") render();
+    else renderFallback();
+  }
+
+  // 7) Fallback renderer (so it’s clickable even if your render() is missing/broken)
+  function renderFallback() {
+    const q = (state.q || "").toLowerCase().trim();
+    const list = state.guests.filter((g) => {
+      const name = (g.name || "").toLowerCase();
+      const type = (g.type || "").toLowerCase();
+
+      if (state.tab === "working") return type.includes("work") || type.includes("staff");
+      if (state.tab === "ndas") return !g.nda;
+      if (state.tab === "guests") return !(type.includes("work") || type.includes("staff"));
+
+      // door tab = everyone
+      return true;
+    }).filter((g) => !q || (g.name || "").toLowerCase().includes(q));
+
+    if (count) count.textContent = `${list.length} people`;
+
+    if (!grid) return;
+    grid.innerHTML = list
+      .map((g) => {
+        const photo = g.photo || g.photoUrl || g.image || "";
+        const initials = (g.name || "?")
+          .split(" ")
+          .slice(0, 2)
+          .map((s) => s[0] || "")
+          .join("")
+          .toUpperCase();
+
+        return `
+          <button class="guestCard" data-id="${escapeAttr(g.id)}" type="button">
+            <div class="avatar">
+              ${
+                photo
+                  ? `<img src="${escapeAttr(photo)}" alt="${escapeAttr(g.name || "Guest")}" />`
+                  : `<div class="initials">${escapeHtml(initials)}</div>`
+              }
+            </div>
+            <div class="meta">
+              <div class="name">${escapeHtml(g.name || "")}</div>
+              <div class="type">${escapeHtml(g.type || "")}</div>
+            </div>
+          </button>
+        `;
+      })
+      .join("");
+
+    // Make cards clickable
+    grid.querySelectorAll(".guestCard").forEach((btn) => {
+      btn.addEventListener("click", () => openGuest(btn.dataset.id));
+    });
+  }
+
+  function openGuest(id) {
+    const g = state.guests.find((x) => String(x.id) === String(id));
+    state.current = g || null;
+
+    if (typeof openSheet === "function") {
+      openSheet(g);
+      return;
     }
 
-    .detail-head{
-      padding:18px 18px 8px;
-      text-align:center;
-    }
-    .avatar{
-      width:110px;
-      height:110px;
-      border-radius:999px;
-      margin:10px auto 10px;
-      overflow:hidden;
-      background:#EEF2FF;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight:900;
-      font-size:40px;
-      color:#27408F;
-    }
-    .avatar img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      object-position:center;
-    }
-    .detail-name{
-      font-size:26px;
-      font-weight:900;
-      letter-spacing:0.01em;
-    }
-    .detail-type{
-      margin-top:6px;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:0.12em;
-      text-transform:uppercase;
-      color:#3B82F6;
-    }
+    // fallback detail
+    if (!detail) return;
+    detail.innerHTML = g
+      ? `
+        <div style="padding:16px">
+          <div style="font-size:18px;font-weight:600">${escapeHtml(g.name || "")}</div>
+          <div style="opacity:.7;margin-top:4px">${escapeHtml(g.type || "")}</div>
+          <div style="margin-top:12px;display:grid;gap:8px">
+            <label><input type="checkbox" ${g.checked ? "checked" : ""} data-field="checked"> Checked in</label>
+            <label><input type="checkbox" ${g.vip ? "checked" : ""} data-field="vip"> VIP</label>
+            <label><input type="checkbox" ${g.nda ? "checked" : ""} data-field="nda"> NDA</label>
+            <label><input type="checkbox" ${g.sti ? "checked" : ""} data-field="sti"> STI Verified</label>
+          </div>
+        </div>
+      `
+      : "";
 
-    .section{
-      padding:10px 18px 0;
-    }
-    .section-title{
-      margin-top:12px;
-      margin-bottom:10px;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:0.16em;
-      text-transform:uppercase;
-      color:#6B7280;
-    }
+    // show overlay/sheet if present
+    if (overlay) overlay.classList.add("show");
+    if (sheet) sheet.classList.add("show");
 
-    .row{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding:14px 0;
-      border-top:1px solid var(--line);
-      gap:12px;
-    }
-    .label{
-      font-size:16px;
-      font-weight:800;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      color:#111827;
-    }
+    // wire toggles -> PATCH to API
+    detail.querySelectorAll('input[type="checkbox"][data-field]').forEach((cb) => {
+      cb.addEventListener("change", async () => {
+        const field = cb.getAttribute("data-field");
+        const value = cb.checked;
 
-    .toggle{
-      width:54px;
-      height:32px;
-      position:relative;
-      flex:0 0 auto;
-    }
-    .toggle input{ opacity:0; width:0; height:0; }
-    .slider{
-      position:absolute;
-      inset:0;
-      background:#E5E7EB;
-      border-radius:999px;
-      cursor:pointer;
-      transition:background 160ms ease;
-    }
-    .slider::before{
-      content:"";
-      position:absolute;
-      width:26px;
-      height:26px;
-      left:3px;
-      top:3px;
-      background:white;
-      border-radius:999px;
-      box-shadow:0 2px 8px rgba(0,0,0,0.12);
-      transition:transform 160ms ease;
-    }
-    .toggle input:checked + .slider{ background:#3B82F6; }
-    .toggle input:checked + .slider::before{ transform:translateX(22px); }
-
-    .pillrow{
-      display:flex;
-      flex-wrap:wrap;
-      gap:10px;
-    }
-    .pill{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      background:var(--pill);
-      border:1px solid rgba(59,130,246,0.15);
-      padding:10px 12px;
-      border-radius:999px;
-      text-decoration:none;
-      font-weight:800;
-      color:#1F2A44;
-      font-size:14px;
-    }
-
-    .field{
-      margin-top:12px;
-      border-top:1px solid var(--line);
-      padding-top:12px;
-    }
-    .field label{
-      display:block;
-      font-size:12px;
-      font-weight:900;
-      letter-spacing:0.16em;
-      text-transform:uppercase;
-      color:#6B7280;
-      margin-bottom:8px;
-    }
-    .field input, .field textarea{
-      width:100%;
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:12px 12px;
-      font-size:16px;
-      outline:none;
-    }
-    .field textarea{ min-height:90px; resize:none; }
-
-    .save{
-      margin-top:14px;
-      width:100%;
-      border:none;
-      border-radius:14px;
-      padding:16px 14px;
-      background:#2563EB;
-      color:white;
-      font-weight:900;
-      letter-spacing:0.16em;
-      text-transform:uppercase;
-      cursor:pointer;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="topbar">
-    <div class="topbar-row">
-      <div>
-        <div class="brand">LouLou's</div>
-        <div class="event-title" id="eventTitle">L'Atelier | March 28th</div>
-      </div>
-      <div class="count" id="count">0 people</div>
-    </div>
-
-    <div class="tabs">
-      <button class="tab active" data-tab="door" type="button">👥 Door List</button>
-      <button class="tab" data-tab="guests" type="button">🔥 Guests</button>
-      <button class="tab" data-tab="working" type="button">🎭 Working</button>
-      <button class="tab" data-tab="ndas" type="button">✍️ NDAs</button>
-    </div>
-  </div>
-
-  <div class="subbar">
-    <select id="eventSelect">
-      <option value="atelier">L'Atelier | March 28th</option>
-      <option value="dnd">Do Not Disturb | Feb 28th</option>
-    </select>
-    <input id="search" placeholder="Search guests..." />
-  </div>
-
-  <div class="content" id="content">
-    <div class="grid" id="grid"></div>
-  </div>
-
-  <div class="overlay" id="overlay"></div>
-  <div class="sheet" id="sheet" role="dialog" aria-modal="true">
-    <div class="handle"></div>
-    <div id="detail"></div>
-  </div>
-
-  <script>
-    const sampleGuests = [
-      { id:"1", name:"Arianna Gilbeaux", type:"Dinner Guest", photo:"", checked:true, vip:true, nda:true, sti:false, email:"", phone:"", instagram:"" },
-      { id:"2", name:"Boykin Curry", type:"After Guests", photo:"", checked:false, vip:false, nda:false, sti:false, email:"", phone:"", instagram:"" },
-      { id:"3", name:"Christina Harley", type:"Dinner Guest", photo:"", checked:false, vip:false, nda:true, sti:true, email:"", phone:"", instagram:"" },
-      { id:"4", name:"Colin Flynn", type:"Working", photo:"", checked:true, vip:false, nda:true, sti:false, email:"", phone:"", instagram:"" },
-      { id:"5", name:"Evan Plomaritis", type:"After Guests", photo:"", checked:false, vip:true, nda:false, sti:false, email:"", phone:"", instagram:"" },
-      { id:"6", name:"Heather Futterman", type:"Dinner Guest", photo:"", checked:false, vip:false, nda:true, sti:true, email:"", phone:"", instagram:"" },
-    ];
-
-    const state = { tab:"door", q:"", guests:[...sampleGuests], current:null };
-
-    const grid = document.getElementById("grid");
-    const count = document.getElementById("count");
-    const overlay = document.getElementById("overlay");
-    const sheet = document.getElementById("sheet");
-    const detail = document.getElementById("detail");
-
-    function isWorking(t){
-      const s = (t||"").toLowerCase();
-      return s.includes("working") || s.includes("staff") || s.includes("work");
-    }
-
-    function filtered(){
-      let list = state.guests.slice();
-      if (state.q) list = list.filter(g => (g.name||"").toLowerCase().includes(state.q));
-      if (state.tab === "guests") list = list.filter(g => !isWorking(g.type));
-      if (state.tab === "working") list = list.filter(g => isWorking(g.type));
-      if (state.tab === "ndas") list = list.filter(g => !g.nda);
-      return list;
-    }
-
-    function render(){
-      const list = filtered();
-      count.textContent = list.length + " people";
-      grid.innerHTML = "";
-      for (const g of list){
-        const card = document.createElement("div");
-        card.className = "card" + (g.checked ? " checked" : "");
-        card.setAttribute("role","button");
-        card.setAttribute("tabindex","0");
-
-        const photo = document.createElement("div");
-        photo.className = "photo";
-        if (g.photo){
-          const img = document.createElement("img");
-          img.src = g.photo;
-          img.alt = g.name;
-          photo.appendChild(img);
-        } else {
-          const init = document.createElement("div");
-          init.className = "initial";
-          init.textContent = (g.name||"U").charAt(0);
-          photo.appendChild(init);
+        try {
+          await api(`/api/guests/${encodeURIComponent(g.id)}`, {
+            method: "PATCH",
+            body: JSON.stringify({ [field]: value }),
+          });
+          g[field] = value;
+        } catch (e) {
+          alert("Save failed. Try again.");
+          cb.checked = !value;
         }
+      });
+    });
+  }
 
-        const meta = document.createElement("div");
-        meta.className = "meta";
-        meta.innerHTML = `<div class="name">${g.name}</div><div class="type">${g.type}</div>`;
+  // 8) Search wiring
+  if (searchInput) {
+    searchInput.addEventListener("input", () => {
+      state.q = searchInput.value || "";
+      if (typeof render === "function") render();
+      else renderFallback();
+    });
+  }
 
-        card.appendChild(photo);
-        card.appendChild(meta);
+  // 9) Tiny safe escaping helpers
+  function escapeHtml(s) {
+    return String(s || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  function escapeAttr(s) {
+    return escapeHtml(s).replaceAll("`", "&#096;");
+  }
 
-        const open = () => openDetail(g);
-        card.addEventListener("pointerup", (e) => {
-          if (e && typeof e.button === "number" && e.button !== 0) return;
-          open();
-        });
-        card.addEventListener("click", open);
-        card.addEventListener("keydown", (e) => {
-          if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
-        });
-
-        grid.appendChild(card);
+  // 10) Boot
+  (async function boot() {
+    try {
+      await ensureAuth();
+      await loadEvents();
+      await loadGuests();
+    } catch (e) {
+      if (String(e.message).includes("unauthorized")) {
+        localStorage.removeItem("loulous_auth");
+        alert("Login needed. Refresh and enter your staff username + passcode.");
+      } else {
+        console.error(e);
+        alert("Could not load. Open Console for details.");
       }
     }
-
-    function openDetail(g){
-      state.current = g;
-
-      detail.innerHTML = `
-        <div class="detail-head">
-          <div class="avatar">${g.photo ? `<img src="${g.photo}" alt="${g.name}" />` : (g.name||"U").charAt(0)}</div>
-          <div class="detail-name">${g.name}</div>
-          <div class="detail-type">${g.type}</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Check-In</div>
-
-          ${toggleRow("✓ Checked In", "checked", g.checked)}
-          ${toggleRow("🎗️ VIP Wristband", "vip", g.vip)}
-          ${toggleRow("✍️ NDA Signed", "nda", g.nda)}
-          ${toggleRow("🧪 STI Verified", "sti", g.sti)}
-
-          <div class="field">
-            <label>Coat Check #</label>
-            <input id="coat" placeholder="e.g. 69" value="${g.coat || ""}">
-          </div>
-
-          <div class="field">
-            <label>Door Notes</label>
-            <textarea id="notes" placeholder="Enter any notes">${g.notes || ""}</textarea>
-          </div>
-
-          <button class="save" id="saveBtn" type="button">Save</button>
-        </div>
-      `;
-
-      document.getElementById("saveBtn").addEventListener("click", () => {
-        g.checked = document.getElementById("t_checked").checked;
-        g.vip = document.getElementById("t_vip").checked;
-        g.nda = document.getElementById("t_nda").checked;
-        g.sti = document.getElementById("t_sti").checked;
-        g.coat = document.getElementById("coat").value.trim();
-        g.notes = document.getElementById("notes").value.trim();
-        closeDetail();
-        render();
-      });
-
-      overlay.classList.add("open");
-      sheet.classList.add("open");
-    }
-
-    function toggleRow(label, key, checked){
-      return `
-        <div class="row">
-          <div class="label">${label}</div>
-          <label class="toggle">
-            <input type="checkbox" id="t_${key}" ${checked ? "checked" : ""}>
-            <span class="slider"></span>
-          </label>
-        </div>
-      `;
-    }
-
-    function closeDetail(){
-      sheet.classList.remove("open");
-      overlay.classList.remove("open");
-      detail.innerHTML = "";
-      state.current = null;
-    }
-
-    overlay.addEventListener("click", closeDetail);
-
-    document.querySelectorAll(".tab").forEach(btn => {
-      btn.addEventListener("click", () => {
-        state.tab = btn.dataset.tab;
-        document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === btn));
-        render();
-      });
-    });
-
-    document.getElementById("search").addEventListener("input", (e) => {
-      state.q = (e.target.value || "").trim().toLowerCase();
-      render();
-    });
-
-    render();
-  </script>
-</body>
-</html>
+  })();
+</script>
