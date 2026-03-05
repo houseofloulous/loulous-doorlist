@@ -1,34 +1,5 @@
 (function () {
 
-  // ============================================
-  // HIDE EVENT END DATES
-  // ============================================
-  function hideEventEndDates() {
-    document.querySelectorAll('.eventlist-meta-date, .event-date, [class*="event"][class*="date"]').forEach(function(el) {
-      var html = el.innerHTML;
-      if (html.includes('–') || html.includes('-') || html.includes('&ndash;')) {
-        el.innerHTML = html.replace(/\s*[–\-&ndash;].*?(PM|AM)/gi, '');
-      }
-    });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(hideEventEndDates, 500);
-      setTimeout(hideEventEndDates, 1500);
-    });
-  } else {
-    setTimeout(hideEventEndDates, 500);
-    setTimeout(hideEventEndDates, 1500);
-  }
-
-  new MutationObserver(function() {
-    hideEventEndDates();
-  }).observe(document.body, { childList: true, subtree: true });
-
-  // ============================================
-  // PARTNER FIELDS TOGGLE
-  // ============================================
   function setupToggle() {
     var allFields = document.querySelectorAll('.form-item');
     var partnerFields = [];
@@ -148,83 +119,131 @@
     document.cookie = 'loulou_member=;path=/;max-age=0;SameSite=Lax';
   }
 
-  function customizeClerkUI() {
-    document.querySelectorAll('.cl-footerActionLink').forEach(function(link) {
-      if (link.textContent.trim().toLowerCase() === 'sign up' && !link.dataset.clerkCustomized) {
-        link.dataset.clerkCustomized = 'true';
-        link.textContent = 'Apply now';
-        link.removeAttribute('href');
-        link.style.cursor = 'pointer';
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = GATE_CONFIG.applyUrl;
-        }, true);
-      }
-    });
-    document.querySelectorAll('.cl-footerActionText').forEach(function(el) {
-      if (el.textContent.toLowerCase().includes("don't have an account")) {
-        el.textContent = 'Need an account? ';
-      }
-    });
-    document.querySelectorAll('.cl-formFieldAction').forEach(function(link) {
-      if (link.textContent.toLowerCase().includes('forgot') && !link.dataset.clerkCustomized) {
-        link.dataset.clerkCustomized = 'true';
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = 'mailto:' + GATE_CONFIG.supportEmail + '?subject=Password%20Help%20-%20House%20of%20LouLou%27s';
-        }, true);
-      }
-    });
-  }
-
-  // GLOBAL function — called by header intercept and by this script
-  window.loulouOpenSignIn = function(redirectTo) {
-    redirectTo = redirectTo || GATE_CONFIG.redirectAfterLogin;
-    function tryOpen() {
-      if (window.Clerk && window.Clerk.openSignIn) {
-        window.Clerk.load().then(function() {
-          window.Clerk.openSignIn({ fallbackRedirectUrl: redirectTo, appearance: CLERK_APPEARANCE });
-          var custInterval = setInterval(function() {
-            if (document.querySelector('.cl-card, .cl-signIn-root, .cl-rootBox')) {
-              customizeClerkUI();
-              clearInterval(custInterval);
-            }
-          }, 200);
-          setTimeout(function() {
-            var clerkRoot = document.querySelector('.cl-rootBox, .cl-signIn-root');
-            if (clerkRoot) {
-              new MutationObserver(customizeClerkUI).observe(clerkRoot, { childList: true, subtree: true });
-            }
-          }, 1000);
-        });
-      } else {
-        setTimeout(tryOpen, 100);
-      }
-    }
-    tryOpen();
-  };
-
   function injectMemberNav() {
     if (document.querySelector('#loulou-member-nav')) return;
+
     setMemberCookie();
+
     var style = document.createElement('style');
     style.id = 'loulou-member-nav-style';
-    style.textContent = '#loulou-member-nav{position:fixed;top:0;left:0;right:0;z-index:99999;background:#1a2535;height:70px;}#loulou-nav-inner{max-width:1400px;margin:0 auto;padding:0 40px;height:70px;display:flex;align-items:center;justify-content:space-between;}#loulou-nav-logo img{height:40px;display:block;}#loulou-nav-links{display:flex;align-items:center;gap:36px;}#loulou-nav-links a{color:#e8e0d0!important;text-decoration:none!important;font-family:"Instrument Serif",serif;font-size:14px;letter-spacing:0.12em;text-transform:uppercase;white-space:nowrap;}#loulou-nav-links a:hover{color:#fff!important;}#loulou-hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;cursor:pointer;padding:8px;background:none;border:none;}#loulou-hamburger span{display:block;width:24px;height:2px;background:#e8e0d0;transition:all 0.3s;}#loulou-mobile-menu{display:none;position:fixed;top:70px;left:0;right:0;background:#1a2535;z-index:99998;padding:16px 0;border-top:1px solid rgba(255,255,255,0.1);}#loulou-mobile-menu.open{display:block;}#loulou-mobile-menu a{display:block;padding:14px 32px;color:#e8e0d0!important;text-decoration:none!important;font-family:"Instrument Serif",serif;font-size:15px;letter-spacing:0.12em;text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,0.05);}#loulou-mobile-menu a:last-child{border-bottom:none;}#loulou-mobile-menu a:hover{background:rgba(255,255,255,0.05);color:#fff!important;}body.loulou-nav-on{padding-top:70px!important;}header,#header,.header,.site-header,[data-section-type="header-section"]{display:none!important;}@media(max-width:768px){#loulou-nav-inner{padding:0 20px;}#loulou-nav-links{display:none;}#loulou-hamburger{display:flex;}}';
+    style.textContent = '\
+      #loulou-member-nav{\
+        position:fixed;top:0;left:0;right:0;\
+        z-index:99999;\
+        background:#1a2535;\
+        height:70px;\
+      }\
+      #loulou-nav-inner{\
+        max-width:1400px;margin:0 auto;\
+        padding:0 40px;height:70px;\
+        display:flex;align-items:center;\
+        justify-content:space-between;\
+      }\
+      #loulou-nav-logo img{\
+        height:40px;display:block;\
+      }\
+      #loulou-nav-links{\
+        display:flex;align-items:center;gap:36px;\
+      }\
+      #loulou-nav-links a{\
+        color:#e8e0d0!important;\
+        text-decoration:none!important;\
+        font-family:"Instrument Serif",serif;\
+        font-size:14px;\
+        letter-spacing:0.12em;\
+        text-transform:uppercase;\
+        white-space:nowrap;\
+      }\
+      #loulou-nav-links a:hover{color:#fff!important;}\
+      #loulou-hamburger{\
+        display:none;\
+        flex-direction:column;\
+        justify-content:center;\
+        gap:5px;\
+        cursor:pointer;\
+        padding:8px;\
+        background:none;\
+        border:none;\
+      }\
+      #loulou-hamburger span{\
+        display:block;\
+        width:24px;\
+        height:2px;\
+        background:#e8e0d0;\
+        transition:all 0.3s;\
+      }\
+      #loulou-mobile-menu{\
+        display:none;\
+        position:fixed;\
+        top:70px;left:0;right:0;\
+        background:#1a2535;\
+        z-index:99998;\
+        padding:16px 0;\
+        border-top:1px solid rgba(255,255,255,0.1);\
+      }\
+      #loulou-mobile-menu.open{display:block;}\
+      #loulou-mobile-menu a{\
+        display:block;\
+        padding:14px 32px;\
+        color:#e8e0d0!important;\
+        text-decoration:none!important;\
+        font-family:"Instrument Serif",serif;\
+        font-size:15px;\
+        letter-spacing:0.12em;\
+        text-transform:uppercase;\
+        border-bottom:1px solid rgba(255,255,255,0.05);\
+      }\
+      #loulou-mobile-menu a:last-child{border-bottom:none;}\
+      #loulou-mobile-menu a:hover{background:rgba(255,255,255,0.05);color:#fff!important;}\
+      body.loulou-nav-on{padding-top:70px!important;}\
+      header,#header,.header,.site-header,[data-section-type="header-section"]{display:none!important;}\
+      @media(max-width:768px){\
+        #loulou-nav-inner{padding:0 20px;}\
+        #loulou-nav-links{display:none;}\
+        #loulou-hamburger{display:flex;}\
+      }\
+    ';
     document.head.appendChild(style);
+
     var nav = document.createElement('div');
     nav.id = 'loulou-member-nav';
-    nav.innerHTML = '<div id="loulou-nav-inner"><a id="loulou-nav-logo" href="https://www.houseofloulous.com/members"><img src="' + GATE_CONFIG.logoWhiteUrl + '" alt="LouLous"></a><div id="loulou-nav-links"><a href="/latelier">L\'ATELIER</a><a href="/donotdisturb">DO NOT DISTURB</a><a href="/obscura">OBSCURA</a><a href="/membersevents">MEMBER EVENTS</a><a href="/cart">&#x1F6D2;</a></div><button id="loulou-hamburger" aria-label="Menu"><span></span><span></span><span></span></button></div>';
+    nav.innerHTML = '\
+      <div id="loulou-nav-inner">\
+        <a id="loulou-nav-logo" href="https://www.houseofloulous.com/members">\
+          <img src="' + GATE_CONFIG.logoWhiteUrl + '" alt="LouLous">\
+        </a>\
+        <div id="loulou-nav-links">\
+          <a href="/latelier">L\'ATELIER</a>\
+          <a href="/donotdisturb">DO NOT DISTURB</a>\
+          <a href="/obscura">OBSCURA</a>\
+          <a href="/membersevents">MEMBER EVENTS</a>\
+          <a href="/cart">&#x1F6D2;</a>\
+        </div>\
+        <button id="loulou-hamburger" aria-label="Menu">\
+          <span></span><span></span><span></span>\
+        </button>\
+      </div>\
+    ';
+
     var mobileMenu = document.createElement('div');
     mobileMenu.id = 'loulou-mobile-menu';
-    mobileMenu.innerHTML = '<a href="/latelier">L\'ATELIER</a><a href="/donotdisturb">DO NOT DISTURB</a><a href="/obscura">OBSCURA</a><a href="/membersevents">MEMBER EVENTS</a><a href="/cart">&#x1F6D2; CART</a>';
+    mobileMenu.innerHTML = '\
+      <a href="/latelier">L\'ATELIER</a>\
+      <a href="/donotdisturb">DO NOT DISTURB</a>\
+      <a href="/obscura">OBSCURA</a>\
+      <a href="/membersevents">MEMBER EVENTS</a>\
+      <a href="/cart">&#x1F6D2; CART</a>\
+    ';
+
     document.body.prepend(mobileMenu);
     document.body.prepend(nav);
     document.body.classList.add('loulou-nav-on');
+
     document.getElementById('loulou-hamburger').addEventListener('click', function() {
-      document.getElementById('loulou-mobile-menu').classList.toggle('open');
+      var menu = document.getElementById('loulou-mobile-menu');
+      menu.classList.toggle('open');
     });
+
     document.addEventListener('click', function(e) {
       var hamburger = document.getElementById('loulou-hamburger');
       var menu = document.getElementById('loulou-mobile-menu');
@@ -238,7 +257,67 @@
     if (document.querySelector('#loulou-gate-styles')) return;
     var style = document.createElement('style');
     style.id = 'loulou-gate-styles';
-    style.textContent = 'body.loulou-checking main,body.loulou-checking #page,body.loulou-checking .content-wrapper,body.loulou-checking article,body.loulou-checking .page-section{opacity:0!important;pointer-events:none!important;}.loulou-denied-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#f5f0eb;font-family:"Instrument Serif",serif;}.loulou-denied-box{text-align:center;padding:3rem 2.5rem;max-width:500px;width:90%;}.loulou-denied-logo img{max-height:80px;margin-bottom:1.5rem;}.loulou-denied-line{width:60px;height:1px;background:#1a1a1a;margin:1.5rem auto;opacity:0.3;}.loulou-denied-title{font-size:1.6rem;color:#1a1a1a;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.75rem;font-family:"Instrument Serif",serif;}.loulou-denied-sub{font-size:1.1rem;color:#555;font-weight:300;margin-bottom:2.5rem;line-height:1.7;font-family:"Instrument Serif",serif;}.loulou-denied-btn{display:inline-block;padding:16px 50px;background:#1a1a1a;border:none;color:#f5f0eb;font-family:"Instrument Serif",serif;font-size:1rem;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:background 0.3s;position:relative;z-index:1;}.loulou-denied-btn:hover{background:#333;}.loulou-denied-apply{display:block;margin-top:2rem;font-size:1rem;color:#888;font-family:"Instrument Serif",serif;}.loulou-denied-apply a{color:#1a1a1a;font-weight:600;text-decoration:none;border-bottom:1px solid #1a1a1a;}.cl-modalBackdrop,.cl-rootBox{z-index:9999999!important;}.cl-card{max-height:90vh;overflow-y:auto;}@media(max-width:480px){.loulou-denied-box{padding:2rem 1.5rem;}.cl-card{max-height:85vh;}}';
+    style.textContent = '\
+      body.loulou-checking main,\
+      body.loulou-checking #page,\
+      body.loulou-checking .content-wrapper,\
+      body.loulou-checking article,\
+      body.loulou-checking .page-section{\
+        opacity:0!important;\
+        pointer-events:none!important;\
+      }\
+      .loulou-denied-overlay{\
+        position:fixed;top:0;left:0;right:0;bottom:0;\
+        z-index:999999;\
+        display:flex;align-items:center;justify-content:center;\
+        background:#f5f0eb;\
+        font-family:"Instrument Serif",serif;\
+      }\
+      .loulou-denied-box{\
+        text-align:center;\
+        padding:3rem 2.5rem;\
+        max-width:500px;width:90%;\
+      }\
+      .loulou-denied-logo img{max-height:80px;margin-bottom:1.5rem;}\
+      .loulou-denied-line{width:60px;height:1px;background:#1a1a1a;margin:1.5rem auto;opacity:0.3;}\
+      .loulou-denied-title{\
+        font-size:1.6rem;color:#1a1a1a;font-weight:400;\
+        letter-spacing:0.15em;text-transform:uppercase;\
+        margin-bottom:0.75rem;\
+        font-family:"Instrument Serif",serif;\
+      }\
+      .loulou-denied-sub{\
+        font-size:1.1rem;color:#555;font-weight:300;\
+        margin-bottom:2.5rem;line-height:1.7;\
+        font-family:"Instrument Serif",serif;\
+      }\
+      .loulou-denied-btn{\
+        display:inline-block;padding:16px 50px;\
+        background:#1a1a1a;border:none;\
+        color:#f5f0eb;\
+        font-family:"Instrument Serif",serif;\
+        font-size:1rem;letter-spacing:0.2em;\
+        text-transform:uppercase;cursor:pointer;\
+        transition:background 0.3s;\
+        position:relative;z-index:1;\
+      }\
+      .loulou-denied-btn:hover{background:#333;}\
+      .loulou-denied-apply{\
+        display:block;margin-top:2rem;\
+        font-size:1rem;color:#888;\
+        font-family:"Instrument Serif",serif;\
+      }\
+      .loulou-denied-apply a{\
+        color:#1a1a1a;font-weight:600;\
+        text-decoration:none;border-bottom:1px solid #1a1a1a;\
+      }\
+      .cl-modalBackdrop,.cl-rootBox{z-index:9999999!important;}\
+      .cl-card{max-height:90vh;overflow-y:auto;}\
+      @media(max-width:480px){\
+        .loulou-denied-box{padding:2rem 1.5rem;}\
+        .cl-card{max-height:85vh;}\
+      }\
+    ';
     document.head.appendChild(style);
   }
 
@@ -286,6 +365,37 @@
     if (overlay) overlay.remove();
   }
 
+  function customizeClerkUI() {
+    document.querySelectorAll('.cl-footerActionLink').forEach(function(link) {
+      if (link.textContent.trim().toLowerCase() === 'sign up' && !link.dataset.clerkCustomized) {
+        link.dataset.clerkCustomized = 'true';
+        link.textContent = 'Apply now';
+        link.removeAttribute('href');
+        link.style.cursor = 'pointer';
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = GATE_CONFIG.applyUrl;
+        }, true);
+      }
+    });
+    document.querySelectorAll('.cl-footerActionText').forEach(function(el) {
+      if (el.textContent.toLowerCase().includes("don't have an account")) {
+        el.textContent = 'Need an account? ';
+      }
+    });
+    document.querySelectorAll('.cl-formFieldAction').forEach(function(link) {
+      if (link.textContent.toLowerCase().includes('forgot') && !link.dataset.clerkCustomized) {
+        link.dataset.clerkCustomized = 'true';
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = 'mailto:' + GATE_CONFIG.supportEmail + '?subject=Password%20Help%20-%20House%20of%20LouLou%27s';
+        }, true);
+      }
+    });
+  }
+
   function handleAuth(clerk) {
     var user = clerk.user;
 
@@ -295,11 +405,50 @@
         window.location.href = params.get('redirect') || GATE_CONFIG.redirectAfterLogin;
         return;
       }
-      // Auto-open if redirected from a gated page
       var params = new URLSearchParams(window.location.search);
-      if (params.has('redirect')) {
-        window.loulouOpenSignIn(params.get('redirect'));
+      var redirectTo = params.get('redirect') || GATE_CONFIG.redirectAfterLogin;
+      var shouldAutoOpen = params.has('redirect');
+
+      function openClerkModal() {
+        clerk.openSignIn({ fallbackRedirectUrl: redirectTo, appearance: CLERK_APPEARANCE });
+        var custInterval = setInterval(function() {
+          if (document.querySelector('.cl-card, .cl-signIn-root, .cl-rootBox')) {
+            customizeClerkUI();
+            clearInterval(custInterval);
+          }
+        }, 200);
+        setTimeout(function() {
+          var clerkRoot = document.querySelector('.cl-rootBox, .cl-signIn-root');
+          if (clerkRoot) {
+            new MutationObserver(customizeClerkUI).observe(clerkRoot, { childList: true, subtree: true });
+          }
+        }, 1000);
       }
+
+      if (shouldAutoOpen) openClerkModal();
+
+      function hijackEnterButton() {
+        document.querySelectorAll('a').forEach(function(link) {
+          var href = (link.getAttribute('href') || '').toLowerCase();
+          var text = link.textContent.trim().toUpperCase();
+          if ((text === 'ENTER' || href.includes('/account')) && !link.dataset.clerkHijacked) {
+            link.dataset.clerkHijacked = 'true';
+            link.setAttribute('href', '#');
+            link.style.pointerEvents = 'auto';
+            link.style.cursor = 'pointer';
+            link.addEventListener('click', function(e) {
+              e.preventDefault();
+              e.stopPropagation();
+              openClerkModal();
+            });
+          }
+        });
+      }
+
+      hijackEnterButton();
+      setTimeout(hijackEnterButton, 500);
+      setTimeout(hijackEnterButton, 1000);
+      setTimeout(hijackEnterButton, 2000);
       return;
     }
 
@@ -333,6 +482,7 @@
     if (isSquarespaceAdmin()) return;
     addGateStyles();
     if (isGatedPage()) document.body.classList.add('loulou-checking');
+
     var waitForClerk = setInterval(function() {
       if (window.Clerk) {
         clearInterval(waitForClerk);
@@ -347,6 +497,7 @@
           });
       }
     }, 100);
+
     setTimeout(function() {
       clearInterval(waitForClerk);
       if (isGatedPage() && document.body.classList.contains('loulou-checking')) {
