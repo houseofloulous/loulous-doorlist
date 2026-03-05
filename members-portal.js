@@ -148,6 +148,64 @@
     document.cookie = 'loulou_member=;path=/;max-age=0;SameSite=Lax';
   }
 
+  function customizeClerkUI() {
+    document.querySelectorAll('.cl-footerActionLink').forEach(function(link) {
+      if (link.textContent.trim().toLowerCase() === 'sign up' && !link.dataset.clerkCustomized) {
+        link.dataset.clerkCustomized = 'true';
+        link.textContent = 'Apply now';
+        link.removeAttribute('href');
+        link.style.cursor = 'pointer';
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = GATE_CONFIG.applyUrl;
+        }, true);
+      }
+    });
+    document.querySelectorAll('.cl-footerActionText').forEach(function(el) {
+      if (el.textContent.toLowerCase().includes("don't have an account")) {
+        el.textContent = 'Need an account? ';
+      }
+    });
+    document.querySelectorAll('.cl-formFieldAction').forEach(function(link) {
+      if (link.textContent.toLowerCase().includes('forgot') && !link.dataset.clerkCustomized) {
+        link.dataset.clerkCustomized = 'true';
+        link.addEventListener('click', function(e) {
+          e.preventDefault();
+          e.stopPropagation();
+          window.location.href = 'mailto:' + GATE_CONFIG.supportEmail + '?subject=Password%20Help%20-%20House%20of%20LouLou%27s';
+        }, true);
+      }
+    });
+  }
+
+  // GLOBAL function — called by header intercept and by this script
+  window.loulouOpenSignIn = function(redirectTo) {
+    redirectTo = redirectTo || GATE_CONFIG.redirectAfterLogin;
+    function tryOpen() {
+      if (window.Clerk && window.Clerk.openSignIn) {
+        window.Clerk.load().then(function() {
+          window.Clerk.openSignIn({ fallbackRedirectUrl: redirectTo, appearance: CLERK_APPEARANCE });
+          var custInterval = setInterval(function() {
+            if (document.querySelector('.cl-card, .cl-signIn-root, .cl-rootBox')) {
+              customizeClerkUI();
+              clearInterval(custInterval);
+            }
+          }, 200);
+          setTimeout(function() {
+            var clerkRoot = document.querySelector('.cl-rootBox, .cl-signIn-root');
+            if (clerkRoot) {
+              new MutationObserver(customizeClerkUI).observe(clerkRoot, { childList: true, subtree: true });
+            }
+          }, 1000);
+        });
+      } else {
+        setTimeout(tryOpen, 100);
+      }
+    }
+    tryOpen();
+  };
+
   function injectMemberNav() {
     if (document.querySelector('#loulou-member-nav')) return;
     setMemberCookie();
@@ -228,37 +286,6 @@
     if (overlay) overlay.remove();
   }
 
-  function customizeClerkUI() {
-    document.querySelectorAll('.cl-footerActionLink').forEach(function(link) {
-      if (link.textContent.trim().toLowerCase() === 'sign up' && !link.dataset.clerkCustomized) {
-        link.dataset.clerkCustomized = 'true';
-        link.textContent = 'Apply now';
-        link.removeAttribute('href');
-        link.style.cursor = 'pointer';
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = GATE_CONFIG.applyUrl;
-        }, true);
-      }
-    });
-    document.querySelectorAll('.cl-footerActionText').forEach(function(el) {
-      if (el.textContent.toLowerCase().includes("don't have an account")) {
-        el.textContent = 'Need an account? ';
-      }
-    });
-    document.querySelectorAll('.cl-formFieldAction').forEach(function(link) {
-      if (link.textContent.toLowerCase().includes('forgot') && !link.dataset.clerkCustomized) {
-        link.dataset.clerkCustomized = 'true';
-        link.addEventListener('click', function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = 'mailto:' + GATE_CONFIG.supportEmail + '?subject=Password%20Help%20-%20House%20of%20LouLou%27s';
-        }, true);
-      }
-    });
-  }
-
   function handleAuth(clerk) {
     var user = clerk.user;
 
@@ -268,63 +295,11 @@
         window.location.href = params.get('redirect') || GATE_CONFIG.redirectAfterLogin;
         return;
       }
+      // Auto-open if redirected from a gated page
       var params = new URLSearchParams(window.location.search);
-      var redirectTo = params.get('redirect') || GATE_CONFIG.redirectAfterLogin;
-      var shouldAutoOpen = params.has('redirect');
-
-      function openClerkModal() {
-        clerk.openSignIn({ fallbackRedirectUrl: redirectTo, appearance: CLERK_APPEARANCE });
-        var custInterval = setInterval(function() {
-          if (document.querySelector('.cl-card, .cl-signIn-root, .cl-rootBox')) {
-            customizeClerkUI();
-            clearInterval(custInterval);
-          }
-        }, 200);
-        setTimeout(function() {
-          var clerkRoot = document.querySelector('.cl-rootBox, .cl-signIn-root');
-          if (clerkRoot) {
-            new MutationObserver(customizeClerkUI).observe(clerkRoot, { childList: true, subtree: true });
-          }
-        }, 1000);
+      if (params.has('redirect')) {
+        window.loulouOpenSignIn(params.get('redirect'));
       }
-
-      if (shouldAutoOpen) openClerkModal();
-
-      function hijackEnterButton() {
-        document.querySelectorAll('a, button').forEach(function(el) {
-          var href = (el.getAttribute('href') || '').toLowerCase();
-          var text = el.textContent.trim().toUpperCase();
-          if ((text === 'ENTER' || href.includes('/account')) && !el.dataset.clerkHijacked) {
-            el.dataset.clerkHijacked = 'true';
-            if (el.tagName === 'A') el.setAttribute('href', '#');
-            el.style.pointerEvents = 'auto';
-            el.style.cursor = 'pointer';
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              openClerkModal();
-            }, true);
-          }
-        });
-      }
-
-      // Intercept ALL clicks on the page and check if they hit an ENTER/account link
-      document.addEventListener('click', function(e) {
-        var el = e.target.closest('a, button');
-        if (!el) return;
-        var href = (el.getAttribute('href') || '').toLowerCase();
-        var text = el.textContent.trim().toUpperCase();
-        if (text === 'ENTER' || href.includes('/account')) {
-          e.preventDefault();
-          e.stopPropagation();
-          openClerkModal();
-        }
-      }, true);
-
-      hijackEnterButton();
-      setTimeout(hijackEnterButton, 500);
-      setTimeout(hijackEnterButton, 1000);
-      setTimeout(hijackEnterButton, 2000);
       return;
     }
 
