@@ -36,55 +36,6 @@
     supportEmail: 'hello@houseofloulous.com'
   };
 
-  var CLERK_APPEARANCE = {
-    layout: {
-      logoImageUrl: GATE_CONFIG.logoUrl,
-      logoPlacement: 'inside',
-      socialButtonsPlacement: 'bottom',
-      showOptionalFields: false,
-      unsafe_disableDevelopmentModeWarnings: true
-    },
-    variables: {
-      colorPrimary: '#1a1a1a',
-      colorBackground: '#f5f0eb',
-      colorText: '#1a1a1a',
-      colorInputBackground: 'transparent',
-      colorInputText: '#1a1a1a',
-      borderRadius: '0px',
-      fontFamily: '"Instrument Serif", serif',
-      colorNeutral: '#1a1a1a'
-    },
-    elements: {
-      card: { backgroundColor: '#f5f0eb', border: 'none', boxShadow: 'none' },
-      headerTitle: { display: 'none' },
-      headerSubtitle: { display: 'none' },
-      logoBox: { height: '120px', justifyContent: 'center', marginBottom: '8px' },
-      logoImage: { maxHeight: '100px', objectFit: 'contain' },
-      formFieldInput: {
-        borderTop: 'none', borderLeft: 'none', borderRight: 'none',
-        borderBottom: '1px solid #ccc', borderRadius: '0',
-        backgroundColor: 'transparent', fontSize: '1rem',
-        fontFamily: '"Instrument Serif", serif',
-        padding: '12px 0', color: '#1a1a1a'
-      },
-      formFieldLabel: { display: 'none' },
-      formButtonPrimary: {
-        backgroundColor: '#1a1a1a', color: '#f5f0eb',
-        fontFamily: '"Instrument Serif", serif',
-        fontSize: '0.9rem', letterSpacing: '0.2em',
-        textTransform: 'uppercase', borderRadius: '0',
-        padding: '14px', fontWeight: '400'
-      },
-      footerAction: { fontFamily: '"Instrument Serif", serif' },
-      footerActionLink: { color: '#1a1a1a', fontWeight: '600', fontFamily: '"Instrument Serif", serif' },
-      socialButtonsBlockButton: { border: '1px solid #ddd', color: '#1a1a1a', backgroundColor: 'transparent', borderRadius: '0', fontFamily: '"Instrument Serif", serif' },
-      dividerLine: { background: '#ddd' },
-      dividerText: { color: '#aaa', fontFamily: '"Instrument Serif", serif', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.8rem' },
-      formFieldAction: { color: '#888', fontFamily: '"Instrument Serif", serif' },
-      alternativeMethodsBlockButton: { border: '1px solid #ddd', borderRadius: '0', fontFamily: '"Instrument Serif", serif' }
-    }
-  };
-
   function getCurrentPath() {
     return window.location.pathname.replace(/\/$/, '').toLowerCase();
   }
@@ -139,52 +90,16 @@
       '.loulou-denied-btn{display:inline-block;padding:16px 50px;background:#1a1a1a;border:none;color:#f5f0eb;font-family:"Instrument Serif",serif;font-size:1rem;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:background 0.3s;}',
       '.loulou-denied-btn:hover{background:#333;}',
       '.loulou-denied-apply{display:block;margin-top:2rem;font-size:1rem;color:#888;font-family:"Instrument Serif",serif;}',
-      '.loulou-denied-apply a{color:#1a1a1a;font-weight:600;text-decoration:none;border-bottom:1px solid #1a1a1a;}',
-      '#loulou-signin-modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999999;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;}',
-      '#loulou-signin-modal.active{display:flex;}',
-      '#loulou-signin-inner{background:#f5f0eb;padding:2rem;max-width:480px;width:90%;max-height:90vh;overflow-y:auto;position:relative;}',
-      '#loulou-signin-close{position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:1.5rem;cursor:pointer;color:#1a1a1a;font-family:"Instrument Serif",serif;}',
-      '#loulou-clerk-mount{min-height:300px;}'
+      '.loulou-denied-apply a{color:#1a1a1a;font-weight:600;text-decoration:none;border-bottom:1px solid #1a1a1a;}'
     ].join('');
     document.head.appendChild(style);
   }
 
-  function createSignInModal() {
-    if (document.querySelector('#loulou-signin-modal')) return;
-    var modal = document.createElement('div');
-    modal.id = 'loulou-signin-modal';
-    modal.innerHTML = '<div id="loulou-signin-inner"><button id="loulou-signin-close" type="button">\u00d7</button><div id="loulou-clerk-mount"></div></div>';
-    document.body.appendChild(modal);
-    document.querySelector('#loulou-signin-close').addEventListener('click', function() {
-      modal.classList.remove('active');
-    });
-    modal.addEventListener('click', function(e) {
-      if (e.target === modal) modal.classList.remove('active');
-    });
+  function goToSignIn() {
+    window.location.href = GATE_CONFIG.signInUrl + '?redirect_url=' + encodeURIComponent(GATE_CONFIG.redirectAfterLogin);
   }
 
-  function openSignInModal(clerk) {
-    var modal = document.querySelector('#loulou-signin-modal');
-    if (!modal) return;
-    modal.classList.add('active');
-    var mountEl = document.querySelector('#loulou-clerk-mount');
-    if (mountEl && !mountEl.dataset.mounted) {
-      mountEl.dataset.mounted = 'true';
-      setTimeout(function() {
-        clerk.mountSignIn(mountEl, {
-          appearance: CLERK_APPEARANCE,
-          fallbackRedirectUrl: GATE_CONFIG.redirectAfterLogin
-        });
-        clerk.addListener(function(resources) {
-          if (resources.user) {
-            window.location.href = GATE_CONFIG.redirectAfterLogin;
-          }
-        });
-      }, 300);
-    }
-  }
-
-  function showDeniedOverlay(clerk) {
+  function showDeniedOverlay() {
     if (document.querySelector('.loulou-denied-overlay')) return;
     var overlay = document.createElement('div');
     overlay.className = 'loulou-denied-overlay';
@@ -207,7 +122,7 @@
     btn.textContent = 'SIGN IN';
     btn.addEventListener('click', function(e) {
       e.preventDefault();
-      if (clerk) openSignInModal(clerk);
+      goToSignIn();
     });
     var applyDiv = document.createElement('div');
     applyDiv.className = 'loulou-denied-apply';
@@ -237,7 +152,6 @@
         window.location.href = GATE_CONFIG.redirectAfterLogin;
         return;
       }
-      createSignInModal();
       function hijackEnterButton() {
         document.querySelectorAll('a, [data-sqsp-button]').forEach(function(el) {
           var text = el.textContent.trim().toUpperCase();
@@ -247,7 +161,7 @@
             el.addEventListener('click', function(e) {
               e.preventDefault();
               e.stopPropagation();
-              openSignInModal(clerk);
+              goToSignIn();
             });
           }
         });
@@ -265,11 +179,10 @@
         hideNavLinks(user);
       } else {
         document.body.classList.remove('loulou-checking');
-        createSignInModal();
-        showDeniedOverlay(clerk);
+        showDeniedOverlay();
       }
       clerk.addListener(function(resources) {
-        if (!resources.user && isGatedPage()) showDeniedOverlay(clerk);
+        if (!resources.user && isGatedPage()) showDeniedOverlay();
         if (resources.user) { showPageContent(); hideNavLinks(resources.user); }
       });
     }
@@ -284,13 +197,13 @@
     var waitForClerk = setInterval(function() {
       if (window.Clerk) {
         clearInterval(waitForClerk);
-        window.Clerk.load({ standardBrowser: true, appearance: CLERK_APPEARANCE })
+        window.Clerk.load()
           .then(function() { handleAuth(window.Clerk); })
           .catch(function(err) {
             console.error('Clerk failed to load:', err);
             if (needsGate) {
               document.body.classList.remove('loulou-checking');
-              showDeniedOverlay(null);
+              showDeniedOverlay();
             }
           });
       }
@@ -299,7 +212,7 @@
       clearInterval(waitForClerk);
       if (needsGate && document.body.classList.contains('loulou-checking')) {
         document.body.classList.remove('loulou-checking');
-        showDeniedOverlay(null);
+        showDeniedOverlay();
       }
     }, 15000);
   }
