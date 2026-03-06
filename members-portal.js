@@ -1,6 +1,7 @@
 (function () {
 
   var GC = {
+    clerkKey: 'pk_live_Y2xlcmsuaG91c2VvZmxvdWxvdXMuY29tJA',
     loginPage: '/membershouse',
     gatedPages: ['/members','/latelier','/donotdisturb','/membersevent','/ateliertix','/loulousdonotdisturb'],
     redirectAfterLogin: '/members',
@@ -34,8 +35,6 @@
     s.id = 'll-gate-style';
     s.textContent = [
       'body.loulou-checking #page, body.loulou-checking .sqs-layout { opacity: 0 !important; pointer-events: none !important; }',
-
-      /* Gate overlay */
       '.ll-do { position: fixed; inset: 0; background: #F5F0EB; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: "Instrument Serif", serif; }',
       '.ll-do img.ll-logo { width: 180px; margin-bottom: 32px; }',
       '.ll-do hr { width: 60px; border: none; border-top: 1px solid #222; margin: 0 auto 28px; }',
@@ -43,10 +42,8 @@
       '.ll-do p { font-size: 15px; color: #444; margin: 0 0 32px; text-align: center; line-height: 1.6; }',
       '.ll-do .ll-links { margin-top: 28px; font-size: 13px; color: #888; }',
       '.ll-do .ll-links a { color: #888; text-decoration: underline; margin: 0 8px; }',
-
-      /* Custom modal */
       '.ll-modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 999999; display: flex; align-items: center; justify-content: center; }',
-      '.ll-modal { background: #F5F0EB; padding: 48px 40px; width: 100%; max-width: 440px; font-family: "Instrument Serif", serif; position: relative; }',
+      '.ll-modal { background: #F5F0EB; padding: 48px 40px; width: 100%; max-width: 440px; font-family: "Instrument Serif", serif; position: relative; box-sizing: border-box; }',
       '.ll-modal img { width: 140px; display: block; margin: 0 auto 32px; }',
       '.ll-modal .ll-field { margin-bottom: 24px; position: relative; }',
       '.ll-modal .ll-field input { width: 100%; border: none; border-bottom: 1px solid #ccc; background: transparent; font-family: "Instrument Serif", serif; font-size: 16px; color: #1a1a1a; padding: 10px 0; outline: none; box-sizing: border-box; }',
@@ -63,17 +60,14 @@
       '.ll-modal .ll-bottom { text-align: center; font-size: 13px; color: #888; }',
       '.ll-modal .ll-bottom a { color: #1a1a1a; font-weight: 600; text-decoration: none; }',
       '.ll-modal .ll-error { color: #c0392b; font-size: 13px; margin-bottom: 16px; text-align: center; min-height: 18px; }',
-      '.ll-modal .ll-success { color: #27ae60; font-size: 13px; margin-bottom: 16px; text-align: center; min-height: 18px; }',
       '.ll-modal .ll-close { position: absolute; top: 16px; right: 20px; background: none; border: none; font-size: 20px; cursor: pointer; color: #999; }',
-
-      /* Sign out button */
       '#ll-signout-btn { background: none; border: none; cursor: pointer; font-family: "Instrument Serif", serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #999; padding: 0; margin-left: 24px; }',
       '#ll-signout-btn:hover { color: #333; }'
     ].join('\n');
     document.head.appendChild(s);
   }
 
-  function openModal() {
+  function openModal(clerkInstance) {
     if (document.querySelector('.ll-modal-bg')) return;
 
     var bg = document.createElement('div');
@@ -101,15 +95,9 @@
 
     document.body.appendChild(bg);
 
-    // Close
-    document.getElementById('ll-close-btn').addEventListener('click', function() {
-      bg.remove();
-    });
-    bg.addEventListener('click', function(e) {
-      if (e.target === bg) bg.remove();
-    });
+    document.getElementById('ll-close-btn').addEventListener('click', function() { bg.remove(); });
+    bg.addEventListener('click', function(e) { if (e.target === bg) bg.remove(); });
 
-    // Show/hide password
     var pwInput = document.getElementById('ll-password');
     var toggleBtn = document.getElementById('ll-toggle-pw');
     toggleBtn.addEventListener('click', function() {
@@ -122,17 +110,18 @@
       }
     });
 
-    // Forgot password
     document.getElementById('ll-forgot').addEventListener('click', function(e) {
       e.preventDefault();
       var email = document.getElementById('ll-email').value.trim();
       var errEl = document.getElementById('ll-error');
       if (!email) {
+        errEl.style.color = '#c0392b';
         errEl.textContent = 'Please enter your email address first.';
         return;
       }
-      errEl.textContent = '';
-      window.Clerk.client.signIn.create({
+      errEl.style.color = '#1a1a1a';
+      errEl.textContent = 'Sending...';
+      clerkInstance.client.signIn.create({
         strategy: 'reset_password_email_code',
         identifier: email
       }).then(function() {
@@ -144,7 +133,6 @@
       });
     });
 
-    // Sign in
     document.getElementById('ll-submit').addEventListener('click', function() {
       var email = document.getElementById('ll-email').value.trim();
       var password = document.getElementById('ll-password').value;
@@ -153,6 +141,7 @@
 
       errEl.textContent = '';
       if (!email || !password) {
+        errEl.style.color = '#c0392b';
         errEl.textContent = 'Please enter your email and password.';
         return;
       }
@@ -160,37 +149,40 @@
       btn.disabled = true;
       btn.textContent = 'SIGNING IN...';
 
-      window.Clerk.client.signIn.create({
+      clerkInstance.client.signIn.create({
         identifier: email,
         password: password
       }).then(function(result) {
         if (result.status === 'complete') {
-          window.Clerk.setActive({ session: result.createdSessionId }).then(function() {
+          clerkInstance.setActive({ session: result.createdSessionId }).then(function() {
             window.location.href = GC.redirectAfterLogin;
           });
         } else {
-          errEl.textContent = 'Sign in incomplete. Please try again or contact ' + GC.supportEmail;
+          errEl.style.color = '#c0392b';
+          errEl.textContent = 'Sign in incomplete. Please contact ' + GC.supportEmail;
           btn.disabled = false;
           btn.textContent = 'SIGN IN';
         }
       }).catch(function(err) {
         var msg = (err.errors && err.errors[0] && err.errors[0].message) || 'Incorrect email or password.';
+        errEl.style.color = '#c0392b';
         errEl.textContent = msg;
         btn.disabled = false;
         btn.textContent = 'SIGN IN';
       });
     });
 
-    // Enter key
     document.getElementById('ll-password').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') document.getElementById('ll-submit').click();
     });
     document.getElementById('ll-email').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') document.getElementById('ll-password').focus();
     });
+
+    setTimeout(function() { document.getElementById('ll-email').focus(); }, 100);
   }
 
-  function showDenied() {
+  function showDenied(clerkInstance) {
     if (document.querySelector('.ll-do')) return;
     var o = document.createElement('div');
     o.className = 'll-do';
@@ -203,7 +195,7 @@
     document.body.appendChild(o);
     document.getElementById('ll-sb').addEventListener('click', function(e) {
       e.preventDefault();
-      openModal();
+      openModal(clerkInstance);
     });
   }
 
@@ -221,7 +213,7 @@
     document.head.appendChild(s);
   }
 
-  function injectSignOut() {
+  function injectSignOut(clerkInstance) {
     if (document.getElementById('ll-signout-btn')) return;
     var nav = document.querySelector('.header-nav, .main-nav, nav, [data-section-type="header-section"]');
     if (!nav) return;
@@ -229,7 +221,7 @@
     btn.id = 'll-signout-btn';
     btn.textContent = 'SIGN OUT';
     btn.addEventListener('click', function() {
-      window.Clerk.signOut().then(function() { window.location.href = '/'; });
+      clerkInstance.signOut().then(function() { window.location.href = '/'; });
     });
     nav.appendChild(btn);
   }
@@ -254,8 +246,8 @@
     });
   }
 
-  function handleAuth(clerk) {
-    var user = clerk.user;
+  function handleAuth(clerkInstance) {
+    var user = clerkInstance.user;
 
     if (isLogin()) {
       if (user) {
@@ -269,7 +261,7 @@
         if (txt === 'ENTER') {
           e.preventDefault();
           e.stopPropagation();
-          openModal();
+          openModal(clerkInstance);
         }
       }, true);
       return;
@@ -279,19 +271,19 @@
       if (user) {
         showContent();
         hideRequestEntry();
-        injectSignOut();
+        injectSignOut(clerkInstance);
       } else {
         document.body.classList.remove('loulou-checking');
-        showDenied();
+        showDenied(clerkInstance);
       }
 
-      clerk.addListener(function() {
-        if (!clerk.user) {
+      clerkInstance.addListener(function() {
+        if (!clerkInstance.user) {
           var btn = document.getElementById('ll-signout-btn');
           if (btn) btn.remove();
           var ns = document.getElementById('ll-nav-style');
           if (ns) ns.remove();
-          showDenied();
+          showDenied(clerkInstance);
         }
       });
     }
@@ -307,12 +299,13 @@
     var t = setInterval(function() {
       if (window.Clerk) {
         clearInterval(t);
-        window.Clerk.load().then(function() {
-          handleAuth(window.Clerk);
+        var clerkInstance = new window.Clerk(GC.clerkKey);
+        clerkInstance.load().then(function() {
+          handleAuth(clerkInstance);
         }).catch(function() {
           if (isGated()) {
             document.body.classList.remove('loulou-checking');
-            showDenied();
+            showDenied(clerkInstance);
           }
         });
       }
@@ -322,7 +315,7 @@
       clearInterval(t);
       if (isGated() && document.body.classList.contains('loulou-checking')) {
         document.body.classList.remove('loulou-checking');
-        showDenied();
+        showDenied(null);
       }
     }, 15000);
   });
