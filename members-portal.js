@@ -254,11 +254,14 @@
         window.location.href = GC.redirectAfterLogin;
         return;
       }
+      if (window.location.hash === '#signin') {
+        openModal(clerkInstance);
+      }
       document.addEventListener('click', function(e) {
         var el = e.target.closest('a, button');
         if (!el) return;
-        var txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'ENTER') {
+        var href = (el.getAttribute('href') || '');
+        if (href === '#signin') {
           e.preventDefault();
           e.stopPropagation();
           openModal(clerkInstance);
