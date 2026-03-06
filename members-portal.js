@@ -1,6 +1,6 @@
 (function () {
-
   var GC = {
+    clerkKey: 'pk_live_Y2xlcmsuaG91c2VvZmxvdWxvdXMuY29tJA',
     loginPage: '/membershouse',
     gatedPages: ['/members','/latelier','/donotdisturb','/membersevent','/ateliertix','/loulousdonotdisturb'],
     redirectAfterLogin: '/members',
@@ -49,7 +49,7 @@
     document.head.appendChild(s);
   }
 
-  function showDenied() {
+  function showDenied(clerk) {
     if (document.querySelector('.ll-do')) return;
     var o = document.createElement('div');
     o.className = 'll-do';
@@ -61,128 +61,13 @@
     document.body.appendChild(o);
     document.getElementById('ll-sb').addEventListener('click', function(e) {
       e.preventDefault();
-      window.Clerk.openSignIn({ afterSignInUrl: GC.redirectAfterLogin, afterSignUpUrl: GC.redirectAfterLogin });
+      openSignInModal(clerk);
     });
   }
 
-  function showContent() {
-    document.body.classList.remove('loulou-checking');
-    var o = document.querySelector('.ll-do');
-    if (o) o.remove();
-  }
-
-  function hideRequestEntry() {
-    if (document.getElementById('ll-nav-style')) return;
-    var s = document.createElement('style');
-    s.id = 'll-nav-style';
-    s.textContent = '.header-nav-item:has(a[href*="/apply"]) { display: none !important; }';
-    document.head.appendChild(s);
-  }
-
-  function injectSignOut() {
-    if (document.getElementById('ll-signout-btn')) return;
-    var nav = document.querySelector('.header-nav, .main-nav, nav, [data-section-type="header-section"]');
-    if (!nav) return;
-    var btn = document.createElement('button');
-    btn.id = 'll-signout-btn';
-    btn.textContent = 'SIGN OUT';
-    btn.addEventListener('click', function() {
-      window.Clerk.signOut().then(function() { window.location.href = '/'; });
-    });
-    nav.appendChild(btn);
-  }
-
-  function setupToggle() {
-    var allFields = document.querySelectorAll('.form-item');
-    var partnerFields = [];
-    allFields.forEach(function(f) {
-      if ((f.textContent || '').match(/Partner/i)) partnerFields.push(f);
-    });
-    if (!partnerFields.length) return;
-    partnerFields.forEach(function(f) { f.style.display = 'none'; });
-    document.addEventListener('click', function(e) {
-      var t = e.target.closest('.option, label, [role="radio"]');
-      if (!t) return;
-      var txt = t.textContent.trim().toLowerCase();
-      if (txt === 'couple' || txt === 'couples') {
-        partnerFields.forEach(function(f) { f.style.display = ''; });
-      } else if (txt === 'individual') {
-        partnerFields.forEach(function(f) { f.style.display = 'none'; });
-      }
-    });
-  }
-
-  function handleAuth(clerk) {
-    var user = clerk.user;
-
-    if (isLogin()) {
-      if (user) {
-        window.location.href = GC.redirectAfterLogin;
-        return;
-      }
-      document.addEventListener('click', function(e) {
-        var el = e.target.closest('a, button');
-        if (!el) return;
-        var txt = (el.textContent || '').trim().toUpperCase();
-        if (txt === 'ENTER') {
-          e.preventDefault();
-          e.stopPropagation();
-          window.Clerk.openSignIn({ afterSignInUrl: GC.redirectAfterLogin, afterSignUpUrl: GC.redirectAfterLogin });
-        }
-      }, true);
-      return;
-    }
-
-    if (isGated()) {
-      if (user) {
-        showContent();
-        hideRequestEntry();
-        injectSignOut();
-      } else {
-        document.body.classList.remove('loulou-checking');
-        showDenied();
-      }
-
-      clerk.addListener(function() {
-        if (!clerk.user) {
-          var btn = document.getElementById('ll-signout-btn');
-          if (btn) btn.remove();
-          var ns = document.getElementById('ll-nav-style');
-          if (ns) ns.remove();
-          showDenied();
-        }
-      });
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', function() {
-    if (isAdmin()) return;
-    addStyles();
-    if (isGated()) document.body.classList.add('loulou-checking');
-    setTimeout(setupToggle, 1000);
-    new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
-
-    var t = setInterval(function() {
-      if (window.Clerk) {
-        clearInterval(t);
-        window.Clerk.load().then(function() {
-          handleAuth(window.Clerk);
-        }).catch(function() {
-          if (isGated()) {
-            document.body.classList.remove('loulou-checking');
-            showDenied();
-          }
-        });
-      }
-    }, 100);
-
-    setTimeout(function() {
-      clearInterval(t);
-      if (isGated() && document.body.classList.contains('loulou-checking')) {
-        document.body.classList.remove('loulou-checking');
-        showDenied();
-      }
-    }, 15000);
-  });
-
-})();
+  function openSignInModal(clerk) {
+    var bg = document.createElement('div');
+    bg.className = 'll-modal-bg';
+    bg.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:999999;display:flex;align-items:center;justify-content:center;';
+    bg.innerHTML =
+      '<div style="background:#F5F0EB;padding:48px
