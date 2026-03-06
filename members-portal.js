@@ -1,20 +1,22 @@
 (function () {
 
+  var db = document.body;
+
   function setupToggle() {
     var allFields = document.querySelectorAll('.form-item');
     var partnerFields = [];
-    allFields.forEach(function(field) {
-      if ((field.textContent || '').match(/Partner/i)) partnerFields.push(field);
+    allFields.forEach(function(f) {
+      if ((f.textContent || '').match(/Partner/i)) partnerFields.push(f);
     });
-    if (partnerFields.length === 0) return;
+    if (!partnerFields.length) return;
     partnerFields.forEach(function(f) { f.style.display = 'none'; });
     document.addEventListener('click', function(e) {
-      var target = e.target.closest('.option, label, [role="radio"]');
-      if (!target) return;
-      var text = target.textContent.trim().toLowerCase();
-      if (text === 'couple' || text === 'couples') {
+      var t = e.target.closest('.option, label, [role="radio"]');
+      if (!t) return;
+      var txt = t.textContent.trim().toLowerCase();
+      if (txt === 'couple' || txt === 'couples') {
         partnerFields.forEach(function(f) { f.style.display = ''; });
-      } else if (text === 'individual') {
+      } else if (txt === 'individual') {
         partnerFields.forEach(function(f) { f.style.display = 'none'; });
       }
     });
@@ -26,203 +28,179 @@
     setTimeout(setupToggle, 1000);
   }
 
-  var GATE_CONFIG = {
+  var GC = {
     loginPage: '/membershouse',
-    gatedPages: ['/members','/latelier','/donotdisturb','/results','/membersevents','/loulousdonotdisturb','/ateliertix'],
-    redirectAfterLogin: 'https://www.houseofloulous.com/members',
-    signInUrl: 'https://accounts.houseofloulous.com/sign-in',
+    gatedPages: ['/members','/latelier','/donotdisturb','/membersevent','/ateliertix','/loulousdonotdisturb'],
+    redirectAfterLogin: '/members',
     logoUrl: 'https://images.squarespace-cdn.com/content/699e2523b3b47f13793c4748/0d527c23-2099-4148-8bdf-28a9c7d97381/LL_LOGO_Horizontal_Blk2.png?content-type=image%2Fpng',
+    logoWhiteUrl: 'https://images.squarespace-cdn.com/content/v1/699e2523b3b47f13793c4748/89f7fd71-9df9-41c6-b43a-d2330e040602/LL_LOGO_Horizontal_White2.png',
     applyUrl: 'https://houseofloulous.com/apply',
     supportEmail: 'hello@houseofloulous.com'
   };
 
-  function getCurrentPath() {
+  function getSlug() {
     return window.location.pathname.replace(/\/$/, '').toLowerCase();
   }
 
-  function isSquarespaceAdmin() {
-    var url = window.location.href;
-    return (
-      url.indexOf('/config/') > -1 ||
-      url.indexOf('.squarespace.com') > -1 ||
-      document.querySelector('.sqs-edit-mode') !== null ||
-      document.querySelector('.sqs-edit-mode-active') !== null ||
-      document.querySelector('#sqs-site-frame') !== null ||
-      document.body.classList.contains('sqs-edit-mode') ||
-      window.self !== window.top
-    );
+  function isGated() {
+    var s = getSlug();
+    return GC.gatedPages.some(function(p) { return s === p || s.startsWith(p + '/'); });
   }
 
-  function isLoginPage() { return getCurrentPath() === GATE_CONFIG.loginPage; }
-
-  function isGatedPage() {
-    if (isSquarespaceAdmin()) return false;
-    var path = getCurrentPath();
-    return GATE_CONFIG.gatedPages.some(function(p) { return path === p || path.startsWith(p + '/'); });
+  function isLogin() {
+    var s = getSlug();
+    return s === GC.loginPage || s.startsWith(GC.loginPage + '/');
   }
 
-  function hideNavLinks(user) {
-    document.querySelectorAll('a').forEach(function(link) {
-      var text = link.textContent.trim().toUpperCase();
-      if (user) {
-        if (text === 'REQUEST ENTRY' || text === 'MEMBERS HOUSE' || text === 'MEMBERSHOUSE') {
-          link.style.display = 'none';
-          if (link.parentElement && (link.parentElement.tagName === 'LI' || link.parentElement.classList.contains('header-nav-item'))) {
-            link.parentElement.style.display = 'none';
-          }
-        }
-      }
-    });
+  function isAdmin() {
+    return document.body.classList.contains('sqs-edit-mode') ||
+           window.location.href.includes('/config/') ||
+           window.location.href.includes('squarespace.com/');
   }
 
   function addGateStyles() {
-    if (document.querySelector('#loulou-gate-styles')) return;
-    var style = document.createElement('style');
-    style.id = 'loulou-gate-styles';
-    style.textContent = [
-      'body.loulou-checking main,body.loulou-checking #page,body.loulou-checking .content-wrapper,body.loulou-checking article,body.loulou-checking .page-section{opacity:0!important;pointer-events:none!important;}',
-      '.loulou-denied-overlay{position:fixed;top:0;left:0;right:0;bottom:0;z-index:999999;display:flex;align-items:center;justify-content:center;background:#f5f0eb;font-family:"Instrument Serif",serif;}',
-      '.loulou-denied-box{text-align:center;padding:3rem 2.5rem;max-width:500px;width:90%;}',
-      '.loulou-denied-logo img{max-height:80px;margin-bottom:1.5rem;}',
-      '.loulou-denied-line{width:60px;height:1px;background:#1a1a1a;margin:1.5rem auto;opacity:0.3;}',
-      '.loulou-denied-title{font-size:1.6rem;color:#1a1a1a;font-weight:400;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.75rem;font-family:"Instrument Serif",serif;}',
-      '.loulou-denied-sub{font-size:1.1rem;color:#555;font-weight:300;margin-bottom:2.5rem;line-height:1.7;font-family:"Instrument Serif",serif;}',
-      '.loulou-denied-btn{display:inline-block;padding:16px 50px;background:#1a1a1a;border:none;color:#f5f0eb;font-family:"Instrument Serif",serif;font-size:1rem;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;transition:background 0.3s;}',
-      '.loulou-denied-btn:hover{background:#333;}',
-      '.loulou-denied-apply{display:block;margin-top:2rem;font-size:1rem;color:#888;font-family:"Instrument Serif",serif;}',
-      '.loulou-denied-apply a{color:#1a1a1a;font-weight:600;text-decoration:none;border-bottom:1px solid #1a1a1a;}'
-    ].join('');
-    document.head.appendChild(style);
+    if (document.getElementById('ll-gate-style')) return;
+    var s = document.createElement('style');
+    s.id = 'll-gate-style';
+    s.textContent = [
+      'body.loulou-checking #page, body.loulou-checking .sqs-layout { opacity: 0 !important; pointer-events: none !important; }',
+      '.ll-do { position: fixed; inset: 0; background: #F5F0EB; z-index: 99999; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: "Instrument Serif", serif; }',
+      '.ll-do img { width: 180px; margin-bottom: 32px; }',
+      '.ll-do hr { width: 60px; border: none; border-top: 1px solid #222; margin: 0 auto 28px; }',
+      '.ll-do h2 { font-size: 22px; letter-spacing: 0.18em; text-transform: uppercase; color: #1a1a1a; margin: 0 0 14px; }',
+      '.ll-do p { font-size: 15px; color: #444; margin: 0 0 32px; text-align: center; line-height: 1.6; }',
+      '.ll-do button { background: #1a1a1a; color: #fff; border: none; padding: 16px 48px; font-family: "Instrument Serif", serif; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; display: block; }',
+      '.ll-do button:hover { background: #333; }',
+      '.ll-do .ll-links { margin-top: 28px; font-size: 13px; color: #888; }',
+      '.ll-do .ll-links a { color: #888; text-decoration: underline; margin: 0 8px; }',
+      '#loulou-member-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 9999; background: #1a1a1a; display: flex; align-items: center; justify-content: space-between; padding: 0 32px; height: 56px; }',
+      '#loulou-member-nav img { height: 28px; }',
+      '#loulou-member-nav .ll-nav-links { display: flex; gap: 28px; align-items: center; }',
+      '#loulou-member-nav .ll-nav-links a { color: #fff; text-decoration: none; font-family: "Instrument Serif", serif; font-size: 12px; letter-spacing: 0.18em; text-transform: uppercase; }',
+      '#loulou-member-nav .ll-nav-links a:hover { opacity: 0.7; }',
+      '#loulou-member-nav .ll-signout { color: #aaa !important; font-size: 11px !important; }',
+      'body.loulou-nav-on { padding-top: 56px !important; }'
+    ].join('\n');
+    document.head.appendChild(s);
   }
 
-  function goToSignIn() {
-    window.location.href = GATE_CONFIG.signInUrl + '?redirect_url=' + encodeURIComponent(GATE_CONFIG.redirectAfterLogin);
-  }
-
-  function showDeniedOverlay() {
-    if (document.querySelector('.loulou-denied-overlay')) return;
-    var overlay = document.createElement('div');
-    overlay.className = 'loulou-denied-overlay';
-    var box = document.createElement('div');
-    box.className = 'loulou-denied-box';
-    var logo = document.createElement('div');
-    logo.className = 'loulou-denied-logo';
-    logo.innerHTML = '<img src="' + GATE_CONFIG.logoUrl + '" alt="LouLous">';
-    var line = document.createElement('div');
-    line.className = 'loulou-denied-line';
-    var title = document.createElement('div');
-    title.className = 'loulou-denied-title';
-    title.textContent = 'Members Only';
-    var sub = document.createElement('div');
-    sub.className = 'loulou-denied-sub';
-    sub.innerHTML = 'This page is reserved for approved members.<br>Please sign in to continue.';
-    var btn = document.createElement('button');
-    btn.className = 'loulou-denied-btn';
-    btn.type = 'button';
-    btn.textContent = 'SIGN IN';
-    btn.addEventListener('click', function(e) {
+  function injectNav() {
+    if (document.getElementById('loulou-member-nav')) return;
+    db.classList.add('loulou-nav-on');
+    var nav = document.createElement('div');
+    nav.id = 'loulou-member-nav';
+    nav.innerHTML = '<a href="/members"><img src="' + GC.logoWhiteUrl + '" alt="LouLous"></a>' +
+      '<div class="ll-nav-links">' +
+        '<a href="/members">Members</a>' +
+        '<a href="/latelier">L\'Atelier</a>' +
+        '<a href="/donotdisturb">Do Not Disturb</a>' +
+        '<a href="/membersevent">Member Events</a>' +
+        '<a href="/ateliertix">Atelier Tix</a>' +
+        '<a href="/loulousdonotdisturb">Lou\'s DND</a>' +
+        '<a href="#" class="ll-signout" id="ll-signout-btn">Sign Out</a>' +
+      '</div>';
+    document.body.insertBefore(nav, document.body.firstChild);
+    document.getElementById('ll-signout-btn').addEventListener('click', function(e) {
       e.preventDefault();
-      goToSignIn();
+      window.Clerk.signOut().then(function() { window.location.href = '/'; });
     });
-    var applyDiv = document.createElement('div');
-    applyDiv.className = 'loulou-denied-apply';
-    applyDiv.innerHTML = 'Need an account? <a href="' + GATE_CONFIG.applyUrl + '">Apply now</a> &nbsp;|&nbsp; Having trouble? <a href="mailto:' + GATE_CONFIG.supportEmail + '">Contact us</a>';
-    box.appendChild(logo);
-    box.appendChild(line);
-    box.appendChild(title);
-    box.appendChild(sub);
-    box.appendChild(btn);
-    box.appendChild(applyDiv);
-    overlay.appendChild(box);
-    document.body.appendChild(overlay);
   }
 
-  function showPageContent() {
-    document.body.classList.remove('loulou-checking');
-    var overlay = document.querySelector('.loulou-denied-overlay');
-    if (overlay) overlay.remove();
+  function showDenied() {
+    if (document.querySelector('.ll-do')) return;
+    var o = document.createElement('div');
+    o.className = 'll-do';
+    o.innerHTML = '<img src="' + GC.logoUrl + '" alt="LouLous"><hr>' +
+      '<h2>Members Only</h2>' +
+      '<p>This page is reserved for approved members.<br>Please sign in to continue.</p>' +
+      '<button id="ll-sb">SIGN IN</button>' +
+      '<div class="ll-links"><a href="' + GC.applyUrl + '">Apply now</a> &nbsp;|&nbsp; <a href="mailto:' + GC.supportEmail + '">Contact us</a></div>';
+    db.appendChild(o);
+    document.getElementById('ll-sb').addEventListener('click', function(e) {
+      e.preventDefault();
+      window.Clerk.openSignIn({
+        afterSignInUrl: GC.redirectAfterLogin,
+        afterSignUpUrl: GC.redirectAfterLogin
+      });
+    });
+  }
+
+  function showContent() {
+    db.classList.remove('loulou-checking');
+    var o = document.querySelector('.ll-do');
+    if (o) o.remove();
   }
 
   function handleAuth(clerk) {
     var user = clerk.user;
-    if (user) hideNavLinks(user);
 
-    if (isLoginPage()) {
+    if (isLogin()) {
       if (user) {
-        window.location.href = GATE_CONFIG.redirectAfterLogin;
+        var p = new URLSearchParams(window.location.search);
+        window.location.href = p.get('redirect') || GC.redirectAfterLogin;
         return;
       }
-      function hijackEnterButton() {
-        document.querySelectorAll('a, [data-sqsp-button]').forEach(function(el) {
-          var text = el.textContent.trim().toUpperCase();
-          if ((text === 'ENTER' || text === 'SIGN IN') && !el.dataset.clerkHijacked) {
-            el.dataset.clerkHijacked = 'true';
-            if (el.tagName === 'A') el.setAttribute('href', '#');
-            el.addEventListener('click', function(e) {
-              e.preventDefault();
-              e.stopPropagation();
-              goToSignIn();
-            });
-          }
-        });
+      var params = new URLSearchParams(window.location.search);
+      if (params.has('redirect')) {
+        clerk.openSignIn({ afterSignInUrl: params.get('redirect') || GC.redirectAfterLogin });
       }
-      hijackEnterButton();
-      setTimeout(hijackEnterButton, 500);
-      setTimeout(hijackEnterButton, 1000);
-      setTimeout(hijackEnterButton, 2000);
       return;
     }
 
-    if (isGatedPage()) {
-      if (user) {
-        showPageContent();
-        hideNavLinks(user);
-      } else {
-        document.body.classList.remove('loulou-checking');
-        showDeniedOverlay();
+    if (user) {
+      showContent();
+      injectNav();
+    } else {
+      if (isGated()) {
+        db.classList.remove('loulou-checking');
+        showDenied();
       }
-      clerk.addListener(function(resources) {
-        if (!resources.user && isGatedPage()) showDeniedOverlay();
-        if (resources.user) { showPageContent(); hideNavLinks(resources.user); }
-      });
     }
+
+    clerk.addListener(function() {
+      if (!clerk.user) {
+        var nav = document.getElementById('loulou-member-nav');
+        if (nav) nav.remove();
+        db.classList.remove('loulou-nav-on');
+        if (isGated()) showDenied();
+      }
+    });
   }
 
-  function initClerk() {
-    var needsGate = isGatedPage();
-    var needsLogin = isLoginPage();
-    if (!needsGate && !needsLogin) return;
+  function init() {
+    if (isAdmin()) return;
     addGateStyles();
-    if (needsGate) document.body.classList.add('loulou-checking');
-    var waitForClerk = setInterval(function() {
+    if (isGated()) db.classList.add('loulou-checking');
+
+    var t = setInterval(function() {
       if (window.Clerk) {
-        clearInterval(waitForClerk);
-        window.Clerk.load()
-          .then(function() { handleAuth(window.Clerk); })
-          .catch(function(err) {
-            console.error('Clerk failed to load:', err);
-            if (needsGate) {
-              document.body.classList.remove('loulou-checking');
-              showDeniedOverlay();
-            }
-          });
+        clearInterval(t);
+        window.Clerk.load().then(function() {
+          handleAuth(window.Clerk);
+        }).catch(function() {
+          if (isGated()) {
+            db.classList.remove('loulou-checking');
+            showDenied();
+          }
+        });
       }
     }, 100);
+
     setTimeout(function() {
-      clearInterval(waitForClerk);
-      if (needsGate && document.body.classList.contains('loulou-checking')) {
-        document.body.classList.remove('loulou-checking');
-        showDeniedOverlay();
+      clearInterval(t);
+      if (isGated() && db.classList.contains('loulou-checking')) {
+        db.classList.remove('loulou-checking');
+        showDenied();
       }
     }, 15000);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClerk);
+    document.addEventListener('DOMContentLoaded', init);
   } else {
-    initClerk();
+    init();
   }
 
-  new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
+  new MutationObserver(function() { setupToggle(); }).observe(db, { childList: true, subtree: true });
 
 })();
