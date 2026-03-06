@@ -1,5 +1,7 @@
 (function () {
 
+  var PUBLISHABLE_KEY = 'pk_live_Y2xlcmsuaG91c2VvZmxvdWxvdXMuY29tJA';
+
   function setupToggle() {
     var allFields = document.querySelectorAll('.form-item');
     var partnerFields = [];
@@ -169,20 +171,15 @@
     var mountEl = document.querySelector('#loulou-clerk-mount');
     if (mountEl && !mountEl.dataset.mounted) {
       mountEl.dataset.mounted = 'true';
-      try {
-        clerk.mountSignIn(mountEl, {
-          appearance: CLERK_APPEARANCE,
-          fallbackRedirectUrl: GATE_CONFIG.redirectAfterLogin,
-          routing: 'virtual'
-        });
-        clerk.addListener(function(resources) {
-          if (resources.user) {
-            window.location.href = GATE_CONFIG.redirectAfterLogin;
-          }
-        });
-      } catch(e) {
-        window.location.href = 'https://accounts.houseofloulous.com/sign-in?redirect_url=' + encodeURIComponent(GATE_CONFIG.redirectAfterLogin);
-      }
+      clerk.mountSignIn(mountEl, {
+        appearance: CLERK_APPEARANCE,
+        fallbackRedirectUrl: GATE_CONFIG.redirectAfterLogin
+      });
+      clerk.addListener(function(resources) {
+        if (resources.user) {
+          window.location.href = GATE_CONFIG.redirectAfterLogin;
+        }
+      });
     }
   }
 
@@ -232,7 +229,6 @@
 
   function handleAuth(clerk) {
     var user = clerk.user;
-
     if (user) hideNavLinks(user);
 
     if (isLoginPage()) {
@@ -272,50 +268,53 @@
         showDeniedOverlay(clerk);
       }
       clerk.addListener(function(resources) {
-        if (!resources.user && isGatedPage()) {
-          showDeniedOverlay(clerk);
-        }
-        if (resources.user) {
-          showPageContent();
-          hideNavLinks(resources.user);
-        }
+        if (!resources.user && isGatedPage()) showDeniedOverlay(clerk);
+        if (resources.user) { showPageContent(); hideNavLinks(resources.user); }
       });
     }
   }
 
-  function initClerk() {
+  function loadClerkAndInit() {
     var needsGate = isGatedPage();
     var needsLogin = isLoginPage();
     if (!needsGate && !needsLogin) return;
     addGateStyles();
     if (needsGate) document.body.classList.add('loulou-checking');
-    var waitForClerk = setInterval(function() {
-      if (window.Clerk) {
+
+    var script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+    script.setAttribute('data-clerk-publishable-key', PUBLISHABLE_KEY);
+    script.crossOrigin = 'anonymous';
+    script.onload = function() {
+      var waitForClerk = setInterval(function() {
+        if (window.Clerk) {
+          clearInterval(waitForClerk);
+          window.Clerk.load({ appearance: CLERK_APPEARANCE })
+            .then(function() { handleAuth(window.Clerk); })
+            .catch(function(err) {
+              console.error('Clerk load error:', err);
+              if (needsGate) {
+                document.body.classList.remove('loulou-checking');
+                showDeniedOverlay(null);
+              }
+            });
+        }
+      }, 100);
+      setTimeout(function() {
         clearInterval(waitForClerk);
-        window.Clerk.load({ appearance: CLERK_APPEARANCE })
-          .then(function() { handleAuth(window.Clerk); })
-          .catch(function(err) {
-            console.error('Clerk failed to load:', err);
-            if (needsGate) {
-              document.body.classList.remove('loulou-checking');
-              showDeniedOverlay(null);
-            }
-          });
-      }
-    }, 100);
-    setTimeout(function() {
-      clearInterval(waitForClerk);
-      if (needsGate && document.body.classList.contains('loulou-checking')) {
-        document.body.classList.remove('loulou-checking');
-        showDeniedOverlay(null);
-      }
-    }, 15000);
+        if (needsGate && document.body.classList.contains('loulou-checking')) {
+          document.body.classList.remove('loulou-checking');
+          showDeniedOverlay(null);
+        }
+      }, 15000);
+    };
+    document.head.appendChild(script);
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initClerk);
+    document.addEventListener('DOMContentLoaded', loadClerkAndInit);
   } else {
-    initClerk();
+    loadClerkAndInit();
   }
 
   new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
