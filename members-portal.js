@@ -38,6 +38,55 @@
     supportEmail: 'hello@houseofloulous.com'
   };
 
+  var APPEARANCE = {
+    layout: {
+      logoImageUrl: GC.logoUrl,
+      logoPlacement: 'inside',
+      socialButtonsPlacement: 'bottom',
+      showOptionalFields: false,
+      unsafe_disableDevelopmentModeWarnings: true
+    },
+    variables: {
+      colorPrimary: '#1a1a1a',
+      colorBackground: '#f5f0eb',
+      colorText: '#1a1a1a',
+      colorInputBackground: 'transparent',
+      colorInputText: '#1a1a1a',
+      borderRadius: '0px',
+      fontFamily: '"Instrument Serif", serif',
+      colorNeutral: '#1a1a1a'
+    },
+    elements: {
+      card: { backgroundColor: '#f5f0eb', border: 'none', boxShadow: 'none' },
+      headerTitle: { display: 'none' },
+      headerSubtitle: { display: 'none' },
+      logoBox: { height: '120px', justifyContent: 'center', marginBottom: '8px' },
+      logoImage: { maxHeight: '100px', objectFit: 'contain' },
+      formFieldInput: {
+        borderTop: 'none', borderLeft: 'none', borderRight: 'none',
+        borderBottom: '1px solid #ccc', borderRadius: '0',
+        backgroundColor: 'transparent', fontSize: '1rem',
+        fontFamily: '"Instrument Serif", serif',
+        padding: '12px 0', color: '#1a1a1a'
+      },
+      formFieldLabel: { fontFamily: '"Instrument Serif", serif', fontSize: '0.95rem', color: '#666', display: 'none' },
+      formButtonPrimary: {
+        backgroundColor: '#1a1a1a', color: '#f5f0eb',
+        fontFamily: '"Instrument Serif", serif',
+        fontSize: '0.9rem', letterSpacing: '0.2em',
+        textTransform: 'uppercase', borderRadius: '0',
+        padding: '14px', fontWeight: '400'
+      },
+      footerAction: { fontFamily: '"Instrument Serif", serif' },
+      footerActionLink: { color: '#1a1a1a', fontWeight: '600', fontFamily: '"Instrument Serif", serif' },
+      socialButtonsBlockButton: { border: '1px solid #ddd', color: '#1a1a1a', backgroundColor: 'transparent', borderRadius: '0', fontFamily: '"Instrument Serif", serif' },
+      dividerLine: { background: '#ddd' },
+      dividerText: { color: '#aaa', fontFamily: '"Instrument Serif", serif', textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: '0.8rem' },
+      identityPreviewEditButton: { color: '#1a1a1a' },
+      formFieldAction: { color: '#888', fontFamily: '"Instrument Serif", serif' }
+    }
+  };
+
   function getSlug() {
     return window.location.pathname.replace(/\/$/, '').toLowerCase();
   }
@@ -120,7 +169,8 @@
       e.preventDefault();
       window.Clerk.openSignIn({
         afterSignInUrl: GC.redirectAfterLogin,
-        afterSignUpUrl: GC.redirectAfterLogin
+        afterSignUpUrl: GC.redirectAfterLogin,
+        appearance: APPEARANCE
       });
     });
   }
@@ -142,7 +192,7 @@
       }
       var params = new URLSearchParams(window.location.search);
       if (params.has('redirect')) {
-        clerk.openSignIn({ afterSignInUrl: params.get('redirect') || GC.redirectAfterLogin });
+        clerk.openSignIn({ afterSignInUrl: params.get('redirect') || GC.redirectAfterLogin, appearance: APPEARANCE });
       }
       return;
     }
@@ -175,7 +225,7 @@
     var t = setInterval(function() {
       if (window.Clerk) {
         clearInterval(t);
-        window.Clerk.load().then(function() {
+        window.Clerk.load({ appearance: APPEARANCE }).then(function() {
           handleAuth(window.Clerk);
         }).catch(function() {
           if (isGated()) {
