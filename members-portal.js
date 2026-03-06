@@ -120,17 +120,24 @@
       '.ll-do button { background: #1a1a1a; color: #fff; border: none; padding: 16px 48px; font-family: "Instrument Serif", serif; font-size: 13px; letter-spacing: 0.2em; text-transform: uppercase; cursor: pointer; display: block; }',
       '.ll-do button:hover { background: #333; }',
       '.ll-do .ll-links { margin-top: 28px; font-size: 13px; color: #888; }',
-      '.ll-do .ll-links a { color: #888; text-decoration: underline; margin: 0 8px; }'
+      '.ll-do .ll-links a { color: #888; text-decoration: underline; margin: 0 8px; }',
+      '#ll-signout-btn { background: none; border: none; cursor: pointer; font-family: "Instrument Serif", serif; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #999; padding: 0; margin-left: 24px; }',
+      '#ll-signout-btn:hover { color: #333; }'
     ].join('\n');
     document.head.appendChild(s);
   }
 
-  function hideRequestEntry() {
-    if (document.getElementById('ll-nav-style')) return;
-    var s = document.createElement('style');
-    s.id = 'll-nav-style';
-    s.textContent = 'a[href="/apply"], a[href*="/apply"], [data-link-href*="/apply"] { display: none !important; }';
-    document.head.appendChild(s);
+  function injectSignOut() {
+    if (document.getElementById('ll-signout-btn')) return;
+    var nav = document.querySelector('.header-nav, .main-nav, nav, [data-section-type="header-section"]');
+    if (!nav) return;
+    var btn = document.createElement('button');
+    btn.id = 'll-signout-btn';
+    btn.textContent = 'SIGN OUT';
+    btn.addEventListener('click', function() {
+      window.Clerk.signOut().then(function() { window.location.href = '/'; });
+    });
+    nav.appendChild(btn);
   }
 
   function showDenied() {
@@ -177,7 +184,7 @@
 
     if (user) {
       showContent();
-      hideRequestEntry();
+      injectSignOut();
     } else {
       if (isGated()) {
         db.classList.remove('loulou-checking');
@@ -187,8 +194,8 @@
 
     clerk.addListener(function() {
       if (!clerk.user) {
-        var ns = document.getElementById('ll-nav-style');
-        if (ns) ns.remove();
+        var btn = document.getElementById('ll-signout-btn');
+        if (btn) btn.remove();
         if (isGated()) showDenied();
       }
     });
