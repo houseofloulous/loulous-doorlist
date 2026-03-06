@@ -98,6 +98,14 @@
            window.location.href.includes('squarespace.com/');
   }
 
+  function openModal() {
+    window.Clerk.openSignIn({
+      afterSignInUrl: GC.redirectAfterLogin,
+      afterSignUpUrl: GC.redirectAfterLogin,
+      appearance: APPEARANCE
+    });
+  }
+
   function addGateStyles() {
     if (document.getElementById('ll-gate-style')) return;
     var s = document.createElement('style');
@@ -144,11 +152,7 @@
     document.body.appendChild(o);
     document.getElementById('ll-sb').addEventListener('click', function(e) {
       e.preventDefault();
-      window.Clerk.openSignIn({
-        afterSignInUrl: GC.redirectAfterLogin,
-        afterSignUpUrl: GC.redirectAfterLogin,
-        appearance: APPEARANCE
-      });
+      openModal();
     });
   }
 
@@ -158,18 +162,29 @@
     if (o) o.remove();
   }
 
+  function interceptEnterButton() {
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('a, button');
+      if (!el) return;
+      var txt = (el.textContent || '').trim().toUpperCase();
+      var href = (el.getAttribute('href') || '');
+      if (txt === 'ENTER' || href === '/#' || href === '#') {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal();
+      }
+    }, true);
+  }
+
   function handleAuth(clerk) {
     var user = clerk.user;
 
     if (isLogin()) {
+      interceptEnterButton();
       if (user) {
         var p = new URLSearchParams(window.location.search);
         window.location.href = p.get('redirect') || GC.redirectAfterLogin;
         return;
-      }
-      var params = new URLSearchParams(window.location.search);
-      if (params.has('redirect')) {
-        clerk.openSignIn({ afterSignInUrl: params.get('redirect') || GC.redirectAfterLogin, appearance: APPEARANCE });
       }
       return;
     }
@@ -201,7 +216,7 @@
     var t = setInterval(function() {
       if (window.Clerk) {
         clearInterval(t);
-        window.Clerk.load({ appearance: APPEARANCE }).then(function() {
+        window.Clerk.load().then(function() {
           handleAuth(window.Clerk);
         }).catch(function() {
           if (isGated()) {
