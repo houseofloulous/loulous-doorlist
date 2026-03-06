@@ -1,8 +1,8 @@
 (function () {
 
-  var db = document.body;
-
   function setupToggle() {
+    var db = document.body;
+    if (!db) return;
     var allFields = document.querySelectorAll('.form-item');
     var partnerFields = [];
     allFields.forEach(function(f) {
@@ -141,7 +141,8 @@
   }
 
   function showDenied() {
-    if (document.querySelector('.ll-do')) return;
+    var db = document.body;
+    if (!db || document.querySelector('.ll-do')) return;
     var o = document.createElement('div');
     o.className = 'll-do';
     o.innerHTML = '<img src="' + GC.logoUrl + '" alt="LouLous"><hr>' +
@@ -161,6 +162,8 @@
   }
 
   function showContent() {
+    var db = document.body;
+    if (!db) return;
     db.classList.remove('loulou-checking');
     var o = document.querySelector('.ll-do');
     if (o) o.remove();
@@ -187,7 +190,7 @@
       injectSignOut();
     } else {
       if (isGated()) {
-        db.classList.remove('loulou-checking');
+        document.body.classList.remove('loulou-checking');
         showDenied();
       }
     }
@@ -202,6 +205,8 @@
   }
 
   function init() {
+    var db = document.body;
+    if (!db) return;
     if (isAdmin()) return;
     addGateStyles();
     if (isGated()) db.classList.add('loulou-checking');
@@ -213,7 +218,7 @@
           handleAuth(window.Clerk);
         }).catch(function() {
           if (isGated()) {
-            db.classList.remove('loulou-checking');
+            document.body.classList.remove('loulou-checking');
             showDenied();
           }
         });
@@ -222,7 +227,8 @@
 
     setTimeout(function() {
       clearInterval(t);
-      if (isGated() && db.classList.contains('loulou-checking')) {
+      var db = document.body;
+      if (db && isGated() && db.classList.contains('loulou-checking')) {
         db.classList.remove('loulou-checking');
         showDenied();
       }
@@ -231,10 +237,18 @@
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
-  } else {
+  } else if (document.body) {
     init();
+  } else {
+    window.addEventListener('load', init);
   }
 
-  new MutationObserver(function() { setupToggle(); }).observe(db, { childList: true, subtree: true });
+  if (document.body) {
+    new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
+  } else {
+    document.addEventListener('DOMContentLoaded', function() {
+      new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
+    });
+  }
 
 })();
