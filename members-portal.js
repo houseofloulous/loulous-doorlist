@@ -1,8 +1,6 @@
 (function () {
 
   function setupToggle() {
-    var db = document.body;
-    if (!db) return;
     var allFields = document.querySelectorAll('.form-item');
     var partnerFields = [];
     allFields.forEach(function(f) {
@@ -20,12 +18,6 @@
         partnerFields.forEach(function(f) { f.style.display = 'none'; });
       }
     });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(setupToggle, 1000); });
-  } else {
-    setTimeout(setupToggle, 1000);
   }
 
   var GC = {
@@ -141,8 +133,7 @@
   }
 
   function showDenied() {
-    var db = document.body;
-    if (!db || document.querySelector('.ll-do')) return;
+    if (document.querySelector('.ll-do')) return;
     var o = document.createElement('div');
     o.className = 'll-do';
     o.innerHTML = '<img src="' + GC.logoUrl + '" alt="LouLous"><hr>' +
@@ -150,7 +141,7 @@
       '<p>This page is reserved for approved members.<br>Please sign in to continue.</p>' +
       '<button id="ll-sb">SIGN IN</button>' +
       '<div class="ll-links"><a href="' + GC.applyUrl + '">Apply now</a> &nbsp;|&nbsp; <a href="mailto:' + GC.supportEmail + '">Contact us</a></div>';
-    db.appendChild(o);
+    document.body.appendChild(o);
     document.getElementById('ll-sb').addEventListener('click', function(e) {
       e.preventDefault();
       window.Clerk.openSignIn({
@@ -162,9 +153,7 @@
   }
 
   function showContent() {
-    var db = document.body;
-    if (!db) return;
-    db.classList.remove('loulou-checking');
+    document.body.classList.remove('loulou-checking');
     var o = document.querySelector('.ll-do');
     if (o) o.remove();
   }
@@ -205,11 +194,9 @@
   }
 
   function init() {
-    var db = document.body;
-    if (!db) return;
     if (isAdmin()) return;
     addGateStyles();
-    if (isGated()) db.classList.add('loulou-checking');
+    if (isGated()) document.body.classList.add('loulou-checking');
 
     var t = setInterval(function() {
       if (window.Clerk) {
@@ -227,28 +214,17 @@
 
     setTimeout(function() {
       clearInterval(t);
-      var db = document.body;
-      if (db && isGated() && db.classList.contains('loulou-checking')) {
-        db.classList.remove('loulou-checking');
+      if (isGated() && document.body.classList.contains('loulou-checking')) {
+        document.body.classList.remove('loulou-checking');
         showDenied();
       }
     }, 15000);
   }
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else if (document.body) {
+  document.addEventListener('DOMContentLoaded', function() {
     init();
-  } else {
-    window.addEventListener('load', init);
-  }
-
-  if (document.body) {
+    setTimeout(setupToggle, 1000);
     new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
-  } else {
-    document.addEventListener('DOMContentLoaded', function() {
-      new MutationObserver(function() { setupToggle(); }).observe(document.body, { childList: true, subtree: true });
-    });
-  }
+  });
 
 })();
