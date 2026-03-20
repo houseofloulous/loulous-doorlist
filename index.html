@@ -1,146 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>House of LouLou's — Door</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
 <style>
-:root { --blue:#162B3B; --cream:#f5f0eb; --dark:#1a1a1a; --warm:#8c7b6b; --accent:#c9a96e; --green:#34c759; --red:#c0392b; --border:rgba(0,0,0,0.07); }
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-body{background:#f2ede8;font-family:'Instrument Serif',serif;color:var(--dark);min-height:100vh;}
+:root { --blue:#162B3B; --cream:#f5f0eb; --dark:#1a1a1a; --warm:#8c7b6b; --accent:#c9a96e; --green:#34c759; --red:#c0392b; --border:rgba(0,0,0,.07); }
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { background:#f2ede8; font-family:'Instrument Serif',serif; color:var(--dark); min-height:100vh; }
 
 /* EVENT SCREEN */
-#evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
-.ev-logo{height:50px;width:auto;display:block;margin-bottom:8px;}
-.ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:40px;font-family:sans-serif;}
-.ev-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
-.ev-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .18s;}
-.ev-item:active{background:rgba(255,255,255,.1);border-color:var(--accent);}
-.ev-name{font-family:'Instrument Serif',serif;font-size:20px;color:#fff;font-style:italic;}
-.ev-date{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;font-family:sans-serif;}
-.ev-reset{margin-top:32px;opacity:.3;background:none;border:none;color:white;font-size:10px;cursor:pointer;font-family:sans-serif;}
+#evScreen { position:fixed; inset:0; background:var(--blue); z-index:400; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; }
+.ev-logo { height:50px; width:auto; display:block; margin-bottom:8px; }
+.ev-sub { font-size:10px; letter-spacing:.22em; text-transform:uppercase; color:rgba(255,255,255,.4); margin-bottom:40px; font-family:sans-serif; }
+.ev-list { width:100%; max-width:320px; display:flex; flex-direction:column; gap:10px; }
+.ev-item { background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:18px 20px; cursor:pointer; transition:all .18s; }
+.ev-item:active { background:rgba(255,255,255,.1); border-color:var(--accent); }
+.ev-name { font-size:20px; color:#fff; font-style:italic; }
+.ev-date { font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.45); margin-top:4px; font-family:sans-serif; }
+.ev-reset { margin-top:32px; opacity:.3; background:none; border:none; color:white; font-size:10px; cursor:pointer; font-family:sans-serif; }
 
 /* APP */
-#app{display:none;}
-.list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
-.list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px;}
-.logo-img{height:28px;width:auto;display:block;}
-.switch-btn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:7px;color:rgba(255,255,255,.6);font-size:10px;letter-spacing:.1em;padding:6px 10px;cursor:pointer;font-family:sans-serif;}
-.toolbar{display:flex;gap:8px;padding:0 14px 12px;}
-.search-wrap{flex:1;position:relative;}
-.search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:#fff;outline:none;font-family:'Instrument Serif',serif;font-style:italic;}
-.search-input::placeholder{color:rgba(255,255,255,.3);}
-.s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
-.hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;font-family:sans-serif;}
-.hbtn.nda{border-color:var(--accent);color:var(--accent);}
-.tabs{display:flex;overflow-x:auto;scrollbar-width:none;border-top:1px solid rgba(255,255,255,.07);}
-.tabs::-webkit-scrollbar{display:none;}
-.tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 15px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:nowrap;font-family:sans-serif;transition:all .18s;}
-.tab.active{color:#fff;border-bottom-color:var(--accent);}
-.stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
-.stat{font-size:12px;color:var(--warm);font-style:italic;}
-.stat b{color:var(--dark);font-style:normal;font-weight:400;}
+#app { display:none; }
+.list-header { background:var(--blue); position:sticky; top:0; z-index:100; }
+.list-top { display:flex; align-items:center; justify-content:space-between; padding:14px 16px 10px; }
+.logo-img { height:28px; width:auto; display:block; }
+.switch-btn { background:none; border:1px solid rgba(255,255,255,.2); border-radius:7px; color:rgba(255,255,255,.6); font-size:10px; letter-spacing:.1em; padding:6px 10px; cursor:pointer; font-family:sans-serif; }
+.toolbar { display:flex; gap:8px; padding:0 14px 12px; }
+.search-wrap { flex:1; position:relative; }
+.search-input { width:100%; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:9px 12px 9px 32px; font-size:13px; color:#fff; outline:none; font-family:'Instrument Serif',serif; font-style:italic; }
+.search-input::placeholder { color:rgba(255,255,255,.3); }
+.s-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,.3); font-size:13px; pointer-events:none; }
+.hbtn { background:none; border:1px solid rgba(255,255,255,.2); border-radius:8px; padding:8px 12px; font-size:11px; letter-spacing:.06em; color:#fff; cursor:pointer; white-space:nowrap; font-family:sans-serif; }
+.hbtn.nda { border-color:var(--accent); color:var(--accent); }
+.tabs { display:flex; overflow-x:auto; scrollbar-width:none; border-top:1px solid rgba(255,255,255,.07); }
+.tabs::-webkit-scrollbar { display:none; }
+.tab { background:none; border:none; border-bottom:2px solid transparent; padding:10px 15px; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:rgba(255,255,255,.38); cursor:pointer; white-space:nowrap; font-family:sans-serif; transition:all .18s; }
+.tab.active { color:#fff; border-bottom-color:var(--accent); }
+.stats { padding:9px 16px; display:flex; gap:14px; background:var(--cream); border-bottom:1px solid var(--border); }
+.stat { font-size:12px; color:var(--warm); font-style:italic; }
+.stat b { color:var(--dark); font-style:normal; font-weight:400; }
 
 /* GRID */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
-@media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
-@media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
-.card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s;}
-.card:active{transform:scale(.96);}
-.card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
-.card-init{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#ebe5dd,#d9d1c7);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:26px;font-style:italic;color:var(--warm);}
-.card-body{padding:7px 8px 8px;}
-.card-name{font-size:11px;color:var(--dark);line-height:1.3;}
-.card-tick{color:var(--blue);font-size:10px;margin-right:2px;}
-.card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;font-family:sans-serif;}
-.wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
-.wb-gold{background:#c9a96e;}
-.wb-black{background:#1a1a1a;border:1px solid #bbb;}
-.in-badge{position:absolute;top:6px;right:6px;background:var(--blue);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
+.grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px; }
+@media(min-width:480px){ .grid{grid-template-columns:repeat(4,1fr);} }
+@media(min-width:700px){ .grid{grid-template-columns:repeat(5,1fr);} }
+.card { background:#fff; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 1px 4px rgba(0,0,0,.07); transition:transform .12s; }
+.card:active { transform:scale(.96); }
+.card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#e8e2da; }
+.card-init { width:100%; aspect-ratio:1; background:linear-gradient(135deg,#ebe5dd,#d9d1c7); display:flex; align-items:center; justify-content:center; font-size:26px; font-style:italic; color:var(--warm); }
+.card-body { padding:7px 8px 8px; }
+.card-name { font-size:11px; color:var(--dark); line-height:1.3; }
+.card-tick { color:var(--blue); font-size:10px; margin-right:2px; }
+.card-tag { font-size:9px; letter-spacing:.07em; text-transform:uppercase; color:var(--warm); margin-top:2px; display:flex; align-items:center; gap:3px; font-family:sans-serif; }
+.wb-dot { width:6px; height:6px; border-radius:50%; display:inline-block; }
+.wb-gold { background:#c9a96e; }
+.wb-black { background:#1a1a1a; border:1px solid #bbb; }
+.in-badge { position:absolute; top:6px; right:6px; background:var(--blue); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; }
 
 /* STATES */
-.cstate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 20px;gap:14px;}
-.spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;font-style:italic;}
+.cstate { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:64px 20px; gap:14px; }
+.spinner { width:26px; height:26px; border:2px solid rgba(0,0,0,.1); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+@keyframes spin{ to{transform:rotate(360deg);} }
+.cstate-txt { font-size:13px; color:var(--warm); letter-spacing:.1em; font-style:italic; }
 
 /* DETAIL */
-#detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
-.detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
-.detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
-.back-btn{background:none;border:none;color:#fff;cursor:pointer;font-size:13px;font-family:sans-serif;opacity:.85;display:flex;align-items:center;gap:4px;}
-.detail-avatar-wrap{margin-top:14px;display:flex;justify-content:center;}
-.detail-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #fff;}
-.detail-init{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:30px;font-style:italic;color:#fff;}
-.detail-name{font-family:'Instrument Serif',serif;font-size:22px;color:#fff;margin-top:10px;font-style:italic;}
-.detail-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;letter-spacing:.06em;font-family:sans-serif;}
-.detail-chips{display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap;padding:0 20px;}
-.det-chip{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:6px;padding:5px 12px;font-size:11px;text-decoration:none;font-family:sans-serif;}
-.det-cards{padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:40px;}
-.det-card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.det-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
-.det-row:last-of-type{border-bottom:none;}
-.det-row-left{display:flex;flex-direction:column;gap:2px;}
-.det-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:6px;}
-.det-sublbl{font-size:11px;color:var(--warm);font-family:sans-serif;margin-top:2px;}
-.wb-display{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
-.wb-display-lbl{font-size:14px;color:var(--dark);margin-bottom:8px;}
-.wb-pill{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);font-family:sans-serif;}
-.wb-pill.none{color:var(--warm);font-style:italic;font-family:'Instrument Serif',serif;}
-.wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
-.wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
-.wb-circle{width:12px;height:12px;border-radius:50%;}
-.wb-circle.gold{background:#c9a96e;}
-.wb-circle.black{background:#fff;}
-.nda-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff5f5;border-top:1px solid rgba(0,0,0,.05);}
-.nda-text{font-size:12px;color:var(--red);display:flex;align-items:flex-start;gap:6px;line-height:1.5;font-family:sans-serif;flex:1;}
-.nda-link{font-size:18px;cursor:pointer;flex-shrink:0;text-decoration:none;}
-.toggle{position:relative;width:51px;height:31px;flex-shrink:0;}
-.toggle input{opacity:0;width:0;height:0;position:absolute;}
-.slider{position:absolute;cursor:pointer;inset:0;background:#e0dad3;border-radius:31px;transition:.2s;}
-.slider:before{content:'';position:absolute;width:25px;height:25px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.15);}
-.toggle input:checked+.slider{background:var(--green);}
-.toggle input:checked+.slider:before{transform:translateX(20px);}
-.saving-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:20px;padding:8px 18px;font-size:12px;font-family:sans-serif;letter-spacing:.06em;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9999;}
-.saving-toast.show{opacity:1;}
-.det-input-wrap{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
-.det-input-wrap:last-child{border-bottom:none;}
-.det-input-lbl{font-size:13px;color:var(--dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-.det-input{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--warm);outline:none;font-family:'Instrument Serif',serif;font-style:italic;}
-.det-input::placeholder{color:#bbb5ae;}
-textarea.det-input{resize:none;min-height:80px;}
+#detailView { display:none; position:fixed; inset:0; background:#f2ede8; z-index:200; overflow-y:auto; }
+.detail-head { background:var(--blue); padding:0 0 24px; text-align:center; }
+.detail-nav { display:flex; align-items:center; padding:14px 16px 0; }
+.back-btn { background:none; border:none; color:#fff; cursor:pointer; font-size:13px; font-family:sans-serif; opacity:.85; display:flex; align-items:center; gap:4px; }
+.detail-avatar-wrap { margin-top:14px; display:flex; justify-content:center; }
+.detail-avatar { width:88px; height:88px; border-radius:50%; object-fit:cover; border:3px solid #fff; }
+.detail-init { width:88px; height:88px; border-radius:50%; background:rgba(255,255,255,.15); border:3px solid rgba(255,255,255,.4); display:flex; align-items:center; justify-content:center; font-size:30px; font-style:italic; color:#fff; }
+.detail-name { font-size:22px; color:#fff; margin-top:10px; font-style:italic; }
+.detail-sub { font-size:11px; color:rgba(255,255,255,.5); margin-top:3px; letter-spacing:.06em; font-family:sans-serif; }
+.detail-chips { display:flex; justify-content:center; gap:8px; margin-top:10px; flex-wrap:wrap; padding:0 20px; }
+.det-chip { background:rgba(255,255,255,.12); color:rgba(255,255,255,.85); border-radius:6px; padding:5px 12px; font-size:11px; text-decoration:none; font-family:sans-serif; }
+.det-cards { padding:14px; display:flex; flex-direction:column; gap:12px; padding-bottom:40px; }
+.det-card { background:#fff; border-radius:14px; box-shadow:0 1px 4px rgba(0,0,0,.06); }
+.det-row { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(0,0,0,.05); }
+.det-row:last-of-type { border-bottom:none; }
+.det-row-left { display:flex; flex-direction:column; gap:2px; }
+.det-lbl { font-size:14px; color:var(--dark); display:flex; align-items:center; gap:6px; }
+.det-sublbl { font-size:11px; color:var(--warm); font-family:sans-serif; margin-top:2px; }
+.wb-display { padding:12px 16px; border-bottom:1px solid rgba(0,0,0,.05); }
+.wb-display-lbl { font-size:14px; color:var(--dark); margin-bottom:8px; }
+.wb-pill { display:inline-flex; align-items:center; gap:8px; border-radius:8px; padding:10px 16px; font-size:14px; border:1.5px solid rgba(0,0,0,.08); font-family:sans-serif; }
+.wb-pill.none { color:var(--warm); font-style:italic; font-family:'Instrument Serif',serif; }
+.wb-pill.gold { background:#fffdf0; border-color:#c9a96e; color:#8a6820; }
+.wb-pill.black { background:#1a1a1a; border-color:#1a1a1a; color:#fff; }
+.wb-circle { width:12px; height:12px; border-radius:50%; }
+.wb-circle.gold { background:#c9a96e; }
+.wb-circle.black { background:#fff; }
+.nda-row { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:#fff5f5; border-top:1px solid rgba(0,0,0,.05); }
+.nda-text { font-size:12px; color:var(--red); display:flex; align-items:flex-start; gap:6px; line-height:1.5; font-family:sans-serif; flex:1; }
+.nda-link { font-size:18px; cursor:pointer; flex-shrink:0; text-decoration:none; }
+.toggle { position:relative; width:51px; height:31px; flex-shrink:0; }
+.toggle input { opacity:0; width:0; height:0; position:absolute; }
+.slider { position:absolute; cursor:pointer; inset:0; background:#e0dad3; border-radius:31px; transition:.2s; }
+.slider:before { content:''; position:absolute; width:25px; height:25px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:.2s; box-shadow:0 2px 4px rgba(0,0,0,.15); }
+.toggle input:checked + .slider { background:var(--green); }
+.toggle input:checked + .slider:before { transform:translateX(20px); }
+.saving-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:var(--dark); color:#fff; border-radius:20px; padding:8px 18px; font-size:12px; font-family:sans-serif; letter-spacing:.06em; opacity:0; transition:opacity .2s; pointer-events:none; z-index:9999; }
+.saving-toast.show { opacity:1; }
+.det-input-wrap { padding:12px 16px; border-bottom:1px solid rgba(0,0,0,.05); }
+.det-input-wrap:last-child { border-bottom:none; }
+.det-input-lbl { font-size:13px; color:var(--dark); display:flex; align-items:center; gap:6px; margin-bottom:8px; }
+.det-input { width:100%; background:#f5f2ee; border:none; border-radius:8px; padding:10px 14px; font-size:14px; color:var(--warm); outline:none; font-family:'Instrument Serif',serif; font-style:italic; }
+.det-input::placeholder { color:#bbb5ae; }
+textarea.det-input { resize:none; min-height:80px; }
 
 /* ADD MODAL */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
-.modal-bg.open{opacity:1;pointer-events:all;}
-.modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:40px;}
-.modal-handle{width:36px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;margin:12px auto 0;}
-.modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
-.modal-title{font-family:'Instrument Serif',serif;font-size:22px;font-style:italic;color:var(--dark);}
-.modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
-.modal-body{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
-.modal-card{background:#fff;border-radius:14px;overflow:hidden;}
-.modal-row{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:10px;}
-.modal-row:last-child{border-bottom:none;}
-.modal-ico{font-size:16px;flex-shrink:0;}
-.modal-field{flex:1;}
-.modal-field-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);font-family:sans-serif;margin-bottom:2px;}
-.modal-input{width:100%;background:none;border:none;outline:none;font-family:'Instrument Serif',serif;font-size:15px;color:var(--dark);font-style:italic;}
-.modal-input::placeholder{color:#c0b8ae;}
-.modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
-.modal-toggle-row:last-child{border-bottom:none;}
-.modal-toggle-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:8px;}
-.modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
-.mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);font-family:'Instrument Serif',serif;font-style:italic;}
-.msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-family:sans-serif;font-weight:500;}
+.modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:300; display:flex; align-items:flex-end; opacity:0; pointer-events:none; transition:opacity .2s; }
+.modal-bg.open { opacity:1; pointer-events:all; }
+.modal { background:#f2ede8; border-radius:20px 20px 0 0; width:100%; max-height:90vh; overflow-y:auto; padding-bottom:40px; }
+.modal-handle { width:36px; height:4px; background:rgba(0,0,0,.1); border-radius:2px; margin:12px auto 0; }
+.modal-head { display:flex; align-items:center; justify-content:space-between; padding:16px 20px 12px; }
+.modal-title { font-size:22px; font-style:italic; color:var(--dark); }
+.modal-close { background:none; border:none; font-size:22px; color:var(--warm); cursor:pointer; }
+.modal-body { padding:0 14px; display:flex; flex-direction:column; gap:10px; }
+.modal-card { background:#fff; border-radius:14px; overflow:hidden; }
+.modal-row { padding:12px 16px; border-bottom:1px solid rgba(0,0,0,.05); display:flex; align-items:center; gap:10px; }
+.modal-row:last-child { border-bottom:none; }
+.modal-ico { font-size:16px; flex-shrink:0; }
+.modal-field { flex:1; }
+.modal-field-lbl { font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--warm); font-family:sans-serif; margin-bottom:2px; }
+.modal-input { width:100%; background:none; border:none; outline:none; font-size:15px; color:var(--dark); font-style:italic; font-family:'Instrument Serif',serif; }
+.modal-input::placeholder { color:#c0b8ae; }
+.modal-toggle-row { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(0,0,0,.05); }
+.modal-toggle-row:last-child { border-bottom:none; }
+.modal-toggle-lbl { font-size:14px; color:var(--dark); display:flex; align-items:center; gap:8px; }
+.modal-actions { display:flex; gap:10px; padding:14px 14px 0; }
+.mcancel { flex:1; background:#fff; border:1px solid rgba(0,0,0,.1); border-radius:12px; padding:14px; font-size:13px; cursor:pointer; color:var(--dark); font-family:'Instrument Serif',serif; font-style:italic; }
+.msubmit { flex:2; background:var(--blue); border:none; border-radius:12px; padding:14px; font-size:13px; letter-spacing:.08em; text-transform:uppercase; color:#fff; cursor:pointer; font-family:sans-serif; font-weight:500; }
 </style>
 </head>
 <body>
 
 <div class="saving-toast" id="toast">Saved ✓</div>
 
-<!-- EVENT SCREEN -->
 <div id="evScreen">
   <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
   <div class="ev-sub">Select Event</div>
@@ -148,7 +147,6 @@ textarea.det-input{resize:none;min-height:80px;}
   <button class="ev-reset" onclick="resetKey()">Reset API Key</button>
 </div>
 
-<!-- APP -->
 <div id="app">
   <div class="list-header">
     <div class="list-top">
@@ -169,10 +167,8 @@ textarea.det-input{resize:none;min-height:80px;}
   <div id="main"></div>
 </div>
 
-<!-- DETAIL -->
 <div id="detailView"><div id="detailContent"></div></div>
 
-<!-- ADD MODAL -->
 <div class="modal-bg" id="addModal">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -193,7 +189,6 @@ textarea.det-input{resize:none;min-height:80px;}
       <div class="modal-card">
         <div class="modal-toggle-row"><div class="modal-toggle-lbl">✓ Checked In</div><label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label></div>
         <div class="modal-toggle-row"><div class="modal-toggle-lbl">👑 Patron</div><label class="toggle"><input type="checkbox" id="mPat"><span class="slider"></span></label></div>
-
         <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed</div><label class="toggle"><input type="checkbox" id="mNDA"><span class="slider"></span></label></div>
       </div>
       <div class="modal-card">
@@ -217,7 +212,7 @@ textarea.det-input{resize:none;min-height:80px;}
           <span class="modal-ico" style="margin-top:2px">📝</span>
           <div class="modal-field">
             <div class="modal-field-lbl">Door Notes <span style="color:var(--red)">Required</span></div>
-            <textarea class="modal-input" id="mNotes" rows="3" placeholder="Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)" style="resize:none;line-height:1.5"></textarea>
+            <textarea class="modal-input" id="mNotes" rows="3" placeholder="Any additional info including who approved them"></textarea>
           </div>
         </div>
       </div>
@@ -244,259 +239,425 @@ textarea.det-input{resize:none;min-height:80px;}
 </div>
 
 <script>
-const BASE='appY6p2HwRtDmOvAf';
-const EVENTS=[
-  {name:"L'Atelier",date:"March 28th",table:"3/28 Door List"},
-  {name:"Do Not Disturb",date:"April 18th",table:"4/18 Door List"},
-  {name:"Obscura",date:"May 2nd",table:"Obscura Premiere"},
-];
-const TABS=[
-  {id:'all',lbl:'Full List'},
-  {id:'patron',lbl:'Patrons'},
-  {id:'guest',lbl:'Guests'},
-  {id:'working',lbl:'Working'},
-  {id:'table',lbl:'Table'},
+const BASE = "appY6p2HwRtDmOvAf";
+const TOKEN_KEY = "at_key";
+const NDA_URL = "https://forms.gle/asRXJtR6zHhDoGZJ8";
+const LOCAL_NOTES_KEY_PREFIX = "door_local_";
+
+const EVENTS = [
+  { name:"L'Atelier", date:"March 28th", table:"3/28 Door List" },
+  { name:"Do Not Disturb", date:"April 18th", table:"4/18 Door List" },
+  { name:"Obscura", date:"May 2nd", table:"Obscura Premiere" }
 ];
 
-let guests=[],curTab='all',curTable='',curG=null,local={};
-let TOKEN=localStorage.getItem('at_key')||'';
+const TABS = [
+  { id:"all", lbl:"Full List" },
+  { id:"patron", lbl:"Patrons" },
+  { id:"guest", lbl:"Guests" },
+  { id:"working", lbl:"Working" },
+  { id:"table", lbl:"Table" }
+];
 
-function resetKey(){localStorage.removeItem('at_key');TOKEN='';location.reload();}
+let guests = [];
+let curTab = "all";
+let curTable = "";
+let curG = null;
+let saveTimer = null;
+let TOKEN = (localStorage.getItem(TOKEN_KEY) || "").trim();
 
-function ensureToken(){
-  if(!TOKEN){
-    TOKEN=(prompt('Enter your Airtable API token (starts with pat...)')||'').trim();
-    if(!TOKEN) throw new Error('No token');
-    localStorage.setItem('at_key',TOKEN);
+function esc(s = "") {
+  return String(s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function ini(n = "") {
+  return n.split(" ").map(p => p[0] || "").join("").slice(0,2).toUpperCase();
+}
+function norm(v = "") {
+  return String(v).trim().toLowerCase();
+}
+function listType(v = "") {
+  const s = norm(v);
+  if (s.includes("guest")) return "guest";
+  if (s.includes("working")) return "working";
+  if (s.includes("table")) return "table";
+  return "";
+}
+function eventStorageKey() {
+  return `${LOCAL_NOTES_KEY_PREFIX}${curTable}`;
+}
+function loadLocalMap() {
+  try { return JSON.parse(localStorage.getItem(eventStorageKey()) || "{}"); } catch { return {}; }
+}
+function saveLocalMap(map) {
+  localStorage.setItem(eventStorageKey(), JSON.stringify(map));
+}
+function showToast(msg = "Saved ✓") {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 1800);
+}
+function resetKey() {
+  localStorage.removeItem(TOKEN_KEY);
+  TOKEN = "";
+  location.reload();
+}
+function ensureToken() {
+  if (!TOKEN) {
+    TOKEN = (prompt("Enter Airtable API token (full token starting with pat...)") || "").trim();
+    if (!TOKEN) throw new Error("No token entered.");
+    localStorage.setItem(TOKEN_KEY, TOKEN);
   }
   return TOKEN;
 }
 
-function showToast(msg='Saved ✓'){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),1800);
-}
-
-function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
-
-function buildEvList(){
-  document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
-    `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${esc(e.name)}</div><div class="ev-date">${esc(e.date)}</div></div>`
-  ).join('');
-}
-
-function pickEv(i){
-  const e=EVENTS[i]; curTable=e.table;
-  document.getElementById('evLabel').textContent=e.name+' · '+e.date;
-  document.getElementById('evScreen').style.display='none';
-  document.getElementById('app').style.display='block';
-  load();
-}
-
-function showEvScreen(){
-  document.getElementById('evScreen').style.display='flex';
-  document.getElementById('app').style.display='none';
-  document.getElementById('detailView').style.display='none';
-}
-
-async function req(path='',opts={}){
-  const token=ensureToken();
-  const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`,{
-    ...opts,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
+async function req(path = "", opts = {}) {
+  const token = ensureToken();
+  const url = `https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`;
+  const r = await fetch(url, {
+    ...opts,
+    headers: {
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json",
+      ...(opts.headers || {})
+    }
   });
-  let d={};
-  try{d=await r.json();}catch(_){}
-  if(!r.ok){
-    if(r.status===401||r.status===403){localStorage.removeItem('at_key');TOKEN='';}
-    throw new Error(d?.error?.message||`${r.status}`);
+
+  let data = {};
+  try { data = await r.json(); } catch {}
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) {
+      localStorage.removeItem(TOKEN_KEY);
+      TOKEN = "";
+    }
+    throw new Error(data?.error?.message || `${r.status} ${r.statusText}`);
   }
-  return d;
+  return data;
 }
 
-function toG(r){
-  const f=r.fields;
+function toGuest(record) {
+  const f = record.fields || {};
   return {
-    id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
-    rsvp:f.RSVP||'',photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
-    list:f.List||'',nda:f.NDA||'No',phone:f.Phone||'',
-    patron:!!f.Patron,
-    wristband:Array.isArray(f.Wristband)?f.Wristband[0]||'':f.Wristband||'',
-    email:f.Email||'',sti:false
+    id: record.id,
+    name: f["Full Name"] || "",
+    checkedIn: !!f["Checked In"],
+    rsvp: f["RSVP"] || "",
+    photo: f["Photo"]?.[0]?.url || null,
+    list: f["List"] || f["List Type"] || "",
+    nda: f["NDA"] || "No",
+    phone: f["Phone"] || "",
+    patron: !!f["Patron"],
+    wristband: Array.isArray(f["Wristband"]) ? (f["Wristband"][0] || "") : (f["Wristband"] || ""),
+    email: f["Email"] || ""
   };
 }
 
-async function load(){
-  document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
+function buildEvList() {
+  document.getElementById("evList").innerHTML = EVENTS.map((e, i) => `
+    <div class="ev-item" onclick="pickEv(${i})">
+      <div class="ev-name">${esc(e.name)}</div>
+      <div class="ev-date">${esc(e.date)}</div>
+    </div>
+  `).join("");
+}
+function buildTabs() {
+  document.getElementById("tabs").innerHTML = TABS.map(t =>
+    `<button class="tab ${t.id === curTab ? "active" : ""}" onclick="setTab('${t.id}')">${t.lbl}</button>`
+  ).join("");
+}
+function setTab(id) {
+  curTab = id;
   buildTabs();
-  try{
-    let recs=[],offset=null;
-    do{const d=await req(offset?'?offset='+offset:'');if(d.records)recs=recs.concat(d.records);offset=d.offset;}while(offset);
-    guests=recs.map(toG);render();
-  }catch(e){
-    document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif;">Reset Key</button></div>`;
+  render();
+}
+function showEvScreen() {
+  document.getElementById("evScreen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("detailView").style.display = "none";
+}
+
+async function pickEv(i) {
+  const ev = EVENTS[i];
+  curTable = ev.table;
+  curTab = "all";
+  document.getElementById("evLabel").textContent = `${ev.name} · ${ev.date}`;
+  document.getElementById("evScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  buildTabs();
+  await load();
+}
+
+async function load() {
+  document.getElementById("main").innerHTML = `<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>`;
+  try {
+    let recs = [];
+    let offset = "";
+    do {
+      const d = await req(offset ? `?offset=${encodeURIComponent(offset)}` : "");
+      if (d.records) recs = recs.concat(d.records);
+      offset = d.offset || "";
+    } while (offset);
+    guests = recs.map(toGuest);
+    render();
+  } catch (e) {
+    document.getElementById("main").innerHTML = `
+      <div class="cstate">
+        <div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div>
+        <button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif;">Reset Key</button>
+      </div>`;
   }
 }
 
-function buildTabs(){
-  document.getElementById('tabs').innerHTML=TABS.map(t=>
-    `<button class="tab ${t.id===curTab?'active':''}" onclick="setTab('${t.id}')">${t.lbl}</button>`
-  ).join('');
-}
-function setTab(id){curTab=id;buildTabs();render();}
+function render() {
+  const q = norm(document.getElementById("searchInput")?.value || "");
+  let list = guests.slice();
 
-function render(){
-  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-  let list=guests;
-  if(curTab==='patron') list=list.filter(g=>g.patron);
-  else if(curTab==='guest') list=list.filter(g=>(g.list||'').toLowerCase()==='guest');
-  else if(curTab==='working') list=list.filter(g=>(g.list||'').toLowerCase()==='working');
-  else if(curTab==='table') list=list.filter(g=>(g.list||'').toLowerCase()==='table');
-  if(q) list=list.filter(g=>g.name.toLowerCase().includes(q)||g.phone.includes(q));
-  const chk=list.filter(g=>g.checkedIn).length;
-  document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>`;
-  if(!list.length){document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';return;}
-  document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
-}
+  if (curTab === "patron") {
+    list = list.filter(g => g.patron);
+  } else if (curTab !== "all") {
+    list = list.filter(g => listType(g.list) === curTab);
+  }
 
-function gCard(g){
-  const ph=g.photo
-    ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`+`<div class="card-init" style="display:none">${ini(g.name)}</div>`
-    :`<div class="card-init">${ini(g.name)}</div>`;
-  const dot=g.wristband==='Gold'?`<span class="wb-dot wb-gold"></span>`:g.wristband==='Black'?`<span class="wb-dot wb-black"></span>`:'';
-  return `<div class="card" onclick="openDetail('${g.id}')">
-    ${g.checkedIn?'<div class="in-badge">✓</div>':''}${ph}
-    <div class="card-body">
-      <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
-      <div class="card-tag">${dot}${esc(g.list||'')}</div>
-    </div></div>`;
+  if (q) {
+    list = list.filter(g =>
+      norm(g.name).includes(q) ||
+      String(g.phone || "").includes(q)
+    );
+  }
+
+  const checkedIn = list.filter(g => g.checkedIn).length;
+  document.getElementById("stats").innerHTML = `
+    <div class="stat"><b>${list.length}</b> guests</div>
+    <div class="stat"><b>${checkedIn}</b> checked in</div>
+  `;
+
+  if (!list.length) {
+    document.getElementById("main").innerHTML = `<div class="cstate"><div class="cstate-txt">No guests found</div></div>`;
+    return;
+  }
+
+  document.getElementById("main").innerHTML = `<div class="grid">${list.map(gCard).join("")}</div>`;
 }
 
-function openDetail(id){
-  const g=guests.find(x=>x.id===id);if(!g)return;
-  curG=g;
-  const loc=local[id]||{};
-  const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
-  const wbPill=g.wristband==='Gold'?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`:g.wristband==='Black'?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`:`<div class="wb-pill none">No wristbands assigned</div>`;
-  const ndaRow=g.nda!=='Signed'?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`:'';
-  document.getElementById('detailContent').innerHTML=`
-    <div class="detail-head">
-      <div class="detail-nav"><button class="back-btn" onclick="closeDetail()">‹ House of LouLou's Door</button></div>
-      <div class="detail-avatar-wrap">${ph}</div>
-      <div class="detail-name">${esc(g.name)}</div>
-      <div class="detail-sub">${esc(g.list||'')}${g.rsvp?' · RSVP: '+esc(g.rsvp):''}</div>
-      <div class="detail-chips">
-        ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
-        ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
+function gCard(g) {
+  const photoHtml = g.photo
+    ? `<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
+    : `<div class="card-init">${ini(g.name)}</div>`;
+  const dot = g.wristband === "Gold"
+    ? `<span class="wb-dot wb-gold"></span>`
+    : g.wristband === "Black"
+      ? `<span class="wb-dot wb-black"></span>`
+      : "";
+  return `
+    <div class="card" onclick="openDetail('${g.id}')">
+      ${g.checkedIn ? `<div class="in-badge">✓</div>` : ""}
+      ${photoHtml}
+      <div class="card-body">
+        <div class="card-name">${g.checkedIn ? `<span class="card-tick">✓</span>` : ""}${esc(g.name)}</div>
+        <div class="card-tag">${dot}${esc(g.list || "")}</div>
       </div>
     </div>
+  `;
+}
+
+function wristbandPill(wb) {
+  if (wb === "Gold") return `<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`;
+  if (wb === "Black") return `<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`;
+  return `<div class="wb-pill none">No wristbands assigned</div>`;
+}
+
+function openDetail(id) {
+  const g = guests.find(x => x.id === id);
+  if (!g) return;
+  curG = g;
+
+  const localMap = loadLocalMap();
+  const loc = localMap[g.id] || {};
+
+  const avatar = g.photo
+    ? `<img class="detail-avatar" src="${esc(g.photo)}">`
+    : `<div class="detail-init">${ini(g.name)}</div>`;
+
+  const ndaRow = g.nda !== "Signed"
+    ? `<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="${NDA_URL}" target="_blank">🔗</a></div>`
+    : "";
+
+  document.getElementById("detailContent").innerHTML = `
+    <div class="detail-head">
+      <div class="detail-nav"><button class="back-btn" onclick="closeDetail()">‹ House of LouLou's Door</button></div>
+      <div class="detail-avatar-wrap">${avatar}</div>
+      <div class="detail-name">${esc(g.name)}</div>
+      <div class="detail-sub">${esc(g.list || "")}${g.rsvp ? " · RSVP: " + esc(g.rsvp) : ""}</div>
+      <div class="detail-chips">
+        ${g.phone ? `<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>` : ""}
+        ${g.email ? `<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>` : ""}
+      </div>
+    </div>
+
     <div class="det-cards">
       <div class="det-card">
         <div class="det-row">
           <div class="det-lbl">✓ Checked In:</div>
-          <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
+          <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn ? "checked" : ""} onchange="autoSave()"><span class="slider"></span></label>
         </div>
+
         <div class="wb-display">
           <div class="wb-display-lbl">Wristbands</div>
-          <div id="wbPillDisplay">${wbPill}</div>
+          <div id="wbPillDisplay">${wristbandPill(g.wristband)}</div>
         </div>
+
         <div class="det-row">
           <div class="det-row-left">
             <div class="det-lbl">👑 Patron</div>
             <div class="det-sublbl">Patrons receive GOLD WRISTBANDS</div>
           </div>
-          <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
+          <label class="toggle"><input type="checkbox" id="dPat" ${g.patron ? "checked" : ""} onchange="onPatron(this)"><span class="slider"></span></label>
         </div>
 
         <div class="det-row">
           <div class="det-lbl">🤫 NDA Signed:</div>
-          <label class="toggle"><input type="checkbox" id="dNDA" ${g.nda==='Signed'?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
+          <label class="toggle"><input type="checkbox" id="dNDA" ${g.nda === "Signed" ? "checked" : ""} onchange="onNDA(this)"><span class="slider"></span></label>
         </div>
+
         <div id="ndaBox">${ndaRow}</div>
       </div>
+
       <div class="det-card">
         <div class="det-input-wrap">
           <div class="det-input-lbl">🧥 Coat Check #</div>
-          <input class="det-input" id="dCoat" value="${esc(loc.coat||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+          <input class="det-input" id="dCoat" value="${esc(loc.coat || "")}" placeholder="e.g. 69" onblur="saveLocalDetail()">
         </div>
         <div class="det-input-wrap">
           <div class="det-input-lbl">📱 Phone Check #</div>
-          <input class="det-input" id="dPhone" value="${esc(loc.phone||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+          <input class="det-input" id="dPhone" value="${esc(loc.phone || "")}" placeholder="e.g. 69" onblur="saveLocalDetail()">
         </div>
       </div>
+
       <div class="det-card">
         <div class="det-input-wrap">
           <div class="det-input-lbl">📝 Door Notes:</div>
-          <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocal()">${esc(loc.notes||'')}</textarea>
+          <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocalDetail()">${esc(loc.notes || "")}</textarea>
         </div>
       </div>
-    </div>`;
-  document.getElementById('app').style.display='none';
-  document.getElementById('detailView').style.display='block';
-  document.getElementById('detailView').scrollTop=0;
+    </div>
+  `;
+
+  document.getElementById("app").style.display = "none";
+  document.getElementById("detailView").style.display = "block";
+  document.getElementById("detailView").scrollTop = 0;
 }
 
-function updateWBPill(wb){
-  const p=wb==='Gold'?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`:wb==='Black'?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`:`<div class="wb-pill none">No wristbands assigned</div>`;
-  document.getElementById('wbPillDisplay').innerHTML=p;
+function updateWBPill(wb) {
+  document.getElementById("wbPillDisplay").innerHTML = wristbandPill(wb);
+}
+function onPatron(el) {
+  updateWBPill(el.checked ? "Gold" : "");
+  autoSave();
+}
+function onNDA(el) {
+  document.getElementById("ndaBox").innerHTML = el.checked ? "" :
+    `<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="${NDA_URL}" target="_blank">🔗</a></div>`;
+  autoSave();
 }
 
-function onPatron(cb){if(cb.checked)updateWBPill('Gold');else updateWBPill('');autoSave();}
-function onNDA(cb){document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`;autoSave();}
-
-function saveLocal(){
-  if(!curG)return;
-  local[curG.id]={coat:document.getElementById('dCoat').value.trim(),phone:document.getElementById('dPhone').value.trim(),notes:document.getElementById('dNotes').value.trim()};
-  showToast('Saved ✓');
+function saveLocalDetail() {
+  if (!curG) return;
+  const map = loadLocalMap();
+  map[curG.id] = {
+    coat: document.getElementById("dCoat")?.value.trim() || "",
+    phone: document.getElementById("dPhone")?.value.trim() || "",
+    notes: document.getElementById("dNotes")?.value.trim() || ""
+  };
+  saveLocalMap(map);
+  showToast("Saved ✓");
 }
 
-let saveTimer=null;
-function autoSave(){
+function autoSave() {
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(async()=>{
-    if(!curG)return;
-    const cI=document.getElementById('dCI').checked;
-    const cN=document.getElementById('dNDA').checked;
-    const cS=false;
-    const cP=document.getElementById('dPat').checked;
-    const wb=cP?'Gold':cS?'Black':'';
-    const fields={'Checked In':cI,'NDA':cN?'Signed':'No','Patron':cP,'Wristband':wb?[wb]:[]};
-    try{
-      await req('/'+curG.id,{method:'PATCH',body:JSON.stringify({fields})});
-      const i=guests.findIndex(g=>g.id===curG.id);
-      if(i>-1)guests[i]={...guests[i],checkedIn:cI,nda:cN?'Signed':'No',sti:cS,patron:cP,wristband:wb};
-      showToast('Saved ✓');
-    }catch(e){showToast('Error saving');}
-  },600);
+  saveTimer = setTimeout(async () => {
+    if (!curG) return;
+    const checkedIn = document.getElementById("dCI").checked;
+    const ndaSigned = document.getElementById("dNDA").checked;
+    const patron = document.getElementById("dPat").checked;
+    const wristband = patron ? "Gold" : "";
+
+    const fields = {
+      "Checked In": checkedIn,
+      "NDA": ndaSigned ? "Signed" : "No",
+      "Patron": patron,
+      "Wristband": wristband || null
+    };
+
+    try {
+      await req("/" + curG.id, { method:"PATCH", body:JSON.stringify({ fields }) });
+      const i = guests.findIndex(g => g.id === curG.id);
+      if (i > -1) guests[i] = { ...guests[i], checkedIn, nda: ndaSigned ? "Signed" : "No", patron, wristband };
+      showToast("Saved ✓");
+    } catch (e) {
+      showToast("Error saving");
+    }
+  }, 500);
 }
 
-function closeDetail(){
-  document.getElementById('detailView').style.display='none';
-  document.getElementById('app').style.display='block';
-  curG=null;render();
+function closeDetail() {
+  document.getElementById("detailView").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  curG = null;
+  render();
 }
 
-function openAdd(){document.getElementById('addModal').classList.add('open');document.getElementById('aN').focus();}
-function closeAdd(){document.getElementById('addModal').classList.remove('open');['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('aLi').value='';['mCI','mPat','mNDA'].forEach(id=>document.getElementById(id).checked=false);}
+/* Add Guest */
+function openAdd() {
+  document.getElementById("addModal").classList.add("open");
+  document.getElementById("aN").focus();
+}
+function closeAdd() {
+  document.getElementById("addModal").classList.remove("open");
+  ["aN","mCoat","mPhone","mNotes"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("aLi").value = "";
+  ["mCI","mPat","mNDA"].forEach(id => document.getElementById(id).checked = false);
+}
+async function doAdd() {
+  const name = document.getElementById("aN").value.trim();
+  const notes = document.getElementById("mNotes").value.trim();
+  if (!name) return alert("Guest name required.");
+  if (!notes) return alert("Door notes required.");
 
-async function doAdd(){
-  const name=document.getElementById('aN').value.trim();if(!name){alert('Guest name required');return;}
-  const btn=document.getElementById('addBtn');btn.textContent='Adding…';
-  const fields={'Full Name':name};
-  if(document.getElementById('mCI').checked)fields['Checked In']=true;
-  if(document.getElementById('mPat').checked)fields['Patron']=true;
-  
-  if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
-  const li=document.getElementById('aLi').value;if(li)fields['List']=li;
-  const coat=document.getElementById('mCoat').value.trim();
-  const ph=document.getElementById('mPhone').value.trim();
-  const notes=document.getElementById('mNotes').value.trim();
-  try{
-    const d=await req('',{method:'POST',body:JSON.stringify({fields})});
-    if(d.id){local[d.id]={coat,phone:ph,notes};guests.push(toG(d));closeAdd();render();showToast('Guest added ✓');}
-  }catch(e){alert('Error: '+e.message);}
-  btn.textContent='Add Guest';
+  const addBtn = document.getElementById("addBtn");
+  addBtn.textContent = "Adding…";
+  addBtn.disabled = true;
+
+  const fields = {
+    "Full Name": name,
+    "Checked In": document.getElementById("mCI").checked,
+    "Patron": document.getElementById("mPat").checked,
+    "NDA": document.getElementById("mNDA").checked ? "Signed" : "No"
+  };
+  const listVal = document.getElementById("aLi").value;
+  if (listVal) fields["List"] = listVal;
+
+  try {
+    const d = await req("", { method:"POST", body:JSON.stringify({ fields }) });
+    if (d.id) {
+      const map = loadLocalMap();
+      map[d.id] = {
+        coat: document.getElementById("mCoat").value.trim(),
+        phone: document.getElementById("mPhone").value.trim(),
+        notes
+      };
+      saveLocalMap(map);
+      guests.push(toGuest(d));
+      closeAdd();
+      render();
+      showToast("Guest added ✓");
+    }
+  } catch (e) {
+    alert("Error: " + e.message);
+  } finally {
+    addBtn.textContent = "Add Guest";
+    addBtn.disabled = false;
+  }
 }
 
 buildEvList();
