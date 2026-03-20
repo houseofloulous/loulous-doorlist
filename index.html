@@ -28,13 +28,13 @@
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px; }
   .card { background:white; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
   .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
-  .card-name { font-size:11px; padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid white; }
+  .card-name { font-size:11px; padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
 
-  /* ── DETAIL VIEW ── */
+  /* ── DETAIL ── */
   #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:2000; overflow-y:auto; }
   .detail-head { background:var(--blue); padding:40px 20px; text-align:center; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 24px; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size:24px; }
   .detail-name { font-size:36px; color:#fff; font-style:italic; }
   .det-card { background:white; margin:15px; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
   .det-row { display:flex; align-items:center; justify-content:space-between; padding:18px 16px; border-bottom:1px solid #f0f0f0; }
@@ -48,7 +48,6 @@
   .toggle input:checked + .slider:before { transform:translateX(20px); }
   .save-btn { width:calc(100% - 30px); margin:10px 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
 
-  /* ── EVENT LIST ── */
   .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; padding:22px; border-radius:12px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
 </style>
 </head>
@@ -76,7 +75,7 @@
 </div>
 
 <script>
-// IMPORTANT: Triple check that this TOKEN is correct and has data.records:read/write permissions
+// PASTE YOUR NEW TOKEN HERE
 const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
 const BASE='appY6p2HwRtDmOvAf';
 
@@ -115,7 +114,7 @@ async function api(path, opts={}){
 
 async function load(){
   const main = document.getElementById('main');
-  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Connecting to Airtable...</div>';
+  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Connecting...</div>';
   
   const data = await api('?maxRecords=500&view=Grid%20view');
   
@@ -130,12 +129,8 @@ async function load(){
     }));
     render();
   } else {
-    // This will display if the 401 error occurs again
-    const errorMsg = data.error ? data.error.message : "Authentication Error (401)";
-    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">
-      <b>Sync Error</b><br>${errorMsg}<br>
-      <small>Check your Personal Access Token permissions.</small>
-    </div>`;
+    const msg = data.error ? data.error.message : "Auth Error (401)";
+    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;"><b>Sync Error</b><br>${msg}</div>`;
   }
 }
 
