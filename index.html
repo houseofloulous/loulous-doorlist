@@ -3,222 +3,262 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>House of LouLou's — Door List</title>
+<title>House of LouLou's Door</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
-  :root { --blue: #162B3B; --cream: #f5f0eb; --green: #34c759; }
+  :root { --blue: #162B3B; --cream: #f5f0eb; --green: #34c759; --gold: #FFD700; --gold-bg: #fff9e6; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { background:var(--cream); font-family:'Instrument Serif',serif; color:#1a1a1a; min-height:100vh; }
-  .logo-img { mix-blend-mode: screen; display: block; filter: brightness(1.2); margin: 0 auto; height:50px; }
-  #evScreen { position:fixed; inset:0; background:var(--blue); z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  body { background:var(--cream); font-family:sans-serif; color:#1a1a1a; min-height:100vh; }
+  h1, h2, .serif { font-family:'Instrument Serif', serif; font-style:italic; }
+
+  /* ── SCREENS ── */
+  #evScreen { position:fixed; inset:0; background:var(--blue); z-index:2000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
   #app { display:none; }
-  .header { background:var(--blue); position:sticky; top:0; z-index:100; padding:15px; text-align:center; }
-  .search-input { width:100%; background:rgba(255,255,255,0.12); border:none; border-radius:8px; padding:12px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; outline:none; margin-top:10px; }
+
+  /* ── HEADER ── */
+  .header { background:var(--blue); padding:15px 20px; color:white; }
+  .nav-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .logo { height:30px; filter:brightness(1.5); }
+  .settings-icon { opacity:0.6; font-size:20px; }
+  
+  .title-area h1 { font-size:32px; margin-bottom:15px; }
+  .search-row { display:flex; gap:10px; margin-bottom:15px; }
+  .search-input { flex:1; background:rgba(255,255,255,0.1); border:none; border-radius:10px; padding:12px; color:white; font-size:16px; }
+  .btn-action { background:white; color:var(--blue); border:none; border-radius:10px; padding:0 15px; font-weight:600; display:flex; align-items:center; gap:5px; white-space:nowrap; }
+
+  /* ── STATS BAR ── */
+  .stats-bar { display:flex; gap:20px; padding:10px 20px; background:white; border-bottom:1px solid #eee; font-size:13px; color:#666; }
+  .stat { display:flex; align-items:center; gap:5px; }
+
+  /* ── TABS ── */
+  .tabs { display:flex; gap:8px; padding:12px 20px; overflow-x:auto; background:var(--blue); }
+  .tab { padding:8px 16px; border-radius:20px; background:rgba(255,255,255,0.1); color:white; font-size:13px; font-weight:600; white-space:nowrap; }
+  .tab.active { background:white; color:var(--blue); }
+
+  /* ── GRID ── */
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:15px; }
-  .card { background:white; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.08); cursor:pointer; }
-  .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
-  .card-name { font-size:11px; padding:8px 4px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
-  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; border:1px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; }
-  #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:2000; overflow-y:auto; }
-  .detail-head { background:var(--blue); padding:40px 20px; text-align:center; color:white; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size:24px; }
-  .det-card { background:white; margin:15px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
-  .det-row { display:flex; align-items:center; justify-content:space-between; padding:20px 16px; border-bottom:1px solid #f0f0f0; }
-  .toggle { position:relative; width:51px; height:31px; }
+  .card { background:white; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 2px 5px rgba(0,0,0,0.05); }
+  .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#ddd; }
+  .card-name { font-size:11px; padding:8px 4px; text-align:center; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .badge { position:absolute; top:5px; right:5px; width:18px; height:18px; border-radius:50%; border:1px solid white; }
+
+  /* ── MODALS ── */
+  .modal { display:none; position:fixed; inset:0; background:var(--cream); z-index:1500; overflow-y:auto; }
+  .modal-head { background:var(--blue); color:white; padding:40px 20px; position:sticky; top:0; z-index:10; }
+  .close-x { position:absolute; right:20px; top:20px; font-size:24px; }
+  .pfp-lg { width:100px; height:100px; border-radius:50%; border:3px solid white; margin:0 auto 15px; display:block; object-fit:cover; }
+  
+  .form-section { background:white; margin:15px; border-radius:15px; padding:5px 15px; }
+  .form-row { display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f0f0f0; }
+  .form-row:last-child { border:none; }
+  .form-label { font-size:15px; font-weight:500; }
+  
+  .wristband-pill { background:var(--gold-bg); border:1px solid var(--gold); color:#967b00; padding:8px 15px; border-radius:10px; font-weight:bold; display:flex; align-items:center; gap:8px; }
+  .input-box { width:100%; background:#f5f5f5; border:none; border-radius:10px; padding:15px; margin-top:10px; font-size:16px; }
+
+  /* ── TOGGLE ── */
+  .toggle { position:relative; width:46px; height:26px; }
   .toggle input { opacity:0; width:0; height:0; }
-  .slider { position:absolute; cursor:pointer; inset:0; background:#e0dad3; border-radius:31px; transition:0.2s; }
-  .slider:before { content:''; position:absolute; width:25px; height:25px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
-  .toggle input:checked + .slider { background:var(--green); }
-  .toggle input:checked + .slider:before { transform:translateX(20px); }
-  .save-btn { width:calc(100% - 30px); margin:0 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
-  .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:white; padding:22px; border-radius:14px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#ddd; border-radius:26px; transition:0.3s; }
+  .slider:before { content:""; position:absolute; height:20px; width:20px; left:3px; bottom:3px; background:white; border-radius:50%; transition:0.3s; }
+  input:checked + .slider { background:var(--green); }
+  input:checked + .slider:before { transform:translateX(20px); }
+
+  .save-btn { background:var(--blue); color:white; border:none; width:calc(100% - 30px); margin:20px 15px; padding:18px; border-radius:12px; font-weight:bold; font-size:16px; }
+  .ev-btn { background:rgba(255,255,255,0.1); border:1px solid rgba(255,255,255,0.2); color:white; padding:20px; border-radius:12px; width:280px; margin-bottom:10px; font-family:'Instrument Serif'; font-size:22px; font-style:italic; cursor:pointer; }
 </style>
 </head>
 <body>
 
 <div id="evScreen">
-  <img src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="120" style="mix-blend-mode:screen; filter:brightness(1.2);">
-  <div id="evList" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:30px;"></div>
-  <button onclick="resetKey()" style="margin-top:30px; opacity:0.3; background:none; border:none; color:white; font-size:10px;">Reset Key</button>
+  <img src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" class="logo" style="height:80px; margin-bottom:40px;">
+  <div id="evList"></div>
 </div>
 
 <div id="app">
   <div class="header">
-    <img class="logo-img" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png">
-    <input class="search-input" id="searchInput" type="text" placeholder="Search guests..." oninput="render()">
+    <div class="nav-top">
+      <img src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" class="logo">
+      <div class="settings-icon" onclick="localStorage.removeItem('at_key'); location.reload();">⚙️</div>
+    </div>
+    <div class="title-area">
+      <h1>House of LouLou's Door</h1>
+    </div>
+    <div class="search-row">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search guests..." oninput="render()">
+      <button class="btn-action" onclick="openAddModal()"><span>+</span> Add Guest</button>
+      <button class="btn-action">🔗 NDA</button>
+    </div>
   </div>
-  <div id="main"></div>
+
+  <div class="stats-bar">
+    <div class="stat">👥 <span id="totalCount">0</span> guests</div>
+    <div class="stat" style="color:var(--green)">👤 <span id="inCount">0</span> checked in</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="setFilter('all')">Full List</div>
+    <div class="tab" onclick="setFilter('patron')">VIP Patrons</div>
+    <div class="tab" onclick="setFilter('guests')">Guests</div>
+  </div>
+
+  <div id="mainGrid" class="grid"></div>
 </div>
 
-<div id="detailView"><div id="detailContent"></div></div>
+<div id="detailModal" class="modal">
+  <div id="detailContent"></div>
+</div>
 
 <script>
-let TOKEN = (localStorage.getItem('at_key') || '').trim();
+let TOKEN = localStorage.getItem('at_key');
 const BASE = 'appY6p2HwRtDmOvAf';
-
-// Keep custom display names, map them to REAL Airtable table names
 const EVENTS = [
-  { name: "L'Atelier", table: "3/28 Door List" },
-  { name: "Do Not Disturb", table: "4/18 Door List" },
-  { name: "Obscura", table: "Obscura Premiere" }
+  {name:"L'Atelier", table:"3/28 Door List"},
+  {name:"Do Not Disturb", table:"4/18 Door List"},
+  {name:"Obscura", table:"Obscura Premiere"}
 ];
 
-let guests = [];
-let curTable = '';
-let curG = null;
-
-function esc(str='') {
-  return String(str)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;')
-    .replace(/'/g,'&#39;');
-}
-
-function resetKey() {
-  localStorage.removeItem('at_key');
-  TOKEN = '';
-  location.reload();
-}
-
-function ensureToken() {
-  if (!TOKEN) {
-    TOKEN = (prompt("Enter Airtable Secret Key (full one starting with pat...)") || '').trim();
-    if (!TOKEN) throw new Error('No Airtable token entered.');
-    localStorage.setItem('at_key', TOKEN);
-  }
-  return TOKEN;
-}
+let guests=[], curTable='', curFilter='all', curG=null;
 
 function init() {
-  document.getElementById('evList').innerHTML = EVENTS.map((e, i) =>
-    `<div class="ev-btn" onclick="pickEv(${i})">${esc(e.name)}</div>`
-  ).join('');
+  if(!TOKEN) {
+    TOKEN = prompt("Airtable Secret Key:");
+    if(TOKEN) localStorage.setItem('at_key', TOKEN);
+  }
+  document.getElementById('evList').innerHTML = EVENTS.map((e,i)=> `<div class="ev-btn" onclick="pickEv(${i})">${e.name}</div>`).join('');
 }
 
 async function pickEv(i) {
   curTable = EVENTS[i].table;
-  document.getElementById('evScreen').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+  document.getElementById('evScreen').style.display='none';
+  document.getElementById('app').style.display='block';
   await load();
 }
 
-async function api(path = '', opts = {}) {
-  const token = ensureToken();
+async function api(path, opts={}){
   const url = `https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`;
-
-  const r = await fetch(url, {
-    ...opts,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      ...(opts.headers || {})
-    }
-  });
-
-  let data = {};
-  try { data = await r.json(); } catch (_) {}
-
-  if (!r.ok) {
-    if (r.status === 401 || r.status === 403) {
-      localStorage.removeItem('at_key');
-      TOKEN = '';
-    }
-    throw new Error(data?.error?.message || `${r.status} ${r.statusText}`);
-  }
-
+  const r = await fetch(url,{ ...opts, headers:{ Authorization:`Bearer ${TOKEN}`, 'Content-Type':'application/json' }});
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.error?.message || "Sync error");
   return data;
 }
 
-async function load() {
-  const main = document.getElementById('main');
-  main.innerHTML = '<div style="text-align:center; padding-top:100px; font-style:italic; opacity:0.5;">Syncing...</div>';
-
+async function load(){
   try {
     const data = await api('?maxRecords=500');
-    guests = (data.records || []).map(r => ({
+    guests = data.records.map(r => ({
       id: r.id,
       name: r.fields['Full Name'] || 'Unknown',
-      checkedIn: !!r.fields['Checked In'],
-      photo: r.fields['Photo']?.[0]?.url || '',
-      nda: r.fields['NDA'] || 'No',
-      patron: !!r.fields['Patron']
+      in: !!r.fields['Checked In'],
+      patron: !!r.fields['Patron'],
+      nda: r.fields['NDA'] === 'Signed',
+      sti: !!r.fields['STI Tests Verified'],
+      coat: r.fields['Coat Check #'] || '',
+      phone: r.fields['Phone Check #'] || '',
+      notes: r.fields['Door Notes'] || '',
+      photo: r.fields['Photo']?.[0]?.url || ''
     }));
     render();
-  } catch (e) {
-    main.innerHTML = `<div style="text-align:center; padding:40px 20px; color:red;">
-      <b>Sync Error</b><br>${esc(e.message)}<br><small>${esc(curTable)}</small><br><br>
-      <button onclick="resetKey()" style="padding:8px 12px; border-radius:8px; border:none; background:var(--blue); color:white; cursor:pointer;">Reset Key</button>
-    </div>`;
-  }
+  } catch(e) { alert(e.message); localStorage.removeItem('at_key'); location.reload(); }
 }
 
-function render() {
+function render(){
   const q = document.getElementById('searchInput').value.toLowerCase();
-  const list = guests.filter(g => g.name.toLowerCase().includes(q));
+  let list = guests.filter(g => g.name.toLowerCase().includes(q));
+  if(curFilter === 'patron') list = list.filter(g => g.patron);
+  
+  document.getElementById('totalCount').innerText = guests.length;
+  document.getElementById('inCount').innerText = guests.filter(g=>g.in).length;
 
-  document.getElementById('main').innerHTML = `<div class="grid">` + list.map(g => `
+  document.getElementById('mainGrid').innerHTML = list.map(g => `
     <div class="card" onclick="openDetail('${g.id}')">
-      ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
-      <img class="card-photo" src="${esc(g.photo || 'https://via.placeholder.com/150?text=No+Photo')}" onerror="this.src='https://via.placeholder.com/150?text=No+Photo'">
-      <div class="card-name">${esc(g.name)}</div>
-    </div>
-  `).join('') + `</div>`;
+      ${g.in ? '<div class="badge" style="background:var(--green)"></div>' : ''}
+      <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=No+Photo'}">
+      <div class="card-name serif">${g.name}</div>
+    </div>`).join('');
 }
 
-function openDetail(id) {
+function openDetail(id){
   curG = guests.find(g => g.id === id);
-  if (!curG) return;
-
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('detailView').style.display = 'block';
+  const modal = document.getElementById('detailModal');
+  modal.style.display = 'block';
   document.getElementById('detailContent').innerHTML = `
-    <div class="detail-head">
-      <button class="back-btn" onclick="closeDetail()">‹</button>
-      <div style="font-size:32px; font-style:italic;">${esc(curG.name)}</div>
+    <div class="modal-head">
+      <div class="close-x" onclick="closeModal()">×</div>
+      <img src="${curG.photo || ''}" class="pfp-lg">
+      <h1 style="text-align:center">${curG.name}</h1>
     </div>
-    <div class="det-card">
-      <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn ? 'checked' : ''}><span class="slider"></span></label></div>
-      <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron ? 'checked' : ''}><span class="slider"></span></label></div>
-      <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda === 'Signed' ? 'checked' : ''}><span class="slider"></span></label></div>
+    
+    <div class="form-section">
+      <div class="form-row">
+        <span class="form-label">✓ Checked In:</span>
+        <label class="toggle"><input type="checkbox" id="mIn" ${curG.in?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div style="padding:15px 0">
+        <div style="font-size:12px; color:#888; margin-bottom:8px;">Wristbands</div>
+        <div class="wristband-pill">🟡 ${curG.patron ? 'Gold' : 'No wristbands assigned'}</div>
+      </div>
+      <div class="form-row">
+        <span class="form-label">👑 Patron</span>
+        <label class="toggle"><input type="checkbox" id="mPat" ${curG.patron?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div class="form-row">
+        <span class="form-label">🧪 STI Tests Verified</span>
+        <label class="toggle"><input type="checkbox" id="mSTI" ${curG.sti?'checked':''}><span class="slider"></span></label>
+      </div>
+      <div class="form-row">
+        <span class="form-label">🤫 NDA Signed:</span>
+        <label class="toggle"><input type="checkbox" id="mNDA" ${curG.nda?'checked':''}><span class="slider"></span></label>
+      </div>
     </div>
+
+    <div class="form-section">
+      <div style="padding:15px 0">
+        <div class="form-label">🧥 Coat Check #</div>
+        <input type="text" id="mCoat" class="input-box" value="${curG.coat}" placeholder="e.g. 69">
+      </div>
+      <div style="padding:15px 0">
+        <div class="form-label">📱 Phone Check #</div>
+        <input type="text" id="mPhone" class="input-box" value="${curG.phone}" placeholder="e.g. 69">
+      </div>
+    </div>
+
+    <div class="form-section">
+       <div style="padding:15px 0">
+        <div class="form-label">📝 Door Notes:</div>
+        <textarea id="mNotes" class="input-box" rows="3">${curG.notes}</textarea>
+      </div>
+    </div>
+
     <button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>
   `;
 }
 
-async function save() {
+async function save(){
   const btn = document.getElementById('saveBtn');
-  btn.textContent = 'Syncing...';
-  btn.disabled = true;
-
+  btn.innerText = 'Syncing...'; btn.disabled = true;
+  const fields = {
+    'Checked In': document.getElementById('mIn').checked,
+    'Patron': document.getElementById('mPat').checked,
+    'STI Tests Verified': document.getElementById('mSTI').checked,
+    'NDA': document.getElementById('mNDA').checked ? 'Signed' : 'No',
+    'Coat Check #': document.getElementById('mCoat').value,
+    'Phone Check #': document.getElementById('mPhone').value,
+    'Door Notes': document.getElementById('mNotes').value,
+    'Wristband': document.getElementById('mPat').checked ? 'Gold' : null
+  };
   try {
-    const isP = document.getElementById('dPat').checked;
-    const fields = {
-      'Checked In': document.getElementById('dCI').checked,
-      'Patron': isP,
-      'NDA': document.getElementById('dNDA').checked ? 'Signed' : 'No',
-      'Wristband': isP ? 'Gold' : null
-    };
-
-    await api('/' + curG.id, {
-      method: 'PATCH',
-      body: JSON.stringify({ fields })
-    });
-
-    await load();
-    closeDetail();
-  } catch (e) {
-    alert('Save failed: ' + e.message);
-  } finally {
-    btn.textContent = 'Save Updates';
-    btn.disabled = false;
-  }
+    await api('/' + curG.id, { method: 'PATCH', body: JSON.stringify({ fields }) });
+    await load(); closeModal();
+  } catch(e) { alert(e.message); btn.innerText = 'Save Updates'; btn.disabled = false; }
 }
 
-function closeDetail() {
-  document.getElementById('detailView').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
+function closeModal(){ document.getElementById('detailModal').style.display='none'; }
+function setFilter(f){ 
+  curFilter = f; 
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  render(); 
 }
 
 init();
