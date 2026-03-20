@@ -18,8 +18,12 @@
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { background:#f2ede8; font-family:'Instrument Serif',Georgia,serif; color:var(--dark); min-height:100vh; }
 
-  /* ── LOGO & THEME ── */
-  .logo-img, .ev-logo { mix-blend-mode: screen; display: block; filter: brightness(1.1); }
+  /* ── LOGO STYLING ── */
+  .logo-img, .ev-logo { 
+    mix-blend-mode: screen; 
+    display: block;
+    filter: brightness(1.1);
+  }
 
   /* ── SCREENS ── */
   #evScreen { position:fixed; inset:0; background:var(--blue); z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
@@ -41,7 +45,7 @@
   .card-name { font-size:11px; color:var(--dark); padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .in-badge { position:absolute; top:6px; right:6px; background:var(--blue); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.2); }
 
-  /* ── DETAIL ── */
+  /* ── DETAIL VIEW ── */
   #detailView { display:none; position:fixed; inset:0; background:#f2ede8; z-index:200; overflow-y:auto; }
   .detail-head { background:var(--blue); padding:20px 0 50px; text-align:center; position:relative; }
   .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:14px 18px; font-size:14px; position:absolute; left:0; top:0; font-family:sans-serif; }
@@ -67,7 +71,7 @@
 
 <div id="evScreen">
   <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="120">
-  <div style="color:rgba(255,255,255,0.4); margin:20px 0 30px; font-size:10px; letter-spacing:3px; font-family:sans-serif;">SELECT DOOR LIST</div>
+  <div style="color:rgba(255,255,255,0.4); margin:20px 0 30px; font-size:10px; letter-spacing:3px; font-family:sans-serif; text-transform:uppercase;">Select Door List</div>
   <div id="evList" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
 </div>
 
@@ -132,13 +136,13 @@ async function load(){
       id: r.id,
       name: r.fields['Full Name'] || 'Unknown',
       checkedIn: !!r.fields['Checked In'],
-      photo: r.fields['Photo'] ? r.fields['Photo'][0].url : '',
+      photo: (r.fields['Photo'] && r.fields['Photo'][0]) ? r.fields['Photo'][0].url : '',
       nda: r.fields['NDA'] || 'No',
       patron: !!r.fields['Patron']
     }));
     render();
   } else {
-    main.innerHTML = '<div style="text-align:center; padding:50px;">Error loading data. Check table name.</div>';
+    main.innerHTML = '<div style="text-align:center; padding:50px; color:red;">Sync Error: Check Table Name in Airtable.</div>';
   }
 }
 
@@ -150,7 +154,7 @@ function render(){
     list.map(g => `
       <div class="card" onclick="openDetail('${g.id}')">
         ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
-        <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=No+Photo'}">
+        <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=LL'}">
         <div class="card-name">${g.name}</div>
       </div>
     `).join('') + `</div>`;
@@ -178,7 +182,7 @@ function openDetail(id){
 
 async function save(){
   const btn = document.getElementById('saveBtn');
-  btn.textContent = 'Saving...';
+  btn.textContent = 'Syncing...';
   btn.disabled = true;
 
   const isPatron = document.getElementById('dPat').checked;
@@ -189,7 +193,7 @@ async function save(){
     'Checked In': isCheckedIn,
     'Patron': isPatron,
     'NDA': isNDA ? 'Signed' : 'No',
-    'Wristband': isPatron ? 'Gold' : null // Auto-set Gold for Patrons
+    'Wristband': isPatron ? 'Gold' : null 
   };
 
   await api('/' + curG.id, { method: 'PATCH', body: JSON.stringify({ fields }) });
