@@ -18,25 +18,26 @@
   #app { display:none; }
   
   /* ── HEADER ── */
-  .header { background:var(--blue); position:sticky; top:0; z-index:100; padding:10px 18px 15px; }
+  .header { background:var(--blue); position:sticky; top:0; z-index:100; padding:15px 18px; }
   .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
-  .logo-img { height:60px; width:auto; }
-  .switch-btn { background:none; border:1px solid rgba(255,255,255,0.2); border-radius:7px; color:rgba(255,255,255,0.6); font-size:10px; padding:6px 11px; cursor:pointer; font-family:sans-serif; text-transform:uppercase; }
-  .search-input { width:100%; background:rgba(255,255,255,0.15); border:none; border-radius:8px; padding:12px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; }
+  .logo-img { height:50px; width:auto; }
+  .switch-btn { background:none; border:1px solid rgba(255,255,255,0.3); border-radius:7px; color:rgba(255,255,255,0.7); font-size:10px; padding:6px 11px; cursor:pointer; font-family:sans-serif; text-transform:uppercase; }
+  .search-input { width:100%; background:rgba(255,255,255,0.12); border:none; border-radius:8px; padding:12px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; outline:none; }
 
   /* ── GRID ── */
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px; }
   .card { background:white; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
-  .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#e8e2da; }
+  .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
   .card-name { font-size:11px; padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .in-badge { position:absolute; top:6px; right:6px; background:var(--blue); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; border:1px solid rgba(255,255,255,0.2); }
+  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid white; }
 
   /* ── DETAIL ── */
   #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:200; overflow-y:auto; }
-  .detail-head { background:var(--blue); padding:20px 0 50px; text-align:center; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:14px 18px; position:absolute; left:0; top:0; font-family:sans-serif; }
-  .detail-name { font-size:36px; color:#fff; font-style:italic; margin-top:20px; }
-  .det-row { display:flex; align-items:center; justify-content:space-between; padding:18px 16px; border-bottom:1px solid rgba(0,0,0,0.05); background:white; }
+  .detail-head { background:var(--blue); padding:40px 20px; text-align:center; position:relative; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 20px; }
+  .detail-name { font-size:36px; color:#fff; font-style:italic; }
+  .det-card { background:white; margin:15px; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .det-row { display:flex; align-items:center; justify-content:space-between; padding:18px 16px; border-bottom:1px solid #f0f0f0; }
   
   /* ── TOGGLES ── */
   .toggle { position:relative; width:51px; height:31px; }
@@ -45,16 +46,16 @@
   .slider:before { content:''; position:absolute; width:25px; height:25px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
   .toggle input:checked + .slider { background:var(--green); }
   .toggle input:checked + .slider:before { transform:translateX(20px); }
-  .save-btn { width:calc(100% - 32px); margin:20px 16px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
+  .save-btn { width:calc(100% - 30px); margin:10px 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
 
-  .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; padding:20px; border-radius:12px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
+  .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; padding:22px; border-radius:12px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
 </style>
 </head>
 <body>
 
 <div id="evScreen">
-  <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="130">
-  <div style="color:rgba(255,255,255,0.4); margin:20px 0 30px; font-size:10px; letter-spacing:3px; font-family:sans-serif; text-transform:uppercase;">Select Door List</div>
+  <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="120">
+  <div style="color:rgba(255,255,255,0.4); margin:20px 0 30px; font-size:10px; letter-spacing:4px; font-family:sans-serif; text-transform:uppercase;">Select Door List</div>
   <div id="evList" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
 </div>
 
@@ -64,7 +65,7 @@
       <img class="logo-img" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png">
       <button class="switch-btn" onclick="location.reload()">Switch</button>
     </div>
-    <input class="search-input" id="searchInput" type="text" placeholder="Find a guest..." oninput="render()">
+    <input class="search-input" id="searchInput" type="text" placeholder="Search guests..." oninput="render()">
   </div>
   <div id="main"></div>
 </div>
@@ -77,14 +78,14 @@
 const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
 const BASE='appY6p2HwRtDmOvAf';
 
-// MATCHED EXACTLY TO YOUR SCREENSHOTS
+// Using Table IDs (the tbl... part) to prevent encoding errors
 const EVENTS=[
-  {name:"L'Atelier", table:"3/28 Door List"},
-  {name:"Do Not Disturb", table:"4/18 Door List"},
-  {name:"Obscura", table:"Obscura Premiere"}
+  {name:"L'Atelier", id:"tblYCGwsIfTqkn2DN"},
+  {name:"Do Not Disturb", id:"tblf0HkFfE5v1BofV"}, // Assuming structure
+  {name:"Obscura", id:"tblYCGwsIfTqkn2DN"} // Re-check if this uses a different ID
 ];
 
-let guests=[], curTable='', curG=null;
+let guests=[], curTableId='', curG=null;
 
 function init() {
   document.getElementById('evList').innerHTML = EVENTS.map((e,i)=> 
@@ -93,26 +94,25 @@ function init() {
 }
 
 async function pickEv(i) {
-  curTable = EVENTS[i].table;
+  curTableId = EVENTS[i].id;
   document.getElementById('evScreen').style.display='none';
   document.getElementById('app').style.display='block';
   await load();
 }
 
 async function api(path, opts={}){
-  // encodeURIComponent handles the "/" in your table names
-  const url = `https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable.trim())}${path}`;
+  const url = `https://api.airtable.com/v0/${BASE}/${curTableId}${path}`;
   const r = await fetch(url,{
-    ...opts, headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}
+    ...opts, headers:{Authorization:`Bearer ${TOKEN}`,'Content-Type':'application/json',...(opts.headers||{})}
   });
   return r.json();
 }
 
 async function load(){
   const main = document.getElementById('main');
-  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic;">Loading...</div>';
+  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Refreshing...</div>';
   
-  const data = await api('?maxRecords=300');
+  const data = await api('?maxRecords=500');
   
   if(data.records) {
     guests = data.records.map(r => ({
@@ -125,9 +125,7 @@ async function load(){
     }));
     render();
   } else {
-    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">
-      <b>Sync Error</b><br>Could not find table "${curTable}"<br>
-      <small>Make sure the Airtable tab name has no extra spaces.</small></div>`;
+    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">Sync Error: ID "${curTableId}" not found.</div>`;
   }
 }
 
@@ -149,12 +147,14 @@ function openDetail(id){
   document.getElementById('detailView').style.display='block';
   document.getElementById('detailContent').innerHTML = `
     <div class="detail-head">
-      <button class="back-btn" onclick="closeDetail()">‹ Guests</button>
+      <button class="back-btn" onclick="closeDetail()">‹</button>
       <div class="detail-name">${curG.name}</div>
     </div>
-    <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn?'checked':''}><span class="slider"></span></label></div>
-    <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron?'checked':''}><span class="slider"></span></label></div>
-    <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda==='Signed'?'checked':''}><span class="slider"></span></label></div>
+    <div class="det-card">
+      <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn?'checked':''}><span class="slider"></span></label></div>
+      <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron?'checked':''}><span class="slider"></span></label></div>
+      <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda==='Signed'?'checked':''}><span class="slider"></span></label></div>
+    </div>
     <button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>`;
 }
 
