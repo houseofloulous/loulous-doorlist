@@ -48,6 +48,7 @@
   .toggle input:checked + .slider:before { transform:translateX(20px); }
   .save-btn { width:calc(100% - 30px); margin:10px 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
 
+  /* ── EVENT LIST ── */
   .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; padding:22px; border-radius:12px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
 </style>
 </head>
@@ -75,14 +76,14 @@
 </div>
 
 <script>
+// IMPORTANT: Triple check that this TOKEN is correct and has data.records:read/write permissions
 const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
 const BASE='appY6p2HwRtDmOvAf';
 
-// IDs triple checked against your Airtable links
 const EVENTS=[
   {name:"L'Atelier", id:"tblYCGwsIfTqkn2DN"},
   {name:"Do Not Disturb", id:"tblVXGFGF0Z3twHHc"},
-  {name:"Obscura", id:"tbliuqZIYOAauYsDW"} 
+  {name:"Obscura", id:"tbliuqZIYOAauYsDW"}
 ];
 
 let guests=[], curTableId='', curG=null;
@@ -129,8 +130,11 @@ async function load(){
     }));
     render();
   } else {
+    // This will display if the 401 error occurs again
+    const errorMsg = data.error ? data.error.message : "Authentication Error (401)";
     main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">
-      <b>Sync Error</b><br>Table ID not found: ${curTableId}
+      <b>Sync Error</b><br>${errorMsg}<br>
+      <small>Check your Personal Access Token permissions.</small>
     </div>`;
   }
 }
