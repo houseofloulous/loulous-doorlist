@@ -8,7 +8,7 @@
 <style>
   :root { --blue: #162B3B; --cream: #f5f0eb; --green: #34c759; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { background:var(--cream); font-family:'Instrument Serif',serif; color:#1a1a1a; min-height:100vh; }
+  body { background:var(--cream); font-family:'Instrument Serif',serif; color:#1a1a1a; min-height:100vh; overflow-x:hidden; }
 
   /* ── LOGO ── */
   .logo-img, .ev-logo { mix-blend-mode: screen; display: block; filter: brightness(1.2); }
@@ -31,10 +31,10 @@
   .card-name { font-size:11px; padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid white; }
 
-  /* ── DETAIL ── */
-  #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:200; overflow-y:auto; }
+  /* ── DETAIL VIEW ── */
+  #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:2000; overflow-y:auto; }
   .detail-head { background:var(--blue); padding:40px 20px; text-align:center; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 20px; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 24px; }
   .detail-name { font-size:36px; color:#fff; font-style:italic; }
   .det-card { background:white; margin:15px; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
   .det-row { display:flex; align-items:center; justify-content:space-between; padding:18px 16px; border-bottom:1px solid #f0f0f0; }
@@ -78,11 +78,11 @@
 const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
 const BASE='appY6p2HwRtDmOvAf';
 
-// Using Table IDs (the tbl... part) to prevent encoding errors
+// IDs triple checked against your Airtable links
 const EVENTS=[
   {name:"L'Atelier", id:"tblYCGwsIfTqkn2DN"},
-  {name:"Do Not Disturb", id:"tblf0HkFfE5v1BofV"}, // Assuming structure
-  {name:"Obscura", id:"tblYCGwsIfTqkn2DN"} // Re-check if this uses a different ID
+  {name:"Do Not Disturb", id:"tblVXGFGF0Z3twHHc"},
+  {name:"Obscura", id:"tbliuqZIYOAauYsDW"} 
 ];
 
 let guests=[], curTableId='', curG=null;
@@ -103,16 +103,20 @@ async function pickEv(i) {
 async function api(path, opts={}){
   const url = `https://api.airtable.com/v0/${BASE}/${curTableId}${path}`;
   const r = await fetch(url,{
-    ...opts, headers:{Authorization:`Bearer ${TOKEN}`,'Content-Type':'application/json',...(opts.headers||{})}
+    ...opts, headers:{
+      Authorization:`Bearer ${TOKEN}`,
+      'Content-Type':'application/json',
+      ...(opts.headers||{})
+    }
   });
   return r.json();
 }
 
 async function load(){
   const main = document.getElementById('main');
-  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Refreshing...</div>';
+  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Connecting to Airtable...</div>';
   
-  const data = await api('?maxRecords=500');
+  const data = await api('?maxRecords=500&view=Grid%20view');
   
   if(data.records) {
     guests = data.records.map(r => ({
@@ -125,7 +129,9 @@ async function load(){
     }));
     render();
   } else {
-    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">Sync Error: ID "${curTableId}" not found.</div>`;
+    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;">
+      <b>Sync Error</b><br>Table ID not found: ${curTableId}
+    </div>`;
   }
 }
 
@@ -136,7 +142,7 @@ function render(){
     list.map(g => `
       <div class="card" onclick="openDetail('${g.id}')">
         ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
-        <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=LL'}">
+        <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=No+Photo'}">
         <div class="card-name">${g.name}</div>
       </div>`).join('') + `</div>`;
 }
