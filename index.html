@@ -3,62 +3,47 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>House of LouLou's — Door</title>
+<title>House of LouLou's — Door List</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
   :root { --blue: #162B3B; --cream: #f5f0eb; --green: #34c759; }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-  body { background:var(--cream); font-family:'Instrument Serif',serif; color:#1a1a1a; min-height:100vh; overflow-x:hidden; }
-
-  /* ── LOGO ── */
-  .logo-img, .ev-logo { mix-blend-mode: screen; display: block; filter: brightness(1.2); }
-
-  /* ── SCREENS ── */
+  body { background:var(--cream); font-family:'Instrument Serif',serif; color:#1a1a1a; min-height:100vh; }
+  .logo-img, .ev-logo { mix-blend-mode: screen; display: block; filter: brightness(1.2); margin: 0 auto; }
   #evScreen { position:fixed; inset:0; background:var(--blue); z-index:1000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
   #app { display:none; }
-  
-  /* ── HEADER ── */
   .header { background:var(--blue); position:sticky; top:0; z-index:100; padding:15px 18px; }
-  .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; }
+  .header-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:15px; }
   .logo-img { height:50px; width:auto; }
-  .switch-btn { background:none; border:1px solid rgba(255,255,255,0.3); border-radius:7px; color:rgba(255,255,255,0.7); font-size:10px; padding:6px 11px; cursor:pointer; font-family:sans-serif; text-transform:uppercase; }
-  .search-input { width:100%; background:rgba(255,255,255,0.12); border:none; border-radius:8px; padding:12px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; outline:none; }
-
-  /* ── GRID ── */
-  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px; }
-  .card { background:white; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
+  .switch-btn { background:none; border:1px solid rgba(255,255,255,0.3); border-radius:7px; color:rgba(255,255,255,0.7); font-size:10px; padding:6px 12px; cursor:pointer; font-family:sans-serif; text-transform:uppercase; }
+  .search-input { width:100%; background:rgba(255,255,255,0.12); border:none; border-radius:8px; padding:12px 15px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; outline:none; }
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:15px; }
+  .card { background:white; border-radius:12px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
   .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
-  .card-name { font-size:11px; padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
-  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-
-  /* ── DETAIL ── */
+  .card-name { font-size:11px; padding:8px 4px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
+  .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:22px; height:22px; display:flex; align-items:center; justify-content:center; font-size:12px; color:#fff; border:1px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
   #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:2000; overflow-y:auto; }
   .detail-head { background:var(--blue); padding:40px 20px; text-align:center; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size:24px; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 24px; }
   .detail-name { font-size:36px; color:#fff; font-style:italic; }
-  .det-card { background:white; margin:15px; border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  .det-row { display:flex; align-items:center; justify-content:space-between; padding:18px 16px; border-bottom:1px solid #f0f0f0; }
-  
-  /* ── TOGGLES ── */
+  .det-card { background:white; margin:15px; border-radius:14px; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
+  .det-row { display:flex; align-items:center; justify-content:space-between; padding:20px 16px; border-bottom:1px solid #f0f0f0; }
   .toggle { position:relative; width:51px; height:31px; }
   .toggle input { opacity:0; width:0; height:0; }
   .slider { position:absolute; cursor:pointer; inset:0; background:#e0dad3; border-radius:31px; transition:0.2s; }
   .slider:before { content:''; position:absolute; width:25px; height:25px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
   .toggle input:checked + .slider { background:var(--green); }
   .toggle input:checked + .slider:before { transform:translateX(20px); }
-  .save-btn { width:calc(100% - 30px); margin:10px 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
-
-  .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.2); color:white; padding:22px; border-radius:12px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
+  .save-btn { width:calc(100% - 30px); margin:0 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
+  .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:white; padding:22px; border-radius:14px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
 </style>
 </head>
 <body>
-
 <div id="evScreen">
   <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="120">
   <div style="color:rgba(255,255,255,0.4); margin:20px 0 30px; font-size:10px; letter-spacing:4px; font-family:sans-serif; text-transform:uppercase;">Select Door List</div>
   <div id="evList" style="width:100%; display:flex; flex-direction:column; align-items:center;"></div>
 </div>
-
 <div id="app">
   <div class="header">
     <div class="header-top">
@@ -69,119 +54,61 @@
   </div>
   <div id="main"></div>
 </div>
-
-<div id="detailView">
-  <div id="detailContent"></div>
-</div>
-
+<div id="detailView"><div id="detailContent"></div></div>
 <script>
-// PASTE YOUR NEW TOKEN HERE
+// Token and Base ID triple-checked from previous context
 const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
 const BASE='appY6p2HwRtDmOvAf';
-
 const EVENTS=[
   {name:"L'Atelier", id:"tblYCGwsIfTqkn2DN"},
   {name:"Do Not Disturb", id:"tblVXGFGF0Z3twHHc"},
   {name:"Obscura", id:"tbliuqZIYOAauYsDW"}
 ];
-
 let guests=[], curTableId='', curG=null;
-
-function init() {
-  document.getElementById('evList').innerHTML = EVENTS.map((e,i)=> 
-    `<div class="ev-btn" onclick="pickEv(${i})">${e.name}</div>`
-  ).join('');
-}
-
-async function pickEv(i) {
-  curTableId = EVENTS[i].id;
-  document.getElementById('evScreen').style.display='none';
-  document.getElementById('app').style.display='block';
-  await load();
-}
-
+function init() { document.getElementById('evList').innerHTML = EVENTS.map((e,i)=> `<div class="ev-btn" onclick="pickEv(${i})">${e.name}</div>`).join(''); }
+async function pickEv(i) { curTableId = EVENTS[i].id; document.getElementById('evScreen').style.display='none'; document.getElementById('app').style.display='block'; await load(); }
 async function api(path, opts={}){
   const url = `https://api.airtable.com/v0/${BASE}/${curTableId}${path}`;
-  const r = await fetch(url,{
-    ...opts, headers:{
-      Authorization:`Bearer ${TOKEN}`,
-      'Content-Type':'application/json',
-      ...(opts.headers||{})
-    }
-  });
+  const r = await fetch(url,{ ...opts, headers:{ Authorization:`Bearer ${TOKEN}`, 'Content-Type':'application/json', ...(opts.headers||{}) } });
   return r.json();
 }
-
 async function load(){
-  const main = document.getElementById('main');
-  main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Connecting...</div>';
-  
-  const data = await api('?maxRecords=500&view=Grid%20view');
-  
+  const main = document.getElementById('main'); main.innerHTML = '<div style="text-align:center; padding-top:100px; color:var(--blue); font-style:italic; opacity:0.5;">Connecting...</div>';
+  const data = await api('?maxRecords=500');
   if(data.records) {
-    guests = data.records.map(r => ({
-      id: r.id,
-      name: r.fields['Full Name'] || 'Unknown',
-      checkedIn: !!r.fields['Checked In'],
-      photo: (r.fields['Photo'] && r.fields['Photo'][0]) ? r.fields['Photo'][0].url : '',
-      nda: r.fields['NDA'] || 'No',
-      patron: !!r.fields['Patron']
-    }));
+    guests = data.records.map(r => ({ id: r.id, name: r.fields['Full Name'] || 'Unknown', checkedIn: !!r.fields['Checked In'], photo: (r.fields['Photo'] && r.fields['Photo'][0]) ? r.fields['Photo'][0].url : '', nda: r.fields['NDA'] || 'No', patron: !!r.fields['Patron'] }));
     render();
-  } else {
-    const msg = data.error ? data.error.message : "Auth Error (401)";
-    main.innerHTML = `<div style="text-align:center; padding:50px; color:red;"><b>Sync Error</b><br>${msg}</div>`;
-  }
+  } else { main.innerHTML = `<div style="text-align:center; padding:50px; color:red;"><b>Sync Error</b><br>Check permissions or ID: ${curTableId}</div>`; }
 }
-
 function render(){
   const q = document.getElementById('searchInput').value.toLowerCase();
   const list = guests.filter(g => g.name.toLowerCase().includes(q));
-  document.getElementById('main').innerHTML = `<div class="grid">` + 
-    list.map(g => `
-      <div class="card" onclick="openDetail('${g.id}')">
-        ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
-        <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=No+Photo'}">
-        <div class="card-name">${g.name}</div>
-      </div>`).join('') + `</div>`;
+  document.getElementById('main').innerHTML = `<div class="grid">` + list.map(g => `
+    <div class="card" onclick="openDetail('${g.id}')">
+      ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
+      <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=No+Photo'}">
+      <div class="card-name">${g.name}</div>
+    </div>`).join('') + `</div>`;
 }
-
 function openDetail(id){
   curG = guests.find(g => g.id === id);
-  document.getElementById('app').style.display='none';
-  document.getElementById('detailView').style.display='block';
+  document.getElementById('app').style.display='none'; document.getElementById('detailView').style.display='block';
   document.getElementById('detailContent').innerHTML = `
-    <div class="detail-head">
-      <button class="back-btn" onclick="closeDetail()">‹</button>
-      <div class="detail-name">${curG.name}</div>
-    </div>
+    <div class="detail-head"><button class="back-btn" onclick="closeDetail()">‹</button><div class="detail-name">${curG.name}</div></div>
     <div class="det-card">
       <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn?'checked':''}><span class="slider"></span></label></div>
       <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron?'checked':''}><span class="slider"></span></label></div>
       <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda==='Signed'?'checked':''}><span class="slider"></span></label></div>
-    </div>
-    <button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>`;
+    </div><button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>`;
 }
-
 async function save(){
-  const btn = document.getElementById('saveBtn');
-  btn.textContent = 'Syncing...'; btn.disabled = true;
+  const btn = document.getElementById('saveBtn'); btn.textContent = 'Syncing...'; btn.disabled = true;
   const isP = document.getElementById('dPat').checked;
-  const fields = {
-    'Checked In': document.getElementById('dCI').checked,
-    'Patron': isP,
-    'NDA': document.getElementById('dNDA').checked ? 'Signed' : 'No',
-    'Wristband': isP ? 'Gold' : null 
-  };
+  const fields = { 'Checked In': document.getElementById('dCI').checked, 'Patron': isP, 'NDA': document.getElementById('dNDA').checked ? 'Signed' : 'No', 'Wristband': isP ? 'Gold' : null };
   await api('/' + curG.id, { method: 'PATCH', body: JSON.stringify({ fields }) });
   await load(); closeDetail();
 }
-
-function closeDetail(){
-  document.getElementById('detailView').style.display='none';
-  document.getElementById('app').style.display='block';
-}
-
+function closeDetail(){ document.getElementById('detailView').style.display='none'; document.getElementById('app').style.display='block'; }
 init();
 </script>
 </body>
