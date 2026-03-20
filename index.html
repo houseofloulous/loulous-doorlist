@@ -15,13 +15,13 @@
   .header { background:var(--blue); position:sticky; top:0; z-index:100; padding:15px; text-align:center; }
   .search-input { width:100%; background:rgba(255,255,255,0.12); border:none; border-radius:8px; padding:12px; font-size:16px; color:#fff; font-family:'Instrument Serif',serif; font-style:italic; outline:none; margin-top:10px; }
   .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:15px; }
-  .card { background:white; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.08); }
+  .card { background:white; border-radius:12px; overflow:hidden; position:relative; box-shadow:0 2px 6px rgba(0,0,0,0.08); cursor:pointer; }
   .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#eee; }
   .card-name { font-size:11px; padding:8px 4px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:600; }
   .in-badge { position:absolute; top:6px; right:6px; background:var(--green); border-radius:50%; width:20px; height:20px; border:1px solid white; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; }
   #detailView { display:none; position:fixed; inset:0; background:var(--cream); z-index:2000; overflow-y:auto; }
   .detail-head { background:var(--blue); padding:40px 20px; text-align:center; color:white; position:relative; }
-  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size: 24px; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:20px; position:absolute; left:0; top:0; font-size:24px; }
   .det-card { background:white; margin:15px; border-radius:14px; box-shadow:0 4px 12px rgba(0,0,0,0.05); }
   .det-row { display:flex; align-items:center; justify-content:space-between; padding:20px 16px; border-bottom:1px solid #f0f0f0; }
   .toggle { position:relative; width:51px; height:31px; }
@@ -31,7 +31,6 @@
   .toggle input:checked + .slider { background:var(--green); }
   .toggle input:checked + .slider:before { transform:translateX(20px); }
   .save-btn { width:calc(100% - 30px); margin:0 15px 30px; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:20px; cursor:pointer; font-weight:bold; font-size:18px; }
-  .save-btn:disabled { opacity:0.5; cursor:not-allowed; }
   .ev-btn { background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); color:white; padding:22px; border-radius:14px; width:100%; max-width:300px; margin-bottom:12px; cursor:pointer; text-align:center; font-size:22px; font-style:italic; }
 </style>
 </head>
@@ -40,7 +39,7 @@
 <div id="evScreen">
   <img src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" height="120" style="mix-blend-mode:screen; filter:brightness(1.2);">
   <div id="evList" style="width:100%; display:flex; flex-direction:column; align-items:center; margin-top:30px;"></div>
-  <button onclick="localStorage.removeItem('at_key'); location.reload();" style="margin-top:30px; opacity:0.3; background:none; border:none; color:white; font-size:10px;">Reset Key</button>
+  <button onclick="resetKey()" style="margin-top:30px; opacity:0.3; background:none; border:none; color:white; font-size:10px;">Reset Key</button>
 </div>
 
 <div id="app">
@@ -54,124 +53,172 @@
 <div id="detailView"><div id="detailContent"></div></div>
 
 <script>
-let TOKEN = localStorage.getItem('at_key');
+let TOKEN = (localStorage.getItem('at_key') || '').trim();
 const BASE = 'appY6p2HwRtDmOvAf';
 
-// Fixed: Using Table Names to be dynamic and URL-encoded
+// Keep custom display names, map them to REAL Airtable table names
 const EVENTS = [
-  {name:"L'Atelier", tableName:"3/28 Door List"},
-  {name:"Do Not Disturb", tableName:"4/18 Door List"},
-  {name:"Obscura", tableName:"Obscura Premiere"}
+  { name: "L'Atelier", table: "3/28 Door List" },
+  { name: "Do Not Disturb", table: "4/18 Door List" },
+  { name: "Obscura", table: "Obscura Premiere" }
 ];
 
-let guests=[], curTable='', curG=null;
+let guests = [];
+let curTable = '';
+let curG = null;
+
+function esc(str='') {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function resetKey() {
+  localStorage.removeItem('at_key');
+  TOKEN = '';
+  location.reload();
+}
+
+function ensureToken() {
+  if (!TOKEN) {
+    TOKEN = (prompt("Enter Airtable Secret Key (full one starting with pat...)") || '').trim();
+    if (!TOKEN) throw new Error('No Airtable token entered.');
+    localStorage.setItem('at_key', TOKEN);
+  }
+  return TOKEN;
+}
 
 function init() {
-  if (!TOKEN) {
-    TOKEN = prompt("Enter Airtable Secret Key:");
-    if (TOKEN) localStorage.setItem('at_key', TOKEN);
-  }
-  document.getElementById('evList').innerHTML = EVENTS.map((e,i)=> `<div class="ev-btn" onclick="pickEv(${i})">${e.name}</div>`).join('');
+  document.getElementById('evList').innerHTML = EVENTS.map((e, i) =>
+    `<div class="ev-btn" onclick="pickEv(${i})">${esc(e.name)}</div>`
+  ).join('');
 }
 
 async function pickEv(i) {
-  curTable = EVENTS[i].tableName;
-  document.getElementById('evScreen').style.display='none';
-  document.getElementById('app').style.display='block';
+  curTable = EVENTS[i].table;
+  document.getElementById('evScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
   await load();
 }
 
-// Improved: Added strict error handling & r.ok check
-async function api(path, opts={}){
+async function api(path = '', opts = {}) {
+  const token = ensureToken();
   const url = `https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`;
-  const r = await fetch(url,{ 
-    ...opts, 
-    headers:{ 
-      Authorization:`Bearer ${TOKEN}`, 
-      'Content-Type':'application/json', 
-      ...(opts.headers||{}) 
-    } 
+
+  const r = await fetch(url, {
+    ...opts,
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      ...(opts.headers || {})
+    }
   });
-  
-  const data = await r.json();
-  if (!r.ok) throw new Error(data.error?.message || "Airtable API Error");
+
+  let data = {};
+  try { data = await r.json(); } catch (_) {}
+
+  if (!r.ok) {
+    if (r.status === 401 || r.status === 403) {
+      localStorage.removeItem('at_key');
+      TOKEN = '';
+    }
+    throw new Error(data?.error?.message || `${r.status} ${r.statusText}`);
+  }
+
   return data;
 }
 
-async function load(){
+async function load() {
   const main = document.getElementById('main');
   main.innerHTML = '<div style="text-align:center; padding-top:100px; font-style:italic; opacity:0.5;">Syncing...</div>';
+
   try {
     const data = await api('?maxRecords=500');
-    guests = data.records.map(r => ({ 
-      id: r.id, 
-      name: r.fields['Full Name'] || 'Unknown', 
-      checkedIn: !!r.fields['Checked In'], 
-      photo: r.fields['Photo']?.[0]?.url || '', 
-      nda: r.fields['NDA'] || 'No', 
-      patron: !!r.fields['Patron'] 
+    guests = (data.records || []).map(r => ({
+      id: r.id,
+      name: r.fields['Full Name'] || 'Unknown',
+      checkedIn: !!r.fields['Checked In'],
+      photo: r.fields['Photo']?.[0]?.url || '',
+      nda: r.fields['NDA'] || 'No',
+      patron: !!r.fields['Patron']
     }));
     render();
-  } catch (err) {
-    alert("Sync Failed: " + err.message);
-    localStorage.removeItem('at_key');
-    location.reload();
+  } catch (e) {
+    main.innerHTML = `<div style="text-align:center; padding:40px 20px; color:red;">
+      <b>Sync Error</b><br>${esc(e.message)}<br><small>${esc(curTable)}</small><br><br>
+      <button onclick="resetKey()" style="padding:8px 12px; border-radius:8px; border:none; background:var(--blue); color:white; cursor:pointer;">Reset Key</button>
+    </div>`;
   }
 }
 
-function render(){
+function render() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const list = guests.filter(g => g.name.toLowerCase().includes(q));
+
   document.getElementById('main').innerHTML = `<div class="grid">` + list.map(g => `
     <div class="card" onclick="openDetail('${g.id}')">
       ${g.checkedIn ? '<div class="in-badge">✓</div>' : ''}
-      <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150'}">
-      <div class="card-name">${g.name}</div>
-    </div>`).join('') + `</div>`;
+      <img class="card-photo" src="${esc(g.photo || 'https://via.placeholder.com/150?text=No+Photo')}" onerror="this.src='https://via.placeholder.com/150?text=No+Photo'">
+      <div class="card-name">${esc(g.name)}</div>
+    </div>
+  `).join('') + `</div>`;
 }
 
-function openDetail(id){
+function openDetail(id) {
   curG = guests.find(g => g.id === id);
-  document.getElementById('app').style.display='none';
-  document.getElementById('detailView').style.display='block';
+  if (!curG) return;
+
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('detailView').style.display = 'block';
   document.getElementById('detailContent').innerHTML = `
-    <div class="detail-head"><button class="back-btn" onclick="closeDetail()">‹</button><div style="font-size:32px; font-style:italic;">${curG.name}</div></div>
+    <div class="detail-head">
+      <button class="back-btn" onclick="closeDetail()">‹</button>
+      <div style="font-size:32px; font-style:italic;">${esc(curG.name)}</div>
+    </div>
     <div class="det-card">
-      <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn?'checked':''}><span class="slider"></span></label></div>
-      <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron?'checked':''}><span class="slider"></span></label></div>
-      <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda==='Signed'?'checked':''}><span class="slider"></span></label></div>
-    </div><button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>`;
+      <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn ? 'checked' : ''}><span class="slider"></span></label></div>
+      <div class="det-row">Patron <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron ? 'checked' : ''}><span class="slider"></span></label></div>
+      <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda === 'Signed' ? 'checked' : ''}><span class="slider"></span></label></div>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="save()">Save Updates</button>
+  `;
 }
 
-// Fixed: Wrapped in try/catch/finally to prevent button from getting stuck
-async function save(){
+async function save() {
   const btn = document.getElementById('saveBtn');
   btn.textContent = 'Syncing...';
   btn.disabled = true;
 
-  const isP = document.getElementById('dPat').checked;
-  const fields = { 
-    'Checked In': document.getElementById('dCI').checked, 
-    'Patron': isP, 
-    'NDA': document.getElementById('dNDA').checked ? 'Signed' : 'No', 
-    'Wristband': isP ? 'Gold' : null 
-  };
-
   try {
-    await api('/' + curG.id, { method: 'PATCH', body: JSON.stringify({ fields }) });
+    const isP = document.getElementById('dPat').checked;
+    const fields = {
+      'Checked In': document.getElementById('dCI').checked,
+      'Patron': isP,
+      'NDA': document.getElementById('dNDA').checked ? 'Signed' : 'No',
+      'Wristband': isP ? 'Gold' : null
+    };
+
+    await api('/' + curG.id, {
+      method: 'PATCH',
+      body: JSON.stringify({ fields })
+    });
+
     await load();
     closeDetail();
-  } catch (err) {
-    alert("Save Failed: " + err.message);
+  } catch (e) {
+    alert('Save failed: ' + e.message);
   } finally {
     btn.textContent = 'Save Updates';
     btn.disabled = false;
   }
 }
 
-function closeDetail(){ 
-  document.getElementById('detailView').style.display='none'; 
-  document.getElementById('app').style.display='block'; 
+function closeDetail() {
+  document.getElementById('detailView').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
 }
 
 init();
