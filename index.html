@@ -350,9 +350,9 @@ function render(){
   const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
   let list=guests;
   if(curTab==='patron') list=list.filter(g=>g.patron);
-  else if(curTab==='guest') list=list.filter(g=>g.list==='Guest');
-  else if(curTab==='working') list=list.filter(g=>g.list==='Working');
-  else if(curTab==='table') list=list.filter(g=>g.list==='Table');
+  else if(curTab==='guest') list=list.filter(g=>(g.list||'').toLowerCase()==='guest');
+  else if(curTab==='working') list=list.filter(g=>(g.list||'').toLowerCase()==='working');
+  else if(curTab==='table') list=list.filter(g=>(g.list||'').toLowerCase()==='table');
   if(q) list=list.filter(g=>g.name.toLowerCase().includes(q)||g.phone.includes(q));
   const chk=list.filter(g=>g.checkedIn).length;
   document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>`;
