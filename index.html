@@ -13,32 +13,214 @@
     --warm: #8c7b6b;
     --accent: #c9a96e;
     --green: #34c759;
-    --red: #c0392b;
-    --border: rgba(0,0,0,0.08);
     --card: #ffffff;
   }
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   body { background:#f2ede8; font-family:'Instrument Serif',Georgia,serif; color:var(--dark); min-height:100vh; }
 
+  /* ── LOGO STYLING ── */
+  .logo-img, .ev-logo { 
+    /* This filter makes the black background of your PNG transparent */
+    mix-blend-mode: screen; 
+  }
+
   /* ── EVENT SELECTOR ── */
   .ev-screen { position:fixed; inset:0; background:var(--blue); z-index:400; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 28px; }
-  .ev-logo { height:46px; width:auto; margin-bottom:8px; }
-  .ev-sub { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:44px; }
+  .ev-logo { height:120px; width:auto; margin-bottom:10px; }
+  .ev-sub { font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:rgba(255,255,255,0.4); margin-bottom:44px; font-family:sans-serif; }
   .ev-list { width:100%; max-width:320px; display:flex; flex-direction:column; gap:10px; }
-  .ev-item { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:18px 20px; cursor:pointer; transition:all 0.18s; }
-  .ev-item:active { background:rgba(255,255,255,0.1); border-color:var(--accent); }
-  .ev-name { font-family:'Instrument Serif',serif; font-size:20px; color:#fff; font-style:italic; }
-  .ev-date { font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:rgba(255,255,255,0.45); margin-top:4px; font-family:sans-serif; }
+  .ev-item { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:12px; padding:18px 20px; cursor:pointer; }
+  .ev-name { font-size:22px; color:#fff; font-style:italic; }
 
   /* ── MAIN APP ── */
   #app { display:none; }
   .list-header { background:var(--blue); position:sticky; top:0; z-index:100; }
-  .list-top { display:flex; align-items:center; justify-content:space-between; padding:14px 18px 10px; }
-  .logo-img { height:28px; width:auto; }
+  .list-top { display:flex; align-items:center; justify-content:space-between; padding:10px 18px; }
+  .logo-img { height:55px; width:auto; }
   .switch-btn { background:none; border:1px solid rgba(255,255,255,0.2); border-radius:7px; color:rgba(255,255,255,0.6); font-size:10px; letter-spacing:0.1em; padding:6px 11px; cursor:pointer; font-family:sans-serif; }
   .toolbar { display:flex; gap:8px; padding:0 16px 12px; }
   .search-wrap { flex:1; position:relative; }
-  .search-input { width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 12px 9px 32px; font-size:13px; color:#fff; outline:none; font-family:'Instrument Serif',serif; font-style:italic; }
-  .s-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.3); font-size:13px; pointer-events:none; }
-  .hbtn { background:none; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 13px; font-size:11px; letter-spacing:0.06em; color:#fff; cursor:pointer; white-space:nowrap; font-family:sans-serif; }
-  .hbtn.
+  .search-input { width:100%; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:9px 12px 9px 32px; font-size:14px; color:#fff; outline:none; font-family:'Instrument Serif',serif; font-style:italic; }
+  .s-icon { position:absolute; left:11px; top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.3); font-size:13px; }
+  .hbtn { background:none; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 13px; font-size:11px; color:#fff; cursor:pointer; font-family:sans-serif; }
+  
+  /* ── GRID ── */
+  .grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; padding:14px; }
+  .card { background:var(--card); border-radius:10px; overflow:hidden; cursor:pointer; position:relative; box-shadow:0 1px 4px rgba(0,0,0,0.07); }
+  .card-photo { width:100%; aspect-ratio:1; object-fit:cover; display:block; background:#e8e2da; }
+  .card-name { font-size:11px; color:var(--dark); padding:8px; text-align:center; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .in-badge { position:absolute; top:6px; right:6px; background:var(--blue); border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; border:1px solid rgba(255,255,255,0.3); }
+
+  /* ── DETAIL VIEW ── */
+  #detailView { display:none; position:fixed; inset:0; background:#f2ede8; z-index:200; overflow-y:auto; }
+  .detail-head { background:var(--blue); padding:20px 0 40px; text-align:center; position:relative; }
+  .back-btn { background:none; border:none; color:#fff; cursor:pointer; padding:14px 18px; font-size:14px; position:absolute; left:0; top:0; font-family:sans-serif; }
+  .detail-name { font-size:32px; color:#fff; font-style:italic; margin-top:20px; }
+  .det-cards { padding:16px; display:flex; flex-direction:column; gap:12px; }
+  .det-card { background:var(--card); border-radius:14px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
+  .det-row { display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid rgba(0,0,0,0.05); }
+  .wb-pill { display:inline-flex; align-items:center; border-radius:8px; padding:8px 14px; font-size:13px; font-weight:bold; letter-spacing:0.05em; }
+  .wb-pill.gold { background:#fffdf0; border:1.5px solid #c9a96e; color:#8a6820; }
+  .wb-pill.black { background:#1a1a1a; color:#fff; }
+
+  /* ── TOGGLES ── */
+  .toggle { position:relative; width:51px; height:31px; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .slider { position:absolute; cursor:pointer; inset:0; background:#e0dad3; border-radius:31px; transition:0.2s; }
+  .slider:before { content:''; position:absolute; width:25px; height:25px; left:3px; bottom:3px; background:#fff; border-radius:50%; transition:0.2s; }
+  .toggle input:checked + .slider { background:var(--green); }
+  .toggle input:checked + .slider:before { transform:translateX(20px); }
+  .save-btn { width:100%; background:var(--blue); color:#fff; border:none; border-radius:12px; padding:16px; cursor:pointer; font-weight:bold; font-size:16px; margin-top:10px; }
+</style>
+</head>
+<body>
+
+<div class="ev-screen" id="evScreen">
+  <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+  <div class="ev-sub">Door Management</div>
+  <div class="ev-list" id="evList"></div>
+</div>
+
+<div id="app">
+  <div class="list-header">
+    <div class="list-top">
+      <img class="logo-img" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+      <button class="switch-btn" onclick="showEvScreen()" id="evLabel">Switch Event</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="s-icon">⌕</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Find guest..." oninput="render()">
+      </div>
+      <button class="hbtn" onclick="openAdd()">+ Guest</button>
+    </div>
+  </div>
+  <div id="main"></div>
+</div>
+
+<div id="detailView">
+  <div id="detailContent"></div>
+</div>
+
+<script>
+const TOKEN='patY9tc4TkNCBGoN1.9b13a0a30620b68b57200f8cef0f4feb2ebbc93bd84ceb6f6637fcd051885a59';
+const BASE='appY6p2HwRtDmOvAf';
+
+const EVENTS=[
+  {name:"L'Atelier",      table:"3/28 Door List"},
+  {name:"Do Not Disturb", table:"4/18 Door List"},
+  {name:"Obscura",        table:"Obscura Premiere"},
+];
+
+let guests=[], curTable='', curG=null;
+
+function buildEvList(){
+  document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
+    `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${e.name}</div></div>`
+  ).join('');
+}
+
+function pickEv(i){
+  const e=EVENTS[i]; curTable=e.table;
+  document.getElementById('evLabel').textContent = e.name;
+  document.getElementById('evScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  load();
+}
+
+async function req(path, opts={}){
+  const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`,{
+    ...opts, headers:{Authorization:'Bearer '+TOKEN,'Content-Type':'application/json',...(opts.headers||{})}
+  });
+  return r.json();
+}
+
+async function load(){
+  document.getElementById('main').innerHTML='<div style="text-align:center; padding-top:100px; color:var(--warm)">Refreshing list...</div>';
+  let recs=[], offset=null;
+  do{ 
+    const d=await req(offset?'?offset='+offset:''); 
+    if(d.records) recs=recs.concat(d.records); 
+    offset=d.offset; 
+  } while(offset);
+  
+  guests=recs.map(r=>({
+    id:r.id, 
+    name:r.fields['Full Name']||'Unknown', 
+    checkedIn:!!r.fields['Checked In'],
+    photo:r.fields.Photo?.[0]?.url, 
+    nda:r.fields.NDA||'No', 
+    patron:!!r.fields.Patron,
+    sti:!!r.fields['STI Tests Verified'], 
+    wristband:r.fields.Wristband||''
+  }));
+  render();
+}
+
+function render(){
+  const q=document.getElementById('searchInput').value.toLowerCase();
+  let list = guests.filter(g => g.name.toLowerCase().includes(q));
+  document.getElementById('main').innerHTML=`<div class="grid">${list.map(g => `
+    <div class="card" onclick="openDetail('${g.id}')">
+      ${g.checkedIn?'<div class="in-badge">✓</div>':''}
+      <img class="card-photo" src="${g.photo || 'https://via.placeholder.com/150?text=LL'}">
+      <div class="card-name">${g.name}</div>
+    </div>`).join('')}</div>`;
+}
+
+function openDetail(id){
+  curG = guests.find(g => g.id === id);
+  const wbPill = curG.wristband === 'Gold' ? `<div class="wb-pill gold">GOLD</div>` : curG.wristband === 'Black' ? `<div class="wb-pill black">BLACK</div>` : `<span style="color:#999">None Assigned</span>`;
+  
+  document.getElementById('detailContent').innerHTML = `
+    <div class="detail-head">
+      <button class="back-btn" onclick="closeDetail()">‹ Guests</button>
+      <div class="detail-name">${curG.name}</div>
+    </div>
+    <div class="det-cards">
+      <div class="det-card">
+        <div class="det-row">Checked In <label class="toggle"><input type="checkbox" id="dCI" ${curG.checkedIn?'checked':''}><span class="slider"></span></label></div>
+        <div class="det-row">Patron (Gold) <label class="toggle"><input type="checkbox" id="dPat" ${curG.patron?'checked':''}><span class="slider"></span></label></div>
+        <div class="det-row">STI Verified (Black) <label class="toggle"><input type="checkbox" id="dSTI" ${curG.sti?'checked':''}><span class="slider"></span></label></div>
+        <div class="det-row">NDA Signed <label class="toggle"><input type="checkbox" id="dNDA" ${curG.nda==='Signed'?'checked':''}><span class="slider"></span></label></div>
+        <div style="padding:16px; font-size:12px; border-top:1px solid #f5f5f5;">Current Wristband: ${wbPill}</div>
+      </div>
+      <button class="save-btn" id="saveBtn" onclick="save()">Save to Airtable</button>
+    </div>`;
+  document.getElementById('detailView').style.display='block';
+}
+
+async function save(){
+  const btn=document.getElementById('saveBtn'); btn.textContent='Syncing...';
+  const cI=document.getElementById('dCI').checked;
+  const cP=document.getElementById('dPat').checked;
+  const cS=document.getElementById('dSTI').checked;
+  const cN=document.getElementById('dNDA').checked;
+
+  let wb = '';
+  if(cP) wb = 'Gold'; else if(cS) wb = 'Black';
+
+  const fields = {
+    'Checked In': cI,
+    'Patron': cP,
+    'STI Tests Verified': cS,
+    'NDA': cN ? 'Signed' : 'No', // Fixed for your Single-Select column
+    'Wristband': wb || null // Fixed for your Single-Select column
+  };
+
+  const res = await req('/'+curG.id, {method:'PATCH', body:JSON.stringify({fields})});
+  if(res.id) {
+    load();
+    closeDetail();
+  } else {
+    btn.textContent = 'Sync Error';
+  }
+}
+
+function closeDetail(){ document.getElementById('detailView').style.display='none'; }
+function showEvScreen(){ document.getElementById('evScreen').style.display='flex'; }
+
+buildEvList();
+</script>
+</body>
+</html>
