@@ -4,9 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>House of LouLou's — Door</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
-<link rel="apple-touch-icon" href="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/New%20Logo.jpg" />
-<!-- Simple: GitHub Pages only. First visit: paste Airtable token once; it saves on this phone. -->
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root { --blue:#162B3B; --cream:#f5f0eb; --dark:#1a1a1a; --warm:#8c7b6b; --accent:#c9a96e; --green:#34c759; --red:#c0392b; --border:rgba(0,0,0,0.07); }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -130,4 +128,378 @@ textarea.det-input{resize:none;min-height:80px;}
 .modal-field-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);font-family:sans-serif;margin-bottom:2px;}
 .modal-input{width:100%;background:none;border:none;outline:none;font-family:'Instrument Serif',serif;font-size:15px;color:var(--dark);font-style:italic;}
 .modal-input::placeholder{color:#c0b8ae;}
-.modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:
+.modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+.modal-toggle-row:last-child{border-bottom:none;}
+.modal-toggle-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:8px;}
+.modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
+.mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);font-family:'Instrument Serif',serif;font-style:italic;}
+.msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-family:sans-serif;font-weight:500;}
+</style>
+</head>
+<body>
+
+<div class="saving-toast" id="toast">Saved ✓</div>
+
+<!-- EVENT SCREEN -->
+<div id="evScreen">
+  <img class="ev-logo" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+  <div class="ev-sub">Select Event</div>
+  <div class="ev-list" id="evList"></div>
+  <button class="ev-reset" onclick="resetKey()">Reset API Key</button>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="list-header">
+    <div class="list-top">
+      <img class="logo-img" src="https://raw.githubusercontent.com/houseofloulous/loulous-doorlist/main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+      <button class="switch-btn" onclick="showEvScreen()" id="evLabel">Switch Event</button>
+    </div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <span class="s-icon">⌕</span>
+        <input class="search-input" id="searchInput" type="text" placeholder="Search guests…" oninput="render()">
+      </div>
+      <button class="hbtn" onclick="openAdd()">+ Add</button>
+      <button class="hbtn nda" onclick="window.open('https://forms.gle/asRXJtR6zHhDoGZJ8','_blank')">NDA</button>
+    </div>
+    <div class="tabs" id="tabs"></div>
+  </div>
+  <div class="stats" id="stats"></div>
+  <div id="main"></div>
+</div>
+
+<!-- DETAIL -->
+<div id="detailView"><div id="detailContent"></div></div>
+
+<!-- ADD MODAL -->
+<div class="modal-bg" id="addModal">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-head">
+      <div class="modal-title">Add New Guest</div>
+      <button class="modal-close" onclick="closeAdd()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-card">
+        <div class="modal-row">
+          <span class="modal-ico">👤</span>
+          <div class="modal-field">
+            <div class="modal-field-lbl">Guest Name <span style="color:var(--red)">Required</span></div>
+            <input class="modal-input" id="aN" placeholder="Enter guest's full name">
+          </div>
+        </div>
+      </div>
+      <div class="modal-card">
+        <div class="modal-toggle-row"><div class="modal-toggle-lbl">✓ Checked In</div><label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label></div>
+        <div class="modal-toggle-row"><div class="modal-toggle-lbl">👑 Patron</div><label class="toggle"><input type="checkbox" id="mPat"><span class="slider"></span></label></div>
+
+        <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed</div><label class="toggle"><input type="checkbox" id="mNDA"><span class="slider"></span></label></div>
+      </div>
+      <div class="modal-card">
+        <div class="modal-row">
+          <span class="modal-ico">🧥</span>
+          <div class="modal-field">
+            <div class="modal-field-lbl">Coat Check #</div>
+            <input class="modal-input" id="mCoat" placeholder="Enter coat check number">
+          </div>
+        </div>
+        <div class="modal-row">
+          <span class="modal-ico">📱</span>
+          <div class="modal-field">
+            <div class="modal-field-lbl">Phone Check #</div>
+            <input class="modal-input" id="mPhone" placeholder="Enter phone check number">
+          </div>
+        </div>
+      </div>
+      <div class="modal-card">
+        <div class="modal-row" style="align-items:flex-start">
+          <span class="modal-ico" style="margin-top:2px">📝</span>
+          <div class="modal-field">
+            <div class="modal-field-lbl">Door Notes <span style="color:var(--red)">Required</span></div>
+            <textarea class="modal-input" id="mNotes" rows="3" placeholder="Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)" style="resize:none;line-height:1.5"></textarea>
+          </div>
+        </div>
+      </div>
+      <div class="modal-card">
+        <div class="modal-row">
+          <span class="modal-ico">📋</span>
+          <div class="modal-field">
+            <div class="modal-field-lbl">List Type</div>
+            <select class="modal-input" id="aLi" style="font-style:normal;font-family:sans-serif;font-size:14px">
+              <option value="">Select…</option>
+              <option value="Guest">Guest</option>
+              <option value="Working">Working</option>
+              <option value="Table">Table</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="mcancel" onclick="closeAdd()">Cancel</button>
+      <button class="msubmit" id="addBtn" onclick="doAdd()">Add Guest</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const BASE='appY6p2HwRtDmOvAf';
+const EVENTS=[
+  {name:"L'Atelier",date:"March 28th",table:"3/28 Door List"},
+  {name:"Do Not Disturb",date:"April 18th",table:"4/18 Door List"},
+  {name:"Obscura",date:"May 2nd",table:"Obscura Premiere"},
+];
+const TABS=[
+  {id:'all',lbl:'Full List'},
+  {id:'patron',lbl:'Patrons'},
+  {id:'guest',lbl:'Guests'},
+  {id:'working',lbl:'Working'},
+  {id:'table',lbl:'Table'},
+];
+
+let guests=[],curTab='all',curTable='',curG=null,local={};
+let TOKEN=localStorage.getItem('at_key')||'';
+
+function resetKey(){localStorage.removeItem('at_key');TOKEN='';location.reload();}
+
+function ensureToken(){
+  if(!TOKEN){
+    TOKEN=(prompt('Enter your Airtable API token (starts with pat...)')||'').trim();
+    if(!TOKEN) throw new Error('No token');
+    localStorage.setItem('at_key',TOKEN);
+  }
+  return TOKEN;
+}
+
+function showToast(msg='Saved ✓'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1800);
+}
+
+function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
+
+function buildEvList(){
+  document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
+    `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${esc(e.name)}</div><div class="ev-date">${esc(e.date)}</div></div>`
+  ).join('');
+}
+
+function pickEv(i){
+  const e=EVENTS[i]; curTable=e.table;
+  document.getElementById('evLabel').textContent=e.name+' · '+e.date;
+  document.getElementById('evScreen').style.display='none';
+  document.getElementById('app').style.display='block';
+  load();
+}
+
+function showEvScreen(){
+  document.getElementById('evScreen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('detailView').style.display='none';
+}
+
+async function req(path='',opts={}){
+  const token=ensureToken();
+  const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`,{
+    ...opts,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
+  });
+  let d={};
+  try{d=await r.json();}catch(_){}
+  if(!r.ok){
+    if(r.status===401||r.status===403){localStorage.removeItem('at_key');TOKEN='';}
+    throw new Error(d?.error?.message||`${r.status}`);
+  }
+  return d;
+}
+
+function toG(r){
+  const f=r.fields;
+  return {
+    id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
+    rsvp:f.RSVP||'',photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
+    list:f.List||'',nda:f.NDA||'No',phone:f.Phone||'',
+    patron:!!f.Patron,
+    wristband:Array.isArray(f.Wristband)?f.Wristband[0]||'':f.Wristband||'',
+    email:f.Email||'',sti:false
+  };
+}
+
+async function load(){
+  document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
+  buildTabs();
+  try{
+    let recs=[],offset=null;
+    do{const d=await req(offset?'?offset='+offset:'');if(d.records)recs=recs.concat(d.records);offset=d.offset;}while(offset);
+    guests=recs.map(toG);render();
+  }catch(e){
+    document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif;">Reset Key</button></div>`;
+  }
+}
+
+function buildTabs(){
+  document.getElementById('tabs').innerHTML=TABS.map(t=>
+    `<button class="tab ${t.id===curTab?'active':''}" onclick="setTab('${t.id}')">${t.lbl}</button>`
+  ).join('');
+}
+function setTab(id){curTab=id;buildTabs();render();}
+
+function render(){
+  const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+  let list=guests;
+  if(curTab==='patron') list=list.filter(g=>g.patron);
+  else if(curTab==='guest') list=list.filter(g=>(g.list||'').toLowerCase()==='guest');
+  else if(curTab==='working') list=list.filter(g=>(g.list||'').toLowerCase()==='working');
+  else if(curTab==='table') list=list.filter(g=>(g.list||'').toLowerCase()==='table');
+  if(q) list=list.filter(g=>g.name.toLowerCase().includes(q)||g.phone.includes(q));
+  const chk=list.filter(g=>g.checkedIn).length;
+  document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>`;
+  if(!list.length){document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';return;}
+  document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
+}
+
+function gCard(g){
+  const ph=g.photo
+    ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`+`<div class="card-init" style="display:none">${ini(g.name)}</div>`
+    :`<div class="card-init">${ini(g.name)}</div>`;
+  const dot=g.wristband==='Gold'?`<span class="wb-dot wb-gold"></span>`:g.wristband==='Black'?`<span class="wb-dot wb-black"></span>`:'';
+  return `<div class="card" onclick="openDetail('${g.id}')">
+    ${g.checkedIn?'<div class="in-badge">✓</div>':''}${ph}
+    <div class="card-body">
+      <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
+      <div class="card-tag">${dot}${esc(g.list||'')}</div>
+    </div></div>`;
+}
+
+function openDetail(id){
+  const g=guests.find(x=>x.id===id);if(!g)return;
+  curG=g;
+  const loc=local[id]||{};
+  const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
+  const wbPill=g.wristband==='Gold'?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`:g.wristband==='Black'?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`:`<div class="wb-pill none">No wristbands assigned</div>`;
+  const ndaRow=g.nda!=='Signed'?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`:'';
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detail-head">
+      <div class="detail-nav"><button class="back-btn" onclick="closeDetail()">‹ House of LouLou's Door</button></div>
+      <div class="detail-avatar-wrap">${ph}</div>
+      <div class="detail-name">${esc(g.name)}</div>
+      <div class="detail-sub">${esc(g.list||'')}${g.rsvp?' · RSVP: '+esc(g.rsvp):''}</div>
+      <div class="detail-chips">
+        ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
+        ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
+      </div>
+    </div>
+    <div class="det-cards">
+      <div class="det-card">
+        <div class="det-row">
+          <div class="det-lbl">✓ Checked In:</div>
+          <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
+        </div>
+        <div class="wb-display">
+          <div class="wb-display-lbl">Wristbands</div>
+          <div id="wbPillDisplay">${wbPill}</div>
+        </div>
+        <div class="det-row">
+          <div class="det-row-left">
+            <div class="det-lbl">👑 Patron</div>
+            <div class="det-sublbl">Patrons receive GOLD WRISTBANDS</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
+        </div>
+
+        <div class="det-row">
+          <div class="det-lbl">🤫 NDA Signed:</div>
+          <label class="toggle"><input type="checkbox" id="dNDA" ${g.nda==='Signed'?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
+        </div>
+        <div id="ndaBox">${ndaRow}</div>
+      </div>
+      <div class="det-card">
+        <div class="det-input-wrap">
+          <div class="det-input-lbl">🧥 Coat Check #</div>
+          <input class="det-input" id="dCoat" value="${esc(loc.coat||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+        </div>
+        <div class="det-input-wrap">
+          <div class="det-input-lbl">📱 Phone Check #</div>
+          <input class="det-input" id="dPhone" value="${esc(loc.phone||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+        </div>
+      </div>
+      <div class="det-card">
+        <div class="det-input-wrap">
+          <div class="det-input-lbl">📝 Door Notes:</div>
+          <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocal()">${esc(loc.notes||'')}</textarea>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('app').style.display='none';
+  document.getElementById('detailView').style.display='block';
+  document.getElementById('detailView').scrollTop=0;
+}
+
+function updateWBPill(wb){
+  const p=wb==='Gold'?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`:wb==='Black'?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`:`<div class="wb-pill none">No wristbands assigned</div>`;
+  document.getElementById('wbPillDisplay').innerHTML=p;
+}
+
+function onPatron(cb){if(cb.checked)updateWBPill('Gold');else updateWBPill('');autoSave();}
+function onNDA(cb){document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`;autoSave();}
+
+function saveLocal(){
+  if(!curG)return;
+  local[curG.id]={coat:document.getElementById('dCoat').value.trim(),phone:document.getElementById('dPhone').value.trim(),notes:document.getElementById('dNotes').value.trim()};
+  showToast('Saved ✓');
+}
+
+let saveTimer=null;
+function autoSave(){
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(async()=>{
+    if(!curG)return;
+    const cI=document.getElementById('dCI').checked;
+    const cN=document.getElementById('dNDA').checked;
+    const cS=false;
+    const cP=document.getElementById('dPat').checked;
+    const wb=cP?'Gold':cS?'Black':'';
+    const fields={'Checked In':cI,'NDA':cN?'Signed':'No','Patron':cP,'Wristband':wb?[wb]:[]};
+    try{
+      await req('/'+curG.id,{method:'PATCH',body:JSON.stringify({fields})});
+      const i=guests.findIndex(g=>g.id===curG.id);
+      if(i>-1)guests[i]={...guests[i],checkedIn:cI,nda:cN?'Signed':'No',sti:cS,patron:cP,wristband:wb};
+      showToast('Saved ✓');
+    }catch(e){showToast('Error saving');}
+  },600);
+}
+
+function closeDetail(){
+  document.getElementById('detailView').style.display='none';
+  document.getElementById('app').style.display='block';
+  curG=null;render();
+}
+
+function openAdd(){document.getElementById('addModal').classList.add('open');document.getElementById('aN').focus();}
+function closeAdd(){document.getElementById('addModal').classList.remove('open');['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('aLi').value='';['mCI','mPat','mNDA'].forEach(id=>document.getElementById(id).checked=false);}
+
+async function doAdd(){
+  const name=document.getElementById('aN').value.trim();if(!name){alert('Guest name required');return;}
+  const btn=document.getElementById('addBtn');btn.textContent='Adding…';
+  const fields={'Full Name':name};
+  if(document.getElementById('mCI').checked)fields['Checked In']=true;
+  if(document.getElementById('mPat').checked)fields['Patron']=true;
+  
+  if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
+  const li=document.getElementById('aLi').value;if(li)fields['List']=li;
+  const coat=document.getElementById('mCoat').value.trim();
+  const ph=document.getElementById('mPhone').value.trim();
+  const notes=document.getElementById('mNotes').value.trim();
+  try{
+    const d=await req('',{method:'POST',body:JSON.stringify({fields})});
+    if(d.id){local[d.id]={coat,phone:ph,notes};guests.push(toG(d));closeAdd();render();showToast('Guest added ✓');}
+  }catch(e){alert('Error: '+e.message);}
+  btn.textContent='Add Guest';
+}
+
+buildEvList();
+</script>
+</body>
+</html>
