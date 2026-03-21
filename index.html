@@ -221,20 +221,7 @@ textarea.det-input{resize:none;min-height:80px;}
           </div>
         </div>
       </div>
-      <div class="modal-card">
-        <div class="modal-row">
-          <span class="modal-ico">📋</span>
-          <div class="modal-field">
-            <div class="modal-field-lbl">List Type</div>
-            <select class="modal-input" id="aLi" style="font-style:normal;font-family:sans-serif;font-size:14px">
-              <option value="">Select…</option>
-              <option value="Guest">Guest</option>
-              <option value="Working">Working</option>
-              <option value="Table">Table</option>
-            </select>
-          </div>
-        </div>
-      </div>
+
     </div>
     <div class="modal-actions">
       <button class="mcancel" onclick="closeAdd()">Cancel</button>
@@ -252,10 +239,10 @@ const EVENTS=[
 ];
 const TABS=[
   {id:'all',lbl:'Full List'},
+  {id:'table',lbl:'Table'},
   {id:'patron',lbl:'Patrons'},
   {id:'guest',lbl:'Guests'},
   {id:'working',lbl:'Working'},
-  {id:'table',lbl:'Table'},
 ];
 
 let guests=[],curTab='all',curTable='',curG=null,local={};
@@ -478,7 +465,7 @@ function closeDetail(){
 }
 
 function openAdd(){document.getElementById('addModal').classList.add('open');document.getElementById('aN').focus();}
-function closeAdd(){document.getElementById('addModal').classList.remove('open');['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');document.getElementById('aLi').value='';['mCI','mPat','mNDA'].forEach(id=>document.getElementById(id).checked=false);}
+function closeAdd(){document.getElementById('addModal').classList.remove('open');['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');['mCI','mPat','mNDA'].forEach(id=>document.getElementById(id).checked=false);}
 
 async function doAdd(){
   const name=document.getElementById('aN').value.trim();if(!name){alert('Guest name required');return;}
@@ -486,9 +473,7 @@ async function doAdd(){
   const fields={'Full Name':name};
   if(document.getElementById('mCI').checked)fields['Checked In']=true;
   if(document.getElementById('mPat').checked)fields['Patron']=true;
-  
   if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
-  const li=document.getElementById('aLi').value;if(li)fields['List']=li;
   const coat=document.getElementById('mCoat').value.trim();
   const ph=document.getElementById('mPhone').value.trim();
   const notes=document.getElementById('mNotes').value.trim();
