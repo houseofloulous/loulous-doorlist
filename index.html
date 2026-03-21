@@ -12,17 +12,20 @@
     html { font-family:'Instrument Serif',serif; }
     body { background:#f2ede8; font-family:'Instrument Serif',serif; color:var(--dark); min-height:100vh; }
     button, input, textarea, select, option { font-family:'Instrument Serif',serif; }
-    #evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 24px;}
+    #evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100dvh;padding:max(14px, env(safe-area-inset-top)) 24px max(12px, env(safe-area-inset-bottom));overflow-y:auto;}
+    .ev-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;min-height:0;padding-top:4px;}
     /* Logo: no blend/filter — avoids Safari “black box” on PNG over blue */
     .ev-logo,.logo-img{height:auto;width:auto;display:block;mix-blend-mode:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
-    .ev-logo{height:50px;margin-bottom:8px;}
-    .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:40px;}
+    .ev-logo-link{display:inline-flex;line-height:0;margin-bottom:0;-webkit-tap-highlight-color:transparent;}
+    .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
+    .ev-logo{height:62px;margin-bottom:0;}
+    .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
     .ev-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
     .ev-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .18s;}
     .ev-item:active{background:rgba(255,255,255,.1);border-color:var(--accent);}
     .ev-name{font-size:20px;color:#fff;font-style:italic;}
     .ev-date{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
-    .ev-reset{margin-top:32px;opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;}
+    .ev-reset{flex-shrink:0;width:100%;max-width:320px;padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
     #app{display:none;}
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
@@ -63,7 +66,6 @@
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
-    .in-badge{position:absolute;top:6px;right:6px;background:var(--blue);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;}
     .cstate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 20px;gap:14px;}
     .spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -146,10 +148,14 @@
   <div class="saving-toast" id="toast">Saved ✓</div>
 
   <div id="evScreen">
-    <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
-    <div class="ev-sub">Select Event</div>
-    <div class="ev-list" id="evList"></div>
-    <button class="ev-reset" onclick="resetKey()">Reset Door Password</button>
+    <div class="ev-main">
+      <a class="ev-logo-link" href="https://www.houseofloulous.com/" target="_blank" rel="noopener noreferrer" title="House of LouLou's — main site">
+        <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+      </a>
+      <div class="ev-sub">Select Event</div>
+      <div class="ev-list" id="evList"></div>
+    </div>
+    <button type="button" class="ev-reset" onclick="resetKey()">Reset Door Password</button>
   </div>
 
   <div id="app">
@@ -394,7 +400,7 @@
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=g.wristband==='Gold'?`<span class="wb-dot wb-gold"></span>`:g.wristband==='Black'?`<span class="wb-dot wb-black"></span>`:'';
       return `<div class="card" onclick="openDetail('${g.id}')">
-        ${g.checkedIn?'<div class="in-badge">✓</div>':''}${ph}
+        ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
           <div class="card-tag">${dot}${esc(g.list||'')}</div>
@@ -602,3 +608,4 @@
   </script>
 </body>
 </html>
+
