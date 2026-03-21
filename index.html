@@ -332,7 +332,7 @@ async function load(){
   buildTabs();
   try{
     let recs=[],offset=null;
-    do{const d=await req(offset?'?offset='+offset:'');if(d.records)recs=recs.concat(d.records);offset=d.offset;}while(offset);
+    do{const d=await req((offset?'?offset='+offset+'&':'?')+'cellFormat=string&timeZone=America/New_York&userLocale=en-us');if(d.records)recs=recs.concat(d.records);offset=d.offset;}while(offset);
     guests=recs.map(toG);render();
   }catch(e){
     document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;font-family:sans-serif;">Reset Key</button></div>`;
