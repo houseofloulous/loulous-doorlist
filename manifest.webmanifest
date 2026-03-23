@@ -1,0 +1,16 @@
+{
+  "name": "House of LouLou's Door",
+  "short_name": "LouLou Door",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#162B3B",
+  "theme_color": "#162B3B",
+  "icons": [
+    {
+      "src": "https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/apple-touch-icon.jpg",
+      "sizes": "180x180",
+      "type": "image/jpeg"
+    }
+  ]
+}
