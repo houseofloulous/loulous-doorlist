@@ -55,17 +55,6 @@
     @media(min-width:520px){
       .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
     }
-    @media(max-width:430px){
-      .ev-sub{font-size:11px;}
-      .ev-date{font-size:11px;}
-      .event-title{font-size:16px;}
-      .search-input{font-size:15px;}
-      .hbtn{font-size:12px;padding:8px 10px;}
-      .stat{font-size:13px;}
-      .card-name{font-size:12px;}
-      .card-tag{font-size:10px;}
-      .tab{font-size:11px;letter-spacing:.03em;}
-    }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
     .stat{font-size:12px;color:var(--warm);font-style:italic;}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
@@ -159,6 +148,38 @@
     .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
     .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);font-style:italic;}
     .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
+
+    /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
+    @media(max-width:480px){
+      html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+      .ev-sub,.ev-date{font-size:12px;letter-spacing:.16em;}
+      .ev-name{font-size:22px;}
+      .event-title{font-size:19px;line-height:1.3;letter-spacing:.01em;}
+      .toolbar{flex-wrap:wrap;row-gap:8px;}
+      .search-wrap{flex:1 1 100%;min-width:0;}
+      .search-input,.s-icon{font-size:16px;}
+      .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:12px;padding:9px 6px;letter-spacing:.04em;white-space:normal;text-align:center;line-height:1.2;}
+      .tabs .tab{padding:11px 1px;font-size:13px;letter-spacing:.01em;line-height:1.12;}
+      .stat{font-size:14px;}
+      .card-body{padding:8px 8px 9px;}
+      .card-name{font-size:15px;line-height:1.35;}
+      .card-tag{font-size:12px;letter-spacing:.05em;margin-top:3px;}
+      .card-tick{font-size:12px;}
+      .cstate-txt{font-size:14px;}
+      .back-btn{font-size:14px;}
+      .detail-name{font-size:26px;}
+      .detail-sub,.det-chip{font-size:13px;}
+      .det-lbl,.wb-display-lbl{font-size:16px;}
+      .det-sublbl,.wb-display-note{font-size:12px;}
+      .wb-pill{font-size:15px;}
+      .nda-text{font-size:13px;}
+      .det-input,.det-input-lbl{font-size:15px;}
+      .modal-title{font-size:23px;}
+      .modal-toggle-lbl,.modal-wb-lbl{font-size:15px;}
+      .modal-field-lbl{font-size:11px;}
+      .modal-input{font-size:16px;}
+      .mcancel,.msubmit{font-size:14px;}
+    }
   </style>
 </head>
 <body>
