@@ -38,7 +38,7 @@
     .logo-link{display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent;background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;}
     .logo-img{height:28px;display:block;}
     .event-title-row{padding:0 16px 8px;text-align:center;}
-    .event-title{font-size:15px;font-style:normal;color:rgba(255,255,255,.92);letter-spacing:.02em;line-height:1.25;}
+    .event-title{font-size:18px;font-style:normal;color:rgba(255,255,255,.92);letter-spacing:.02em;line-height:1.25;}
     .toolbar{display:flex;gap:8px;padding:0 14px 12px;}
     .search-wrap{flex:1;position:relative;}
     .search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:#fff;outline:none;font-style:italic;}
@@ -154,7 +154,7 @@
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       .ev-sub,.ev-date{font-size:13px;letter-spacing:.14em;}
       .ev-name{font-size:23px;}
-      .event-title{font-size:21px;line-height:1.28;letter-spacing:0;}
+      .event-title{font-size:24px;line-height:1.28;letter-spacing:0;}
       .toolbar{flex-wrap:wrap;row-gap:8px;}
       .search-wrap{flex:1 1 100%;min-width:0;}
       .search-input,.s-icon{font-size:17px;}
@@ -288,13 +288,13 @@
       {name:"Obscura",date:"May 2nd",table:"Obscura Premiere"},
     ];
     const TABS=[
-      {id:'all',lbl:'Full List'},
       {id:'guest',lbl:'Guests'},
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
+      {id:'all',lbl:'Full List'},
     ];
 
-    let guests=[],curTab='all',curTable='',curG=null,local={};
+    let guests=[],curTab='guest',curTable='',curG=null,local={};
     let TOKEN='';
     const PASS='loulousdoor';
     let originalWristband='';
@@ -467,183 +467,6 @@
           <div class="detail-sub">${esc(g.list||'')}${g.rsvp?' · RSVP: '+esc(g.rsvp):''}</div>
           <div class="detail-chips">
             ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
-            ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
-          </div>
-        </div>
-        <div class="det-cards">
-          <div class="det-card">
-            <div class="det-row">
-              <div class="det-lbl">✓ Checked In:</div>
-              <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
-            </div>
-            <div class="wb-display">
-              <div class="wb-display-lbl">Wristbands</div>
-              <div class="wb-display-note">${WB_NOTE}</div>
-              <div id="wbPillDisplay">${wbPill}</div>
-            </div>
-            <div class="det-row">
-              <div class="det-row-left">
-                <div class="det-lbl">👑 Patron</div>
-                <div class="det-sublbl">Patrons receive GOLD WRISTBANDS</div>
-              </div>
-              <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
-            </div>
-            <div class="det-row">
-              <div class="det-lbl">🤫 NDA Signed:</div>
-              <label class="toggle"><input type="checkbox" id="dNDA" ${g.nda==='Signed'?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
-            </div>
-            <div id="ndaBox">${ndaRow}</div>
-          </div>
-          <div class="det-card">
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(loc.coat||'')}" placeholder="e.g. 69" onblur="saveLocal()">
-            </div>
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📱 Phone Check #</div>
-              <input class="det-input" id="dPhone" value="${esc(loc.phone||'')}" placeholder="e.g. 69" onblur="saveLocal()">
-            </div>
-          </div>
-          <div class="det-card">
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📝 Door Notes:</div>
-              <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocal()">${esc(loc.notes||'')}</textarea>
-            </div>
-          </div>
-        </div>`;
-      document.getElementById('app').style.display='none';
-      document.getElementById('detailView').style.display='block';
-      document.getElementById('detailView').scrollTop=0;
-    }
-
-    function updateWBPill(wb){
-      const p=wb==='Gold'
-        ?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`
-        :wb==='Black'
-          ?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`
-          :`<div class="wb-pill none">No wristbands assigned</div>`;
-      document.getElementById('wbPillDisplay').innerHTML=p;
-    }
-
-    function onPatron(cb){
-      if(cb.checked){
-        updateWBPill('Gold');
-      }else{
-        updateWBPill(originalWristband==='Black'?'Black':'');
-      }
-      autoSave();
-    }
-
-    function onNDA(cb){
-      document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`;
-      autoSave();
-    }
-
-    function onAddNDAChange(cb){
-      const hint=document.getElementById('mNdaHint');
-      if(!hint)return;
-      hint.style.display=cb.checked?'none':'flex';
-    }
-
-    function saveLocal(){
-      if(!curG)return;
-      local[curG.id]={
-        coat:document.getElementById('dCoat').value.trim(),
-        phone:document.getElementById('dPhone').value.trim(),
-        notes:document.getElementById('dNotes').value.trim()
-      };
-      showToast('Saved ✓');
-    }
-
-    let saveTimer=null;
-    function autoSave(){
-      clearTimeout(saveTimer);
-      saveTimer=setTimeout(async()=>{
-        if(!curG)return;
-        const cI=document.getElementById('dCI').checked;
-        const cN=document.getElementById('dNDA').checked;
-        const cP=document.getElementById('dPat').checked;
-        const wb=cP?'Gold':(originalWristband==='Black'?'Black':'');
-        const fields={
-          'Checked In':cI,
-          'NDA':cN?'Signed':'No',
-          'Patron':cP,
-          'Wristband':wb?[wb]:[]
-        };
-        try{
-          await req('/'+curG.id,{method:'PATCH',body:JSON.stringify({fields})});
-          const i=guests.findIndex(g=>g.id===curG.id);
-          if(i>-1){
-            guests[i]={
-              ...guests[i],
-              checkedIn:cI,
-              nda:cN?'Signed':'No',
-              patron:cP,
-              wristband:wb
-            };
-          }
-          showToast('Saved ✓');
-        }catch(e){
-          showToast('Error saving');
-        }
-      },600);
-    }
-
-    function closeDetail(){
-      document.getElementById('detailView').style.display='none';
-      document.getElementById('app').style.display='block';
-      curG=null;
-      render();
-    }
-
-    function openAdd(){
-      document.getElementById('addModal').classList.add('open');
-      document.getElementById('aN').focus();
-      const nda=document.getElementById('mNDA');
-      if(nda) onAddNDAChange(nda);
-    }
-
-    function closeAdd(){
-      document.getElementById('addModal').classList.remove('open');
-      ['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');
-      ['mCI','mNDA'].forEach(id=>document.getElementById(id).checked=false);
-      onAddNDAChange({checked:false});
-    }
-
-    async function doAdd(){
-      const name=document.getElementById('aN').value.trim();
-      if(!name){alert('Guest name required');return;}
-      const btn=document.getElementById('addBtn');
-      btn.textContent='Adding…';
-
-      const fields={'Full Name':name};
-      if(document.getElementById('mCI').checked)fields['Checked In']=true;
-      if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
-
-      const coat=document.getElementById('mCoat').value.trim();
-      const ph=document.getElementById('mPhone').value.trim();
-      const notes=document.getElementById('mNotes').value.trim();
-
-      try{
-        const d=await req('',{method:'POST',body:JSON.stringify({fields})});
-        if(d.id){
-          local[d.id]={coat,phone:ph,notes};
-          guests.push(toG(d));
-          closeAdd();
-          render();
-          showToast('Guest added ✓');
-        }
-      }catch(e){
-        alert('Error: '+e.message);
-      }
-      btn.textContent='Add Guest';
-    }
-
-    document.querySelector('.modal-wb-note').textContent=WB_NOTE;
-    buildEvList();
-  </script>
-</body>
-</html>
             ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
           </div>
         </div>
