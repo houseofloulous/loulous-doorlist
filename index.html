@@ -102,7 +102,6 @@
     .wb-pill.none{color:var(--warm);font-style:italic;}
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
-    .wb-line-black{font-size:14px;color:var(--warm);line-height:1.45;}
     #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
     .wb-circle.gold{background:#c9a96e;}
@@ -343,7 +342,7 @@
     }
     function buildWBDisplayHTML(patron,stiVerified){
       let html='';
-      if(stiVerified) html+='<div class="wb-line-black">🖤 Verified STI Results receive BLACK WRISTBANDS</div>';
+      if(stiVerified) html+='<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>';
       if(patron) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
       if(!patron && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
       return html;
