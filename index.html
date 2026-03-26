@@ -102,6 +102,8 @@
     .wb-pill.none{color:var(--warm);font-style:italic;}
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
+    .wb-line-black{font-size:14px;color:var(--warm);line-height:1.45;}
+    #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
     .wb-circle.gold{background:#c9a96e;}
     .wb-circle.black{background:#fff;}
@@ -280,7 +282,7 @@
   </div>
 
   <script>
-    const WB_NOTE='🖤 Verified STI Results receive BLACK WRISTBANDS';
+    const WB_NOTE='💛 Patrons receive gold wristbands · 🖤 Verified STI → black wristbands';
     const BASE='appY6p2HwRtDmOvAf';
     const EVENTS=[
       {name:"L'Atelier",date:"March 28th",table:"3/28 Door List"},
@@ -297,8 +299,6 @@
     let guests=[],curTab='guest',curTable='',curG=null,local={};
     let TOKEN='';
     const PASS='loulousdoor';
-    let originalWristband='';
-
     function ensureToken(){
       if(!TOKEN){
         const p=(localStorage.getItem('ll_pass')||'').trim();
@@ -331,6 +331,23 @@
     }
     function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
+    function parseWristbandsFromFields(f){
+      const w=f.Wristband;
+      if(Array.isArray(w)) return w.filter(Boolean);
+      if(w) return [w];
+      return [];
+    }
+    function stiVerifiedFromFields(f,wbArr){
+      if(typeof f['STI Verified']==='boolean') return f['STI Verified'];
+      return wbArr.includes('Black');
+    }
+    function buildWBDisplayHTML(patron,stiVerified){
+      let html='';
+      if(stiVerified) html+='<div class="wb-line-black">🖤 Verified STI Results receive BLACK WRISTBANDS</div>';
+      if(patron) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
+      if(!patron && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
+      return html;
+    }
 
     function buildEvList(){
       document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
@@ -379,13 +396,18 @@
 
     function toG(r){
       const f=r.fields;
+      const wbArr=parseWristbandsFromFields(f);
+      const patron=!!f.Patron;
+      const stiVerified=stiVerifiedFromFields(f,wbArr);
       return {
         id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
         rsvp:f.RSVP||'',photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
         list:f.List||'',nda:f.NDA||'No',phone:f.Phone||'',
-        patron:!!f.Patron,
-        wristband:Array.isArray(f.Wristband)?f.Wristband[0]||'':f.Wristband||'',
-        email:f.Email||'',sti:false
+        patron,
+        stiVerified,
+        wristbands:wbArr,
+        wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
+        email:f.Email||'',sti:stiVerified
       };
     }
 
@@ -434,7 +456,7 @@
       const ph=g.photo
         ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
-      const dot=g.wristband==='Gold'?`<span class="wb-dot wb-gold"></span>`:g.wristband==='Black'?`<span class="wb-dot wb-black"></span>`:'';
+      const dot=(g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
       return `<div class="card" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
@@ -447,14 +469,9 @@
     function openDetail(id){
       const g=guests.find(x=>x.id===id); if(!g) return;
       curG=g;
-      originalWristband=g.wristband||'';
       const loc=local[id]||{};
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
-      const wbPill=g.wristband==='Gold'
-        ?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`
-        :g.wristband==='Black'
-          ?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`
-          :`<div class="wb-pill none">No wristbands assigned</div>`;
+      const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
       const ndaRow=g.nda!=='Signed'
         ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`
         :'';
@@ -478,15 +495,22 @@
             </div>
             <div class="wb-display">
               <div class="wb-display-lbl">Wristbands</div>
-              <div class="wb-display-note">${WB_NOTE}</div>
+              <div class="wb-display-note">Current assignment</div>
               <div id="wbPillDisplay">${wbPill}</div>
             </div>
             <div class="det-row">
               <div class="det-row-left">
                 <div class="det-lbl">👑 Patron</div>
-                <div class="det-sublbl">Patrons receive GOLD WRISTBANDS</div>
+                <div class="det-sublbl">💛 Patrons receive GOLD WRISTBANDS</div>
               </div>
               <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
+            </div>
+            <div class="det-row">
+              <div class="det-row-left">
+                <div class="det-lbl">💉 STI Tests Verified</div>
+                <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="dSTI" ${g.stiVerified?'checked':''} onchange="onSTI(this)"><span class="slider"></span></label>
             </div>
             <div class="det-row">
               <div class="det-lbl">🤫 NDA Signed:</div>
@@ -516,21 +540,20 @@
       document.getElementById('detailView').scrollTop=0;
     }
 
-    function updateWBPill(wb){
-      const p=wb==='Gold'
-        ?`<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>`
-        :wb==='Black'
-          ?`<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>`
-          :`<div class="wb-pill none">No wristbands assigned</div>`;
-      document.getElementById('wbPillDisplay').innerHTML=p;
+    function updateWBDisplay(){
+      const cP=document.getElementById('dPat').checked;
+      const sti=document.getElementById('dSTI');
+      const cS=sti && sti.checked;
+      document.getElementById('wbPillDisplay').innerHTML=buildWBDisplayHTML(cP,cS);
+    }
+
+    function onSTI(cb){
+      updateWBDisplay();
+      autoSave();
     }
 
     function onPatron(cb){
-      if(cb.checked){
-        updateWBPill('Gold');
-      }else{
-        updateWBPill(originalWristband==='Black'?'Black':'');
-      }
+      updateWBDisplay();
       autoSave();
     }
 
@@ -563,12 +586,17 @@
         const cI=document.getElementById('dCI').checked;
         const cN=document.getElementById('dNDA').checked;
         const cP=document.getElementById('dPat').checked;
-        const wb=cP?'Gold':(originalWristband==='Black'?'Black':'');
+        const stiEl=document.getElementById('dSTI');
+        const cS=stiEl && stiEl.checked;
+        const wb=[];
+        if(cP) wb.push('Gold');
+        if(cS) wb.push('Black');
         const fields={
           'Checked In':cI,
           'NDA':cN?'Signed':'No',
           'Patron':cP,
-          'Wristband':wb?[wb]:[]
+          'STI Verified':cS,
+          'Wristband':wb
         };
         try{
           await req('/'+curG.id,{method:'PATCH',body:JSON.stringify({fields})});
@@ -579,7 +607,10 @@
               checkedIn:cI,
               nda:cN?'Signed':'No',
               patron:cP,
-              wristband:wb
+              stiVerified:cS,
+              wristbands:wb,
+              wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
+              sti:cS
             };
           }
           showToast('Saved ✓');
