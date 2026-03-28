@@ -56,7 +56,10 @@
       .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
+    #doorReady{display:none;}
+    #doorReady.door-ready-on{display:block;padding:8px 16px 12px;font-size:12px;line-height:1.4;background:var(--cream);border-bottom:1px solid var(--border);color:#1b4332;text-align:center;}
     .stat{font-size:12px;color:var(--warm);font-style:italic;}
+    .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
     @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
@@ -215,6 +218,7 @@
       <div class="tabs" id="tabs"></div>
     </div>
     <div class="stats" id="stats"></div>
+    <div id="doorReady" style="display:none" aria-live="polite"></div>
     <div id="main"></div>
   </div>
 
@@ -294,7 +298,9 @@
       {id:'all',lbl:'Full List'},
     ];
 
+    const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
+    let saveGen=0;
     let TOKEN='';
     const PASS='loulousdoor';
     function ensureToken(){
@@ -322,10 +328,10 @@
       location.reload();
     }
 
-    function showToast(msg='Saved ✓'){
+    function showToast(msg='Saved ✓',ms=1800){
       const t=document.getElementById('toast');
       t.textContent=msg; t.classList.add('show');
-      setTimeout(()=>t.classList.remove('show'),1800);
+      setTimeout(()=>t.classList.remove('show'),ms);
     }
     function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
@@ -361,27 +367,161 @@
       load();
     }
 
+    function setDoorReady(on){
+      const el=document.getElementById('doorReady');
+      if(!el) return;
+      if(on){
+        el.textContent='✓ Live sync · check-in saves first; wristbands retry if needed';
+        el.style.display='block';
+        el.classList.add('door-ready-on');
+      }else{
+        el.style.display='none';
+        el.textContent='';
+        el.classList.remove('door-ready-on');
+      }
+    }
+
     function showEvScreen(){
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
       document.getElementById('detailView').style.display='none';
+      setDoorReady(false);
     }
 
-    async function req(path='',opts={}){
-      const token=ensureToken();
-      const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(curTable)}${path}`,{
-        ...opts,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
-      });
-      let d={};
-      try{d=await r.json();}catch(_){}
-      if(!r.ok){
-        if(r.status===401||r.status===403){
-          localStorage.removeItem('ll_pass');
-          TOKEN='';
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    /** Airtable request with transient network / rate-limit retries. Optional tableName for sync queue. */
+    async function req(path='',opts={},tableName){
+      const tbl=tableName!=null?tableName:curTable;
+      const maxAttempts=4;
+      let lastErr;
+      for(let attempt=0; attempt<maxAttempts; attempt++){
+        try{
+          const token=ensureToken();
+          const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(tbl)}${path}`,{
+            ...opts,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
+          });
+          let d={};
+          try{d=await r.json();}catch(_){}
+          if(!r.ok){
+            if(r.status===401||r.status===403){
+              localStorage.removeItem('ll_pass');
+              TOKEN='';
+            }
+            const err=new Error(d?.error?.message||String(r.status));
+            err.status=r.status;
+            throw err;
+          }
+          return d;
+        }catch(e){
+          lastErr=e;
+          const st=e.status||0;
+          const msg=String(e.message||'');
+          const transient=
+            st===429||st===502||st===503||st===504||
+            /failed to fetch|networkerror|load failed|fetch|timeout|aborted|network connection was lost|internet connection appears to be offline/i.test(msg);
+          const noRetry=st===401||st===403||st===404||st===400||st===422;
+          if(noRetry||!transient||attempt===maxAttempts-1) throw e;
+          await sleep(400*Math.pow(2,attempt)+Math.random()*200);
         }
-        throw new Error(d?.error?.message||`${r.status}`);
       }
-      return d;
+      throw lastErr;
+    }
+
+    function enqueuePending(recordId,tableId,fields){
+      try{
+        const raw=localStorage.getItem(PENDING_KEY);
+        let arr=raw?JSON.parse(raw):[];
+        const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
+        if(i>-1) arr[i]={...arr[i], fields:{...arr[i].fields,...fields}, ts:Date.now()};
+        else arr.push({recordId,tableId,fields:{...fields}, ts:Date.now()});
+        localStorage.setItem(PENDING_KEY, JSON.stringify(arr.slice(-500)));
+      }catch(_){}
+    }
+
+    function pendingCountForTable(tableId){
+      try{
+        const raw=localStorage.getItem(PENDING_KEY);
+        if(!raw) return 0;
+        const arr=JSON.parse(raw);
+        return arr.filter(x=>x.tableId===tableId).length;
+      }catch(_){ return 0; }
+    }
+
+    let flushBusy=false;
+    async function flushPendingQueue(){
+      if(flushBusy) return;
+      const raw=localStorage.getItem(PENDING_KEY);
+      if(!raw) return;
+      let arr;
+      try{ arr=JSON.parse(raw); }catch(_){ return; }
+      if(!arr.length) return;
+      flushBusy=true;
+      try{
+        const before=arr.length;
+        const remaining=[];
+        for(const item of arr){
+          try{
+            await patchGuestResilient(item.recordId, item.fields, item.tableId);
+          }catch(_){
+            remaining.push(item);
+          }
+        }
+        localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
+        if(remaining.length<before){
+          showToast('Queued saves synced ✓',2200);
+          try{ render(); }catch(_){}
+        }
+      }finally{
+        flushBusy=false;
+      }
+    }
+
+    /**
+     * PATCH with retries for common Airtable mismatches: missing "STI Verified" field,
+     * Wristband as single-select (string) vs multi-select (array).
+     */
+    async function patchGuestResilient(recordId,fields,tableName){
+      let f={...fields};
+      const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristband');
+      for(let attempt=0; attempt<12; attempt++){
+        try{
+          await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
+          return;
+        }catch(e){
+          const low=String(e.message||'').toLowerCase();
+          if(Object.prototype.hasOwnProperty.call(f,'STI Verified') && (low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column'))){
+            const next={...f};
+            delete next['STI Verified'];
+            f=next;
+            continue;
+          }
+          if(!hasWB) throw e;
+          const w=f.Wristband;
+          if(Array.isArray(w)){
+            if(w.length===0){
+              f={...f,Wristband:null};
+              continue;
+            }
+            if(w.length===1){
+              f={...f,Wristband:w[0]};
+              continue;
+            }
+            f={...f,Wristband:w[0]};
+            continue;
+          }
+          if(w===null && (low.includes('invalid')||low.includes('cannot'))){
+            f={...f,Wristband:[]};
+            continue;
+          }
+          if(typeof w==='string' && (low.includes('array')||low.includes('multiple')||(low.includes('invalid')&&low.includes('wristband')))){
+            f={...f,Wristband:[w]};
+            continue;
+          }
+          throw e;
+        }
+      }
+      throw new Error('Could not save after retries');
     }
 
     function sortGuestsByName(list){
@@ -392,6 +532,24 @@
       });
     }
 
+    /** Airtable List: single select (string) or multi-select (string[]). Used for tab filters. */
+    function listTokens(raw){
+      if(raw==null||raw==='') return [];
+      if(Array.isArray(raw)) return raw.map(x=>String(x||'').trim().toLowerCase()).filter(Boolean);
+      return [String(raw).trim().toLowerCase()].filter(t=>t.length);
+    }
+
+    function formatListLabel(raw){
+      if(raw==null||raw==='') return '';
+      if(Array.isArray(raw)) return raw.filter(Boolean).join(', ');
+      return String(raw);
+    }
+
+    function listTokensForGuest(g){
+      if(g.listRaw!==undefined&&g.listRaw!==null) return listTokens(g.listRaw);
+      return listTokens(g.list);
+    }
+
     function toG(r){
       const f=r.fields;
       const wbArr=parseWristbandsFromFields(f);
@@ -400,7 +558,7 @@
       return {
         id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
         rsvp:f.RSVP||'',photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
-        list:f.List||'',nda:f.NDA||'No',phone:f.Phone||'',
+        list:formatListLabel(f.List),listRaw:f.List,nda:f.NDA||'No',phone:f.Phone||'',
         patron,
         stiVerified,
         wristbands:wbArr,
@@ -410,6 +568,7 @@
     }
 
     async function load(){
+      setDoorReady(false);
       document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
       buildTabs();
       try{
@@ -421,7 +580,10 @@
         }while(offset);
         guests=sortGuestsByName(recs.map(toG));
         render();
+        setDoorReady(true);
+        flushPendingQueue().catch(()=>{});
       }catch(e){
+        setDoorReady(false);
         document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">Reset Door Password</button></div>`;
       }
     }
@@ -436,13 +598,19 @@
     function render(){
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
-      if(curTab==='tables') list=list.filter(g=>g.patron||(g.list||'').toLowerCase()==='table');
-      else if(curTab==='guest') list=list.filter(g=>(g.list||'').toLowerCase()==='guest');
-      else if(curTab==='working') list=list.filter(g=>(g.list||'').toLowerCase()==='working');
-      if(q) list=list.filter(g=>g.name.toLowerCase().includes(q)||g.phone.includes(q));
+      if(curTab==='tables') list=list.filter(g=>g.patron||listTokensForGuest(g).includes('table'));
+      else if(curTab==='guest') list=list.filter(g=>{ const t=listTokensForGuest(g); return t.includes('guest')||t.includes('table'); });
+      else if(curTab==='working') list=list.filter(g=>listTokensForGuest(g).includes('working'));
+      if(q) list=list.filter(g=>{
+        const phone=(g.phone||'');
+        const em=(g.email||'').toLowerCase();
+        return g.name.toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
+      });
       list=sortGuestsByName(list);
       const chk=list.filter(g=>g.checkedIn).length;
-      document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>`;
+      const pend=pendingCountForTable(curTable);
+      const pendHtml=pend?`<div class="stat stat-pending" title="Saved on this device — will sync automatically"><b>${pend}</b> queued</div>`:'';
+      document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>${pendHtml}`;
       if(!list.length){
         document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
         return;
@@ -538,10 +706,13 @@
     }
 
     function updateWBDisplay(){
-      const cP=document.getElementById('dPat').checked;
+      const box=document.getElementById('wbPillDisplay');
+      const dPat=document.getElementById('dPat');
       const sti=document.getElementById('dSTI');
+      if(!box||!dPat)return;
+      const cP=dPat.checked;
       const cS=sti && sti.checked;
-      document.getElementById('wbPillDisplay').innerHTML=buildWBDisplayHTML(cP,cS);
+      box.innerHTML=buildWBDisplayHTML(cP,cS);
     }
 
     function onSTI(cb){
@@ -567,10 +738,14 @@
 
     function saveLocal(){
       if(!curG)return;
+      const coat=document.getElementById('dCoat');
+      const ph=document.getElementById('dPhone');
+      const notes=document.getElementById('dNotes');
+      if(!coat||!ph||!notes)return;
       local[curG.id]={
-        coat:document.getElementById('dCoat').value.trim(),
-        phone:document.getElementById('dPhone').value.trim(),
-        notes:document.getElementById('dNotes').value.trim()
+        coat:coat.value.trim(),
+        phone:ph.value.trim(),
+        notes:notes.value.trim()
       };
       showToast('Saved ✓');
     }
@@ -578,25 +753,24 @@
     let saveTimer=null;
     function autoSave(){
       clearTimeout(saveTimer);
+      const myGen=++saveGen;
       saveTimer=setTimeout(async()=>{
         if(!curG)return;
-        const cI=document.getElementById('dCI').checked;
-        const cN=document.getElementById('dNDA').checked;
-        const cP=document.getElementById('dPat').checked;
+        const dCI=document.getElementById('dCI');
+        const dNDA=document.getElementById('dNDA');
+        const dPat=document.getElementById('dPat');
         const stiEl=document.getElementById('dSTI');
+        if(!dCI||!dNDA||!dPat)return;
+        const cI=dCI.checked;
+        const cN=dNDA.checked;
+        const cP=dPat.checked;
         const cS=stiEl && stiEl.checked;
         const wb=[];
         if(cP) wb.push('Gold');
         if(cS) wb.push('Black');
-        const fields={
-          'Checked In':cI,
-          'NDA':cN?'Signed':'No',
-          'Patron':cP,
-          'STI Verified':cS,
-          'Wristband':wb
-        };
-        try{
-          await req('/'+curG.id,{method:'PATCH',body:JSON.stringify({fields})});
+        const criticalFields={'Checked In':cI,'NDA':cN?'Signed':'No'};
+        const wristFields={'Patron':cP,'STI Verified':cS,'Wristband':wb};
+        const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
           if(i>-1){
             guests[i]={
@@ -610,14 +784,40 @@
               sti:cS
             };
           }
-          showToast('Saved ✓');
+        };
+        try{
+          await patchGuestResilient(curG.id, criticalFields);
         }catch(e){
-          showToast('Error saving');
+          console.error('Door critical save failed',e);
+          enqueuePending(curG.id, curTable, {...criticalFields,...wristFields});
+          if(myGen!==saveGen) return;
+          applyLocal();
+          showToast('Connection issue — queued on device. Will sync.', 5000);
+          try{ render(); }catch(_){}
+          return;
         }
+        let wristErr=null;
+        try{
+          await patchGuestResilient(curG.id, wristFields);
+        }catch(e){
+          console.error('Door wristband save failed',e);
+          wristErr=e;
+          enqueuePending(curG.id, curTable, wristFields);
+        }
+        if(myGen!==saveGen) return;
+        applyLocal();
+        if(wristErr){
+          showToast('Check-in saved · wristbands queued to sync', 4500);
+        }else{
+          showToast('Saved ✓');
+        }
+        try{ render(); }catch(_){}
+        flushPendingQueue().catch(()=>{});
       },600);
     }
 
     function closeDetail(){
+      saveGen++;
       document.getElementById('detailView').style.display='none';
       document.getElementById('app').style.display='block';
       curG=null;
@@ -669,6 +869,11 @@
 
     document.querySelector('.modal-wb-note').textContent=WB_NOTE;
     buildEvList();
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
+    });
+    window.addEventListener('online', ()=>flushPendingQueue().catch(()=>{}));
+    setInterval(()=>flushPendingQueue().catch(()=>{}), 30000);
   </script>
 </body>
 </html>
