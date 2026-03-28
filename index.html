@@ -56,8 +56,6 @@
       .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
-    #doorReady{display:none;}
-    #doorReady.door-ready-on{display:block;padding:8px 16px 12px;font-size:12px;line-height:1.4;background:var(--cream);border-bottom:1px solid var(--border);color:#1b4332;text-align:center;}
     .stat{font-size:12px;color:var(--warm);font-style:italic;}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
@@ -218,7 +216,6 @@
       <div class="tabs" id="tabs"></div>
     </div>
     <div class="stats" id="stats"></div>
-    <div id="doorReady" style="display:none" aria-live="polite"></div>
     <div id="main"></div>
   </div>
 
@@ -375,25 +372,10 @@
       load();
     }
 
-    function setDoorReady(on){
-      const el=document.getElementById('doorReady');
-      if(!el) return;
-      if(on){
-        el.textContent='✓ Live sync · check-in saves first; wristbands retry if needed';
-        el.style.display='block';
-        el.classList.add('door-ready-on');
-      }else{
-        el.style.display='none';
-        el.textContent='';
-        el.classList.remove('door-ready-on');
-      }
-    }
-
     function showEvScreen(){
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
       document.getElementById('detailView').style.display='none';
-      setDoorReady(false);
     }
 
     function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
@@ -593,7 +575,6 @@
     }
 
     async function load(){
-      setDoorReady(false);
       document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
       buildTabs();
       try{
@@ -605,10 +586,8 @@
         }while(offset);
         guests=sortGuestsByName(recs.map(toG));
         render();
-        setDoorReady(true);
         flushPendingQueue().catch(()=>{});
       }catch(e){
-        setDoorReady(false);
         document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">Reset Door Password</button></div>`;
       }
     }
