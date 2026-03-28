@@ -117,7 +117,7 @@
     .slider:before{content:'';position:absolute;width:25px;height:25px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.15);}
     .toggle input:checked+.slider{background:var(--green);}
     .toggle input:checked+.slider:before{transform:translateX(20px);}
-    .saving-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:20px;padding:8px 18px;font-size:12px;letter-spacing:.06em;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9999;}
+    .saving-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:20px;padding:10px 16px;font-size:12px;letter-spacing:.02em;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9999;max-width:min(92vw,420px);max-height:40vh;overflow-y:auto;word-break:break-word;line-height:1.35;text-align:center;}
     .saving-toast.show{opacity:1;}
     .det-input-wrap{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
     .det-input-wrap:last-child{border-bottom:none;}
@@ -333,6 +333,14 @@
       t.textContent=msg; t.classList.add('show');
       setTimeout(()=>t.classList.remove('show'),ms);
     }
+    function fmtErr(e){
+      const s=String(e&&e.message!=null?e.message:e||'Error');
+      return s.length>220?s.slice(0,217)+'…':s;
+    }
+    function isTransientErr(e){
+      const st=e&&e.status!=null?e.status:0;
+      return st===0||st===429||st===502||st===503||st===504;
+    }
     function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
     function parseWristbandsFromFields(f){
@@ -490,11 +498,15 @@
           return;
         }catch(e){
           const low=String(e.message||'').toLowerCase();
-          if(Object.prototype.hasOwnProperty.call(f,'STI Verified') && (low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column'))){
+          if(Object.prototype.hasOwnProperty.call(f,'STI Verified') && (low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
             const next={...f};
             delete next['STI Verified'];
             f=next;
             continue;
+          }
+          if(Object.prototype.hasOwnProperty.call(f,'NDA') && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /nda|choice|select|option|cell/i.test(low)){
+            if(f.NDA==='Signed'){ f={...f,NDA:'Yes'}; continue; }
+            if(f.NDA==='Yes'){ f={...f,NDA:'Signed'}; continue; }
           }
           if(!hasWB) throw e;
           const w=f.Wristband;
@@ -550,20 +562,33 @@
       return listTokens(g.list);
     }
 
+    function ndaIsSigned(raw){
+      const s=String(raw==null?'':raw).trim();
+      return s==='Signed'||s==='Yes';
+    }
+
     function toG(r){
       const f=r.fields;
       const wbArr=parseWristbandsFromFields(f);
       const patron=!!f.Patron;
       const stiVerified=stiVerifiedFromFields(f,wbArr);
+      const ndaRaw=f.NDA==null||f.NDA===''?'No':String(f.NDA);
+      const phoneRaw=f.Phone==null||f.Phone===''?'':String(f.Phone);
+      const emailRaw=f.Email==null||f.Email===''?'':String(f.Email);
       return {
         id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
-        rsvp:f.RSVP||'',photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
-        list:formatListLabel(f.List),listRaw:f.List,nda:f.NDA||'No',phone:f.Phone||'',
+        rsvp:f.RSVP==null||f.RSVP===''?'':String(f.RSVP),
+        photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
+        list:formatListLabel(f.List),listRaw:f.List,
+        nda:ndaRaw,
+        ndaSigned:ndaIsSigned(ndaRaw),
+        phone:phoneRaw,
         patron,
         stiVerified,
         wristbands:wbArr,
         wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
-        email:f.Email||'',sti:stiVerified
+        email:emailRaw,
+        sti:stiVerified
       };
     }
 
@@ -604,7 +629,7 @@
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
         const em=(g.email||'').toLowerCase();
-        return g.name.toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
+        return (g.name||'').toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
       });
       list=sortGuestsByName(list);
       const chk=list.filter(g=>g.checkedIn).length;
@@ -638,7 +663,8 @@
       const loc=local[id]||{};
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
-      const ndaRow=g.nda!=='Signed'
+      const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
+      const ndaRow=!ndaSig
         ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`
         :'';
 
@@ -679,7 +705,7 @@
             </div>
             <div class="det-row">
               <div class="det-lbl">🤫 NDA Signed:</div>
-              <label class="toggle"><input type="checkbox" id="dNDA" ${g.nda==='Signed'?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
+              <label class="toggle"><input type="checkbox" id="dNDA" ${ndaSig?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
             </div>
             <div id="ndaBox">${ndaRow}</div>
           </div>
@@ -777,6 +803,7 @@
               ...guests[i],
               checkedIn:cI,
               nda:cN?'Signed':'No',
+              ndaSigned:!!cN,
               patron:cP,
               stiVerified:cS,
               wristbands:wb,
@@ -792,7 +819,10 @@
           enqueuePending(curG.id, curTable, {...criticalFields,...wristFields});
           if(myGen!==saveGen) return;
           applyLocal();
-          showToast('Connection issue — queued on device. Will sync.', 5000);
+          const msg=isTransientErr(e)
+            ?'Network hiccup — queued on device. Will retry.'
+            :('Airtable rejected save: '+fmtErr(e)+' — queued locally; fix field names/types in base.');
+          showToast(msg, 8000);
           try{ render(); }catch(_){}
           return;
         }
@@ -807,7 +837,7 @@
         if(myGen!==saveGen) return;
         applyLocal();
         if(wristErr){
-          showToast('Check-in saved · wristbands queued to sync', 4500);
+          showToast('Check-in saved · wristbands queued — '+fmtErr(wristErr), 7000);
         }else{
           showToast('Saved ✓');
         }
@@ -862,12 +892,12 @@
           showToast('Guest added ✓');
         }
       }catch(e){
-        alert('Error: '+e.message);
+        alert('Airtable: '+fmtErr(e));
       }
       btn.textContent='Add Guest';
     }
 
-    document.querySelector('.modal-wb-note').textContent=WB_NOTE;
+    (function(){ const el=document.querySelector('.modal-wb-note'); if(el) el.textContent=WB_NOTE; })();
     buildEvList();
     document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
