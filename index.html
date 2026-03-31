@@ -62,13 +62,14 @@
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
     @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
-    .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s;}
+    .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .card:active{transform:scale(.96);}
+    .card.checked{filter:grayscale(1);opacity:.62;}
     .card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
     .card-init{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#ebe5dd,#d9d1c7);display:flex;align-items:center;justify-content:center;font-size:26px;font-style:italic;color:var(--warm);}
     .card-body{padding:7px 8px 8px;}
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
-    .card-tick{color:var(--blue);font-size:10px;margin-right:2px;}
+    .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
@@ -165,7 +166,7 @@
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
       .card-tag{font-size:13px;letter-spacing:.04em;margin-top:3px;}
-      .card-tick{font-size:13px;}
+      .card-tick{font-size:20px;}
       .cstate-txt{font-size:15px;}
       .back-btn{font-size:15px;}
       .detail-name{font-size:28px;}
@@ -284,13 +285,19 @@
     const WB_NOTE='💛 Patrons receive gold wristbands · 🖤 Verified STI → black wristbands';
     const BASE='appY6p2HwRtDmOvAf';
     const EVENTS=[
-      {name:"L'Atelier",date:"March 28th",table:"3/28 Door List"},
+      {name:"L'Atelier",date:"May 16th",table:"5/16 Door List"},
       {name:"Do Not Disturb",date:"April 18th",table:"4/18 Door List"},
       {name:"Obscura",date:"May 2nd",table:"Obscura Premiere"},
     ];
-    const TABS=[
+    const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
       {id:'tables',lbl:'Tables'},
+      {id:'working',lbl:'Working'},
+      {id:'all',lbl:'Full List'},
+    ];
+    const DND_TABS=[
+      {id:'dinner',lbl:'Dinner Guests'},
+      {id:'after',lbl:'After Guests'},
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
@@ -365,6 +372,14 @@
       return html;
     }
 
+    function getTabsForCurrentTable(){
+      return curTable==='4/18 Door List'?DND_TABS:BASE_TABS;
+    }
+
+    function defaultTabForCurrentTable(){
+      return curTable==='4/18 Door List'?'dinner':'guest';
+    }
+
     function buildEvList(){
       document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
         `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${esc(e.name)}</div><div class="ev-date">${esc(e.date)}</div></div>`
@@ -373,6 +388,7 @@
 
     function pickEv(i){
       const e=EVENTS[i]; curTable=e.table;
+      curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.name+' | '+e.date;
       document.getElementById('evScreen').style.display='none';
       document.getElementById('app').style.display='block';
@@ -648,7 +664,9 @@
     }
 
     function buildTabs(){
-      document.getElementById('tabs').innerHTML=TABS.map(t=>
+      const tabs=getTabsForCurrentTable();
+      if(!tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
+      document.getElementById('tabs').innerHTML=tabs.map(t=>
         `<button class="tab ${t.id===curTab?'active':''}" onclick="setTab('${t.id}')">${t.lbl}</button>`
       ).join('');
     }
@@ -658,14 +676,22 @@
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
       if(curTab==='tables') list=list.filter(g=>g.patron||listTokensForGuest(g).includes('table'));
-      else if(curTab==='guest') list=list.filter(g=>{ const t=listTokensForGuest(g); return t.includes('guest')||t.includes('table'); });
+      else if(curTab==='guest') list=list.filter(g=>{
+        const t=listTokensForGuest(g);
+        return !t.includes('working');
+      });
+      else if(curTab==='dinner') list=list.filter(g=>listTokensForGuest(g).includes('dinner'));
+      else if(curTab==='after') list=list.filter(g=>listTokensForGuest(g).includes('after'));
       else if(curTab==='working') list=list.filter(g=>listTokensForGuest(g).includes('working'));
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
         const em=(g.email||'').toLowerCase();
         return (g.name||'').toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
       });
-      list=sortGuestsByName(list);
+      list=[...list].sort((a,b)=>{
+        if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
+        return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
+      });
       const chk=list.filter(g=>g.checkedIn).length;
       const pend=pendingCountForTable(curTable);
       const pendHtml=pend?`<div class="stat stat-pending" title="Saved on this device — will sync automatically"><b>${pend}</b> queued</div>`:'';
@@ -682,7 +708,7 @@
         ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=(g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
-      return `<div class="card" onclick="openDetail('${g.id}')">
+      return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
