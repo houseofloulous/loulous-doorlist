@@ -379,6 +379,9 @@
     function defaultTabForCurrentTable(){
       return curTable==='4/18 Door List'?'dinner':'guest';
     }
+    function isDoNotDisturbTable(){
+      return curTable==='4/18 Door List';
+    }
 
     function buildEvList(){
       document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
@@ -504,6 +507,12 @@
         }catch(e){
           const low=String(e.message||'').toLowerCase();
           if((low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
+            if(Object.prototype.hasOwnProperty.call(f,'Patron')){
+              const next={...f};
+              delete next['Patron'];
+              f=next;
+              continue;
+            }
             if(Object.prototype.hasOwnProperty.call(f,'STI Verified')){
               const next={...f};
               delete next['STI Verified'];
@@ -727,6 +736,7 @@
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
       const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
+      const showPatron=!isDoNotDisturbTable();
       const ndaRow=!ndaSig
         ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`
         :'';
@@ -752,13 +762,13 @@
               <div class="wb-display-lbl">Wristbands</div>
               <div id="wbPillDisplay">${wbPill}</div>
             </div>
-            <div class="det-row">
+            ${showPatron?`<div class="det-row">
               <div class="det-row-left">
                 <div class="det-lbl">👑 Patron</div>
                 <div class="det-sublbl">💛 Patrons receive GOLD WRISTBANDS</div>
               </div>
               <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
-            </div>
+            </div>`:''}
             <div class="det-row">
               <div class="det-row-left">
                 <div class="det-lbl">💉 STI Tests Verified</div>
@@ -798,8 +808,8 @@
       const box=document.getElementById('wbPillDisplay');
       const dPat=document.getElementById('dPat');
       const sti=document.getElementById('dSTI');
-      if(!box||!dPat)return;
-      const cP=dPat.checked;
+      if(!box)return;
+      const cP=dPat?dPat.checked:false;
       const cS=sti && sti.checked;
       box.innerHTML=buildWBDisplayHTML(cP,cS);
     }
@@ -861,16 +871,17 @@
         const dNDA=document.getElementById('dNDA');
         const dPat=document.getElementById('dPat');
         const stiEl=document.getElementById('dSTI');
-        if(!dCI||!dNDA||!dPat)return;
+        if(!dCI||!dNDA)return;
         const cI=dCI.checked;
         const cN=dNDA.checked;
-        const cP=dPat.checked;
+        const cP=dPat?dPat.checked:false;
         const cS=stiEl && stiEl.checked;
         const wb=[];
         if(cP) wb.push('Gold');
         if(cS) wb.push('Black');
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
-        const wristFields={'Patron':cP,[pickField(F_STI)]:cS,'Wristband':wb};
+        const wristFields={ [pickField(F_STI)]:cS,'Wristband':wb };
+        if(!isDoNotDisturbTable()) wristFields.Patron=cP;
         const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
           if(i>-1){
