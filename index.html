@@ -294,9 +294,16 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
+    /** Airtable field aliases across older/newer schemas. */
+    const F_CHECKED_IN=['Checked In','Check-in'];
+    const F_STI=['STI Verified','STI Tests'];
+    const F_COAT=['Coat Check #'];
+    const F_PHONE_CHECK=['Phone Check #','Phone Check'];
+    const F_NOTES=['Door Notes'];
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
+    let tableFields=new Set();
     let saveGen=0;
     let TOKEN='';
     const PASS='loulousdoor';
@@ -480,11 +487,34 @@
           return;
         }catch(e){
           const low=String(e.message||'').toLowerCase();
-          if(Object.prototype.hasOwnProperty.call(f,'STI Verified') && (low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
-            const next={...f};
-            delete next['STI Verified'];
-            f=next;
-            continue;
+          if((low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
+            if(Object.prototype.hasOwnProperty.call(f,'STI Verified')){
+              const next={...f};
+              delete next['STI Verified'];
+              next['STI Tests']=f['STI Verified'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'STI Tests')){
+              const next={...f};
+              delete next['STI Tests'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Checked In')){
+              const next={...f};
+              next['Check-in']=next['Checked In'];
+              delete next['Checked In'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Check-in')){
+              const next={...f};
+              next['Checked In']=next['Check-in'];
+              delete next['Check-in'];
+              f=next;
+              continue;
+            }
           }
           if(Object.prototype.hasOwnProperty.call(f,'NDA') && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /nda|choice|select|option|cell/i.test(low)){
             if(f.NDA==='Signed'){ f={...f,NDA:'Yes'}; continue; }
@@ -549,6 +579,23 @@
       return s==='Signed'||s==='Yes';
     }
 
+    function pickField(candidates){
+      for(const n of candidates){
+        if(tableFields.has(n)) return n;
+      }
+      return candidates[0];
+    }
+    function fieldAny(f,candidates){
+      for(const n of candidates){
+        if(Object.prototype.hasOwnProperty.call(f,n)) return f[n];
+      }
+      return undefined;
+    }
+    function fieldStr(f,candidates){
+      const v=fieldAny(f,candidates);
+      return v==null||v===''?'':String(v);
+    }
+
     function toG(r){
       const f=r.fields;
       const wbArr=parseWristbandsFromFields(f);
@@ -558,7 +605,7 @@
       const phoneRaw=f.Phone==null||f.Phone===''?'':String(f.Phone);
       const emailRaw=f.Email==null||f.Email===''?'':String(f.Email);
       return {
-        id:r.id,name:f['Full Name']||'',checkedIn:!!f['Checked In'],
+        id:r.id,name:f['Full Name']||'',checkedIn:!!fieldAny(f,F_CHECKED_IN),
         rsvp:f.RSVP==null||f.RSVP===''?'':String(f.RSVP),
         photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
         list:formatListLabel(f.List),listRaw:f.List,
@@ -570,7 +617,10 @@
         wristbands:wbArr,
         wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
         email:emailRaw,
-        sti:stiVerified
+        sti:stiVerified,
+        coatCheck:fieldStr(f,F_COAT),
+        phoneCheckNum:fieldStr(f,F_PHONE_CHECK),
+        doorNotes:fieldStr(f,F_NOTES)
       };
     }
 
@@ -584,6 +634,11 @@
           if(d.records)recs=recs.concat(d.records);
           offset=d.offset;
         }while(offset);
+        tableFields=new Set();
+        for(const r of recs){
+          const f=r&&r.fields?r.fields:{};
+          for(const k of Object.keys(f)) tableFields.add(k);
+        }
         guests=sortGuestsByName(recs.map(toG));
         render();
         flushPendingQueue().catch(()=>{});
@@ -640,6 +695,9 @@
       const g=guests.find(x=>x.id===id); if(!g) return;
       curG=g;
       const loc=local[id]||{};
+      const coatVal=loc.coat!=null?loc.coat:(g.coatCheck||'');
+      const phoneCkVal=loc.phone!=null?loc.phone:(g.phoneCheckNum||'');
+      const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
       const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
@@ -691,17 +749,17 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(loc.coat||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" onblur="saveLocal()">
             </div>
             <div class="det-input-wrap">
               <div class="det-input-lbl">📱 Phone Check #</div>
-              <input class="det-input" id="dPhone" value="${esc(loc.phone||'')}" placeholder="e.g. 69" onblur="saveLocal()">
+              <input class="det-input" id="dPhoneCk" value="${esc(phoneCkVal)}" placeholder="e.g. 69" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Door Notes:</div>
-              <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocal()">${esc(loc.notes||'')}</textarea>
+              <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
           </div>
         </div>`;
@@ -741,18 +799,30 @@
       hint.style.display=cb.checked?'none':'flex';
     }
 
-    function saveLocal(){
+    async function saveLocal(){
       if(!curG)return;
       const coat=document.getElementById('dCoat');
-      const ph=document.getElementById('dPhone');
+      const phCk=document.getElementById('dPhoneCk');
       const notes=document.getElementById('dNotes');
-      if(!coat||!ph||!notes)return;
-      local[curG.id]={
-        coat:coat.value.trim(),
-        phone:ph.value.trim(),
-        notes:notes.value.trim()
-      };
-      showToast('Saved ✓');
+      if(!coat||!phCk||!notes)return;
+      const vCoat=coat.value.trim();
+      const vPhoneCk=phCk.value.trim();
+      const vNotes=notes.value.trim();
+      const fields={[pickField(F_COAT)]:vCoat,[pickField(F_PHONE_CHECK)]:vPhoneCk,[pickField(F_NOTES)]:vNotes};
+      try{
+        await patchGuestResilient(curG.id, fields);
+        local[curG.id]={coat:vCoat,phone:vPhoneCk,notes:vNotes};
+        const i=guests.findIndex(x=>x.id===curG.id);
+        if(i>-1){
+          guests[i]={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
+        }
+        showToast('Saved ✓');
+      }catch(e){
+        console.error('Coat/phone/notes save failed',e);
+        enqueuePending(curG.id, curTable, fields);
+        showToast('Could not save numbers/notes: '+fmtErr(e)+' — queued to retry',8000);
+        try{ render(); }catch(_){}
+      }
     }
 
     let saveTimer=null;
@@ -773,8 +843,8 @@
         const wb=[];
         if(cP) wb.push('Gold');
         if(cS) wb.push('Black');
-        const criticalFields={'Checked In':cI,'NDA':cN?'Signed':'No'};
-        const wristFields={'Patron':cP,'STI Verified':cS,'Wristband':wb};
+        const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
+        const wristFields={'Patron':cP,[pickField(F_STI)]:cS,'Wristband':wb};
         const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
           if(i>-1){
@@ -854,7 +924,7 @@
       btn.textContent='Adding…';
 
       const fields={'Full Name':name};
-      if(document.getElementById('mCI').checked)fields['Checked In']=true;
+      if(document.getElementById('mCI').checked)fields[pickField(F_CHECKED_IN)]=true;
       if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
 
       const coat=document.getElementById('mCoat').value.trim();
@@ -864,8 +934,17 @@
       try{
         const d=await req('',{method:'POST',body:JSON.stringify({fields})});
         if(d.id){
+          if(coat||ph||notes){
+            try{
+              await patchGuestResilient(d.id,{[pickField(F_COAT)]:coat,[pickField(F_PHONE_CHECK)]:ph,[pickField(F_NOTES)]:notes});
+            }catch(e2){
+              alert('Guest created but coat/phone/notes did not save: '+fmtErr(e2));
+            }
+          }
+          let rec=d;
+          try{ rec=await req('/'+d.id); }catch(_){}
           local[d.id]={coat,phone:ph,notes};
-          guests.push(toG(d));
+          guests.push(toG(rec));
           closeAdd();
           render();
           showToast('Guest added ✓');
