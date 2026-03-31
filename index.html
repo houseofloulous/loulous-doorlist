@@ -513,6 +513,12 @@
               f=next;
               continue;
             }
+            if(Object.prototype.hasOwnProperty.call(f,'Wristband')){
+              const next={...f};
+              delete next['Wristband'];
+              f=next;
+              continue;
+            }
             if(Object.prototype.hasOwnProperty.call(f,'STI Verified')){
               const next={...f};
               delete next['STI Verified'];
