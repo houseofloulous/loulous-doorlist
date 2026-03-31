@@ -551,6 +551,13 @@
             if(f.NDA==='Signed'){ f={...f,NDA:'Yes'}; continue; }
             if(f.NDA==='Yes'){ f={...f,NDA:'Signed'}; continue; }
           }
+          if((Object.prototype.hasOwnProperty.call(f,'STI Verified')||Object.prototype.hasOwnProperty.call(f,'STI Tests')) && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /sti|choice|select|option|cell/i.test(low)){
+            const next={...f};
+            delete next['STI Verified'];
+            delete next['STI Tests'];
+            f=next;
+            continue;
+          }
           if(!hasWB) throw e;
           const w=f.Wristband;
           if(Array.isArray(w)){
@@ -886,7 +893,8 @@
         if(cP) wb.push('Gold');
         if(cS) wb.push('Black');
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
-        const wristFields={ [pickField(F_STI)]:cS,'Wristband':wb };
+        const wristFields={ 'Wristband':wb };
+        if(!isDoNotDisturbTable()) wristFields[pickField(F_STI)]=cS;
         if(!isDoNotDisturbTable()) wristFields.Patron=cP;
         const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
