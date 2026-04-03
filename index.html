@@ -1,154 +1,1003 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OBSCURA</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Playfair+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html{font-size:17px;}
-body{background:#f5f0eb;font-family:'Playfair Display',serif;color:#141414;line-height:1.55;-webkit-font-smoothing:antialiased;}
-.wrap{max-width:820px;margin:0 auto;padding:2rem 1.5rem 3.5rem;}
-.evt-title,.evt-date,.evt-schedule{font-family:'Instrument Serif',serif;}
-.evt-title{font-size:clamp(1.55rem,4vw,2.1rem);font-weight:400;color:#0d0d0d;margin-bottom:.45rem;line-height:1.2;}
-.evt-date{font-size:1.05rem;color:#1a1a1a;line-height:1.55;font-weight:400;margin-bottom:.4rem;}
-.evt-date a{color:inherit;text-decoration:underline;text-underline-offset:2px;}
-.evt-date a:hover{opacity:.85;}
-.evt-schedule{font-size:1.05rem;color:#141414;line-height:1.6;font-weight:400;margin-bottom:1.25rem;max-width:40rem;}
-.rule{border:none;border-top:1px solid #ddd;margin-bottom:1.75rem;}
-.intro{font-size:1.02rem;color:#333;margin-bottom:1.5rem;max-width:38rem;}
-.venue{margin-bottom:2.25rem;}
-.venue img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border:1px solid #1a1a1a;background:#e8e3dc;}
-.venue figcaption{font-size:0.88rem;color:#555;margin-top:.5rem;font-style:italic;}
-.tickets{display:flex;flex-direction:column;gap:1.75rem;}
-.item{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);
-  gap:0;
-  border:1px solid #1a1a1a;
-  background:#faf6f0;
-  overflow:hidden;
-}
-@media(max-width:640px){
-  .item{grid-template-columns:1fr;}
-}
-.item__img{min-height:200px;background:#e0d9cf;border-right:1px solid #1a1a1a;}
-@media(max-width:640px){
-  .item__img{border-right:none;border-bottom:1px solid #1a1a1a;min-height:180px;}
-}
-.item__img img{width:100%;height:100%;object-fit:cover;display:block;}
-.item__body{padding:1.35rem 1.5rem 1.5rem;display:flex;flex-direction:column;}
-.item__title{font-family:'Instrument Serif',serif;font-size:clamp(1.35rem,3vw,1.65rem);font-weight:400;color:#0d0d0d;margin-bottom:.35rem;line-height:1.2;}
-.item__price{font-family:system-ui,-apple-system,sans-serif;font-size:1rem;color:#222;margin-bottom:.85rem;}
-.item__desc{font-size:1.02rem;color:#252525;line-height:1.6;margin-bottom:1rem;flex:1;}
-.item__note{font-size:0.9rem;color:#444;font-style:italic;margin-bottom:1.1rem;line-height:1.5;}
-.item__note a{color:#162B3B;text-decoration:underline;text-underline-offset:2px;}
-.item__actions{display:flex;flex-direction:column;gap:.65rem;margin-top:auto;}
-.item__btn{
-  display:inline-block;text-align:center;padding:12px 18px;font-size:0.72rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;
-  font-family:inherit;background:#ede6dc;color:#111;border:1px solid #1a1a1a;text-decoration:none;transition:background .15s;
-}
-.item__btn:hover{background:#e0d8ce;}
-.item__sub{font-size:0.82rem;font-family:system-ui,-apple-system,sans-serif;}
-.item__sub a{color:#162B3B;text-decoration:underline;text-underline-offset:2px;}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>House of LouLou's — Door</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LouLou Door">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#162B3B">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/apple-touch-icon.jpg">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <style>
+    :root { --blue:#162B3B; --cream:#f5f0eb; --dark:#1a1a1a; --warm:#8c7b6b; --accent:#c9a96e; --green:#34c759; --red:#c0392b; --border:rgba(0,0,0,0.07); }
+    * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html { font-family:'Instrument Serif',serif; }
+    body { background:#f2ede8; font-family:'Instrument Serif',serif; color:var(--dark); min-height:100vh; }
+    button, input, textarea, select, option { font-family:'Instrument Serif',serif; }
+    #evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100dvh;padding:max(14px, env(safe-area-inset-top)) 24px max(12px, env(safe-area-inset-bottom));overflow-y:auto;}
+    .ev-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;min-height:0;padding-top:4px;}
+    /* Logo: no blend/filter — avoids Safari “black box” on PNG over blue */
+    .ev-logo,.logo-img{height:auto;width:auto;display:block;mix-blend-mode:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
+    .ev-logo-link{display:inline-flex;line-height:0;margin-bottom:0;-webkit-tap-highlight-color:transparent;}
+    .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
+    .ev-logo{height:62px;margin-bottom:0;}
+    .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
+    .ev-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
+    .ev-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .18s;}
+    .ev-item:active{background:rgba(255,255,255,.1);border-color:var(--accent);}
+    .ev-name{font-size:20px;color:#fff;font-style:italic;}
+    .ev-date{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
+    .ev-reset{flex-shrink:0;width:100%;max-width:320px;padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
+    #app{display:none;}
+    .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
+    .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
+    .logo-link{display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent;background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;}
+    .logo-img{height:28px;display:block;}
+    .event-title-row{padding:0 16px 8px;text-align:center;}
+    .event-title{font-size:18px;font-style:normal;color:rgba(255,255,255,.92);letter-spacing:.02em;line-height:1.25;}
+    .toolbar{display:flex;gap:8px;padding:0 14px 12px;}
+    .search-wrap{flex:1;position:relative;}
+    .search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:#fff;outline:none;font-style:italic;}
+    .search-input::placeholder{color:rgba(255,255,255,.3);}
+    .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
+    .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
+    .hbtn.nda{border-color:var(--accent);color:var(--accent);}
+    .tabs{display:flex;overflow-x:hidden;border-top:1px solid rgba(255,255,255,.07);}
+    .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;flex:1 1 0;min-width:0;transition:all .18s;-webkit-hyphens:auto;hyphens:auto;}
+    .tab.active{color:#fff;border-bottom-color:var(--accent);}
+    @media(min-width:400px){
+      .tab{padding:10px 4px;font-size:11px;letter-spacing:.05em;}
+    }
+    @media(min-width:520px){
+      .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
+    }
+    .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
+    .stat{font-size:12px;color:var(--warm);font-style:italic;}
+    .stat-pending{color:var(--accent);}
+    .stat b{color:var(--dark);font-style:normal;font-weight:400;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
+    @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
+    @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
+    .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
+    .card:active{transform:scale(.96);}
+    .card.checked{filter:grayscale(1);opacity:.62;}
+    .card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
+    .card-init{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#ebe5dd,#d9d1c7);display:flex;align-items:center;justify-content:center;font-size:26px;font-style:italic;color:var(--warm);}
+    .card-body{padding:7px 8px 8px;}
+    .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
+    .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
+    .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
+    .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+    .wb-gold{background:#c9a96e;}
+    .wb-black{background:#1a1a1a;border:1px solid #bbb;}
+    .cstate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 20px;gap:14px;}
+    .spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
+    @keyframes spin{to{transform:rotate(360deg);}}
+    .cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;font-style:italic;}
+    #detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
+    .detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
+    .detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
+    .back-btn{background:none;border:none;color:rgba(255,255,255,.92);cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:1;display:flex;align-items:center;padding:4px 0;text-align:left;-webkit-font-smoothing:antialiased;}
+    .detail-avatar-wrap{margin-top:14px;display:flex;justify-content:center;}
+    .detail-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #fff;}
+    .detail-init{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:30px;font-style:italic;color:#fff;}
+    .detail-name{font-size:22px;color:#fff;margin-top:10px;font-style:italic;}
+    .detail-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;letter-spacing:.06em;}
+    .detail-chips{display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap;padding:0 20px;}
+    .det-chip{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:6px;padding:5px 12px;font-size:11px;text-decoration:none;}
+    .det-cards{padding:14px;display:flex;flex-direction:column;gap:12px;padding-bottom:40px;}
+    .det-card{background:#fff;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+    .det-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+    .det-row:last-of-type{border-bottom:none;}
+    .det-row-left{display:flex;flex-direction:column;gap:2px;}
+    .det-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:6px;}
+    .wb-display{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+    .wb-display-lbl{font-size:14px;color:var(--dark);margin-bottom:2px;}
+    .det-sublbl,.modal-wb-note{font-size:11px;color:var(--warm);line-height:1.35;}
+    .det-sublbl{margin-top:2px;}
+    .wb-pill{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);}
+    .wb-pill.none{color:var(--warm);font-style:italic;}
+    .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
+    .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
+    #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
+    .wb-circle{width:12px;height:12px;border-radius:50%;}
+    .wb-circle.gold{background:#c9a96e;}
+    .wb-circle.black{background:#fff;}
+    .nda-row{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:#fff5f5;border-top:1px solid rgba(0,0,0,.05);}
+    .nda-text{font-size:12px;color:var(--red);display:flex;align-items:flex-start;gap:6px;line-height:1.5;flex:1;}
+    .nda-link{font-size:18px;cursor:pointer;flex-shrink:0;text-decoration:none;}
+    .toggle{position:relative;width:51px;height:31px;flex-shrink:0;}
+    .toggle input{opacity:0;width:0;height:0;position:absolute;}
+    .slider{position:absolute;cursor:pointer;inset:0;background:#e0dad3;border-radius:31px;transition:.2s;}
+    .slider:before{content:'';position:absolute;width:25px;height:25px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 2px 4px rgba(0,0,0,.15);}
+    .toggle input:checked+.slider{background:var(--green);}
+    .toggle input:checked+.slider:before{transform:translateX(20px);}
+    .saving-toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--dark);color:#fff;border-radius:20px;padding:10px 16px;font-size:12px;letter-spacing:.02em;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9999;max-width:min(92vw,420px);max-height:40vh;overflow-y:auto;word-break:break-word;line-height:1.35;text-align:center;}
+    .saving-toast.show{opacity:1;}
+    .det-input-wrap{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+    .det-input-wrap:last-child{border-bottom:none;}
+    .det-input-lbl{font-size:13px;color:var(--dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;}
+    .det-input{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--warm);outline:none;font-style:italic;}
+    .det-input::placeholder{color:#bbb5ae;}
+    textarea.det-input{resize:none;min-height:80px;}
+    .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
+    .modal-bg.open{opacity:1;pointer-events:all;}
+    .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:40px;}
+    .modal-handle{width:36px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;margin:12px auto 0;}
+    .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
+    .modal-title{font-size:22px;font-style:italic;color:var(--dark);}
+    .modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
+    .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+    .modal-card{background:#fff;border-radius:14px;overflow:hidden;}
+    .modal-row{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:10px;}
+    .modal-row:last-child{border-bottom:none;}
+    .modal-ico{font-size:16px;flex-shrink:0;}
+    .modal-field{flex:1;}
+    .modal-field-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);margin-bottom:2px;}
+    .modal-input{width:100%;background:none;border:none;outline:none;font-size:15px;color:var(--dark);font-style:italic;}
+    .modal-input::placeholder{color:#c0b8ae;}
+    .modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+    .modal-toggle-row:last-child{border-bottom:none;}
+    .modal-toggle-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:8px;}
+    .modal-wb-block{padding:14px 16px;border-top:1px solid rgba(0,0,0,.05);}
+    .modal-wb-lbl{font-size:14px;color:var(--dark);margin-bottom:2px;}
+    .modal-nda-hint{padding:10px 16px 14px;font-size:12px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(0,0,0,.05);line-height:1.4;}
+    .modal-nda-link{font-size:16px;text-decoration:none;flex-shrink:0;}
+    .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
+    .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);font-style:italic;}
+    .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
+
+    /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
+    @media(max-width:480px){
+      html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+      .ev-sub,.ev-date{font-size:13px;letter-spacing:.14em;}
+      .ev-name{font-size:23px;}
+      .event-title{font-size:24px;line-height:1.28;letter-spacing:0;}
+      .toolbar{flex-wrap:wrap;row-gap:8px;}
+      .search-wrap{flex:1 1 100%;min-width:0;}
+      .search-input,.s-icon{font-size:17px;}
+      .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
+      .tabs .tab{padding:11px 0;font-size:14px;letter-spacing:0;line-height:1.15;}
+      .stat{font-size:15px;}
+      .card-body{padding:9px 8px 10px;}
+      .card-name{font-size:16px;line-height:1.35;}
+      .card-tag{font-size:13px;letter-spacing:.04em;margin-top:3px;}
+      .card-tick{font-size:20px;}
+      .cstate-txt{font-size:15px;}
+      .back-btn{font-size:15px;}
+      .detail-name{font-size:28px;}
+      .detail-sub,.det-chip{font-size:14px;}
+      .det-lbl,.wb-display-lbl{font-size:17px;}
+      .det-sublbl{font-size:13px;}
+      .wb-pill{font-size:16px;}
+      .nda-text{font-size:14px;}
+      .det-input,.det-input-lbl{font-size:16px;}
+      .modal-title{font-size:24px;}
+      .modal-toggle-lbl,.modal-wb-lbl{font-size:16px;}
+      .modal-field-lbl{font-size:12px;}
+      .modal-input{font-size:17px;}
+      .mcancel,.msubmit{font-size:15px;}
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="evt-title">OBSCURA</div>
-  <div class="evt-date">Sat, May 2, 2026 &nbsp;·&nbsp; <a href="https://maps.app.goo.gl/9FEoVo52BVGVYE2D8" target="_blank" rel="noopener noreferrer">The Red Pavilion</a>, Brooklyn</div>
-  <div class="evt-schedule">Check in at the lobby begins at 8:30 PM | Show at 9:00 PM</div>
-  <hr class="rule">
-  <p class="intro">Photos of the room and seating styles are below. Choose a ticket type to reserve through our shop—same evening, one immersive show.</p>
+  <div class="saving-toast" id="toast">Saved ✓</div>
 
-  <figure class="venue">
-    <img src="obscura-spaces.jpg" width="1200" height="900" alt="Obscura at The Red Pavilion">
-    <figcaption>The Red Pavilion — Obscura</figcaption>
-  </figure>
-
-  <div class="tickets">
-
-    <article class="item" id="ga">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">General Admission</h2>
-        <p class="item__price">$75.00</p>
-        <p class="item__desc">Standing room on the GA floor with full access to the evening.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/ga" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/ga" target="_blank" rel="noopener">View full item</a></span>
-        </div>
-      </div>
-    </article>
-
-    <article class="item" id="salon-2">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">Salon Table for 2</h2>
-        <p class="item__price">$360.00 <span class="item__sub" style="font-weight:400">($180 per person)</span></p>
-        <p class="item__desc">An intimate table for two within the immersive performance setting. Designed for shared discovery.</p>
-        <p class="item__note">*Private bottle arrangements may be <a href="mailto:concierge@madameloulous.com">requested in advance</a>.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/tablefor2" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/tablefor2" target="_blank" rel="noopener">View full item</a></span>
-        </div>
-      </div>
-    </article>
-
-    <article class="item" id="salon-4">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">Salon Table for 4</h2>
-        <p class="item__price">$225.00 <span class="item__sub" style="font-weight:400">per person</span></p>
-        <p class="item__desc">A single seat at a shared salon table for four—close to the room’s energy.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/tablefor4" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/tablefor4" target="_blank" rel="noopener">View full item</a></span>
-        </div>
-      </div>
-    </article>
-
-    <article class="item" id="intimate">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">Intimate Stage Table</h2>
-        <p class="item__price">$350.00 <span class="item__sub" style="font-weight:400">per seat</span></p>
-        <p class="item__desc">Single seat at an intimate stage table for two—right in the sightlines of the show.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/intimatestagetableseat" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/intimatestagetableseat" target="_blank" rel="noopener">View full item</a></span>
-        </div>
-      </div>
-    </article>
-
-    <article class="item" id="splash">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">Splash Zone Table for 2</h2>
-        <p class="item__price">$400.00 <span class="item__sub" style="font-weight:400">($200 per person)</span></p>
-        <p class="item__desc">Table for two at the stage splash zone—up close when the performance spills forward.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/splash-zone-table-for-2" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/splash-zone-table-for-2" target="_blank" rel="noopener">View full item</a></span>
-        </div>
-      </div>
-    </article>
-
-    <article class="item" id="booth">
-      <div class="item__img" aria-hidden="true"><img src="obscura-spaces.jpg" alt=""></div>
-      <div class="item__body">
-        <h2 class="item__title">Grand Booth for 8</h2>
-        <p class="item__price">$275.00 <span class="item__sub" style="font-weight:400">per seat · $2,200 full booth</span></p>
-        <p class="item__desc">Eight seats per booth. Purchase by seat, or inquire to reserve an entire booth for your group.</p>
-        <div class="item__actions">
-          <a class="item__btn" href="https://www.houseofloulous.com/obscurastickets/p/madames-booth-for-6" target="_blank" rel="noopener">Reserve</a>
-          <span class="item__sub"><a href="https://www.houseofloulous.com/obscurastickets/p/madames-booth-for-6" target="_blank" rel="noopener">View full item</a> · <a href="mailto:concierge@madameloulous.com">Full booth — inquire</a></span>
-        </div>
-      </div>
-    </article>
-
+  <div id="evScreen">
+    <div class="ev-main">
+      <a class="ev-logo-link" href="https://www.houseofloulous.com/" target="_blank" rel="noopener noreferrer" title="House of LouLou's — main site">
+        <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+      </a>
+      <div class="ev-sub">Select Event</div>
+      <div class="ev-list" id="evList"></div>
+    </div>
+    <button type="button" class="ev-reset" onclick="resetKey()">Reset Door Password</button>
   </div>
-</div>
+
+  <div id="app">
+    <div class="list-header">
+      <div class="list-top">
+        <button type="button" class="logo-link" onclick="showEvScreen()" title="Back to Select Event" aria-label="Back to Select Event">
+          <img class="logo-img" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
+        </button>
+      </div>
+      <div class="event-title-row"><div class="event-title" id="eventTitle">L'Atelier | March 28th</div></div>
+      <div class="toolbar">
+        <div class="search-wrap">
+          <span class="s-icon">⌕</span>
+          <input class="search-input" id="searchInput" type="text" placeholder="Search guests…" oninput="render()">
+        </div>
+        <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
+        <button class="hbtn nda" onclick="window.open('https://forms.gle/asRXJtR6zHhDoGZJ8','_blank')">NDA</button>
+      </div>
+      <div class="tabs" id="tabs"></div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="main"></div>
+  </div>
+
+  <div id="detailView"><div id="detailContent"></div></div>
+
+  <div class="modal-bg" id="addModal">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-head">
+        <div class="modal-title">Add New Guest</div>
+        <button class="modal-close" onclick="closeAdd()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-card">
+          <div class="modal-row">
+            <span class="modal-ico">👤</span>
+            <div class="modal-field">
+              <div class="modal-field-lbl">Guest Name <span style="color:var(--red)">Required</span></div>
+              <input class="modal-input" id="aN" placeholder="Enter guest's full name">
+            </div>
+          </div>
+        </div>
+        <div class="modal-card">
+          <div class="modal-toggle-row"><div class="modal-toggle-lbl">✓ Checked In</div><label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label></div>
+          <div class="modal-wb-block">
+            <div class="modal-wb-lbl">Wristbands</div>
+            <div class="modal-wb-note"></div>
+          </div>
+          <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed</div><label class="toggle"><input type="checkbox" id="mNDA" onchange="onAddNDAChange(this)"><span class="slider"></span></label></div>
+          <div id="mNdaHint" class="modal-nda-hint"><span>🔴 If NDA is unsigned, please click here and have them sign:</span><a class="modal-nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>
+        </div>
+        <div class="modal-card">
+          <div class="modal-row">
+            <span class="modal-ico">🧥</span>
+            <div class="modal-field">
+              <div class="modal-field-lbl">Coat Check #</div>
+              <input class="modal-input" id="mCoat" placeholder="Enter coat check number">
+            </div>
+          </div>
+          <div class="modal-row">
+            <span class="modal-ico">📱</span>
+            <div class="modal-field">
+              <div class="modal-field-lbl">Phone Check #</div>
+              <input class="modal-input" id="mPhone" placeholder="Enter phone check number">
+            </div>
+          </div>
+        </div>
+        <div class="modal-card">
+          <div class="modal-row" style="align-items:flex-start">
+            <span class="modal-ico" style="margin-top:2px">📝</span>
+            <div class="modal-field">
+              <div class="modal-field-lbl">Door Notes <span style="color:var(--red)">Required</span></div>
+              <textarea class="modal-input" id="mNotes" rows="3" placeholder="Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)" style="resize:none;line-height:1.5"></textarea>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="mcancel" onclick="closeAdd()">Cancel</button>
+        <button class="msubmit" id="addBtn" onclick="doAdd()">Add Guest</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const WB_NOTE='💛 Patrons receive gold wristbands · 🖤 Verified STI → black wristbands';
+    const BASE='appY6p2HwRtDmOvAf';
+    const EVENTS=[
+      {name:"Do Not Disturb",date:"April 18th",table:"4/18 Door List"},
+      {name:"Premiere",date:"May 2nd",table:"Obscura Premiere"},
+      {name:"L'Atelier",date:"May 16th",table:"5/16 Door List"},
+    ];
+    const BASE_TABS=[
+      {id:'guest',lbl:'Guests'},
+      {id:'tables',lbl:'Tables'},
+      {id:'working',lbl:'Working'},
+      {id:'all',lbl:'Full List'},
+    ];
+    const DND_TABS=[
+      {id:'dinner',lbl:'Dinner Guests'},
+      {id:'after',lbl:'After Guests'},
+      {id:'working',lbl:'Working'},
+      {id:'all',lbl:'Full List'},
+    ];
+    /** Airtable field aliases across older/newer schemas. */
+    const F_CHECKED_IN=['Checked In','Check-in'];
+    const F_STI=['STI Verified','STI Tests'];
+    const F_COAT=['Coat Check #'];
+    const F_PHONE_CHECK=['Phone Check #','Phone Check'];
+    const F_NOTES=['Door Notes'];
+
+    const PENDING_KEY='ll_door_pending_v1';
+    let guests=[],curTab='guest',curTable='',curG=null,local={};
+    let tableFields=new Set();
+    let saveGen=0;
+    let TOKEN='';
+    const PASS='loulousdoor';
+    function ensureToken(){
+      if(!TOKEN){
+        const p=(localStorage.getItem('ll_pass')||'').trim();
+        if(p===PASS){
+          TOKEN='pat77o3kWwRFu0E0G.0efbab0f505d6fc54447711ff2543dd1f9a54adc62a7f9f9f96a73524faea154';
+          return TOKEN;
+        }
+        const entered=(prompt('Enter door password:')||'').trim();
+        if(entered===PASS){
+          localStorage.setItem('ll_pass',entered);
+          TOKEN='pat77o3kWwRFu0E0G.0efbab0f505d6fc54447711ff2543dd1f9a54adc62a7f9f9f96a73524faea154';
+        } else {
+          alert('Wrong password');
+          throw new Error('Auth failed');
+        }
+      }
+      return TOKEN;
+    }
+
+    function resetKey(){
+      localStorage.removeItem('ll_pass');
+      TOKEN='';
+      location.reload();
+    }
+
+    function showToast(msg='Saved ✓',ms=1800){
+      const t=document.getElementById('toast');
+      t.textContent=msg; t.classList.add('show');
+      setTimeout(()=>t.classList.remove('show'),ms);
+    }
+    function fmtErr(e){
+      const s=String(e&&e.message!=null?e.message:e||'Error');
+      return s.length>220?s.slice(0,217)+'…':s;
+    }
+    function isTransientErr(e){
+      const st=e&&e.status!=null?e.status:0;
+      return st===0||st===429||st===502||st===503||st===504;
+    }
+    function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
+    function parseWristbandsFromFields(f){
+      const w=f.Wristband;
+      if(Array.isArray(w)) return w.filter(Boolean);
+      if(w) return [w];
+      return [];
+    }
+    function stiVerifiedFromFields(f,wbArr){
+      if(typeof f['STI Verified']==='boolean') return f['STI Verified'];
+      return wbArr.includes('Black');
+    }
+    function buildWBDisplayHTML(patron,stiVerified){
+      let html='';
+      if(stiVerified) html+='<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>';
+      if(patron) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
+      if(!patron && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
+      return html;
+    }
+
+    function getTabsForCurrentTable(){
+      return curTable==='4/18 Door List'?DND_TABS:BASE_TABS;
+    }
+
+    function defaultTabForCurrentTable(){
+      return curTable==='4/18 Door List'?'dinner':'guest';
+    }
+    function isDoNotDisturbTable(){
+      return curTable==='4/18 Door List';
+    }
+
+    function buildEvList(){
+      document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
+        `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${esc(e.name)}</div><div class="ev-date">${esc(e.date)}</div></div>`
+      ).join('');
+    }
+
+    function pickEv(i){
+      const e=EVENTS[i]; curTable=e.table;
+      curTab=defaultTabForCurrentTable();
+      document.getElementById('eventTitle').textContent=e.name+' | '+e.date;
+      document.getElementById('evScreen').style.display='none';
+      document.getElementById('app').style.display='block';
+      load();
+    }
+
+    function showEvScreen(){
+      document.getElementById('evScreen').style.display='flex';
+      document.getElementById('app').style.display='none';
+      document.getElementById('detailView').style.display='none';
+    }
+
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    /** Airtable request with transient network / rate-limit retries. Optional tableName for sync queue. */
+    async function req(path='',opts={},tableName){
+      const tbl=tableName!=null?tableName:curTable;
+      const maxAttempts=4;
+      let lastErr;
+      for(let attempt=0; attempt<maxAttempts; attempt++){
+        try{
+          const token=ensureToken();
+          const r=await fetch(`https://api.airtable.com/v0/${BASE}/${encodeURIComponent(tbl)}${path}`,{
+            ...opts,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json',...(opts.headers||{})}
+          });
+          let d={};
+          try{d=await r.json();}catch(_){}
+          if(!r.ok){
+            if(r.status===401||r.status===403){
+              localStorage.removeItem('ll_pass');
+              TOKEN='';
+            }
+            const err=new Error(d?.error?.message||String(r.status));
+            err.status=r.status;
+            throw err;
+          }
+          return d;
+        }catch(e){
+          lastErr=e;
+          const st=e.status||0;
+          const msg=String(e.message||'');
+          const transient=
+            st===429||st===502||st===503||st===504||
+            /failed to fetch|networkerror|load failed|fetch|timeout|aborted|network connection was lost|internet connection appears to be offline/i.test(msg);
+          const noRetry=st===401||st===403||st===404||st===400||st===422;
+          if(noRetry||!transient||attempt===maxAttempts-1) throw e;
+          await sleep(400*Math.pow(2,attempt)+Math.random()*200);
+        }
+      }
+      throw lastErr;
+    }
+
+    function enqueuePending(recordId,tableId,fields){
+      try{
+        const raw=localStorage.getItem(PENDING_KEY);
+        let arr=raw?JSON.parse(raw):[];
+        const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
+        if(i>-1) arr[i]={...arr[i], fields:{...arr[i].fields,...fields}, ts:Date.now()};
+        else arr.push({recordId,tableId,fields:{...fields}, ts:Date.now()});
+        localStorage.setItem(PENDING_KEY, JSON.stringify(arr.slice(-500)));
+      }catch(_){}
+    }
+
+    function pendingCountForTable(tableId){
+      try{
+        const raw=localStorage.getItem(PENDING_KEY);
+        if(!raw) return 0;
+        const arr=JSON.parse(raw);
+        return arr.filter(x=>x.tableId===tableId).length;
+      }catch(_){ return 0; }
+    }
+
+    let flushBusy=false;
+    async function flushPendingQueue(){
+      if(flushBusy) return;
+      const raw=localStorage.getItem(PENDING_KEY);
+      if(!raw) return;
+      let arr;
+      try{ arr=JSON.parse(raw); }catch(_){ return; }
+      if(!arr.length) return;
+      flushBusy=true;
+      try{
+        const before=arr.length;
+        const remaining=[];
+        for(const item of arr){
+          try{
+            await patchGuestResilient(item.recordId, item.fields, item.tableId);
+          }catch(_){
+            remaining.push(item);
+          }
+        }
+        localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
+        if(remaining.length<before){
+          showToast('Queued saves synced ✓',2200);
+          try{ render(); }catch(_){}
+        }
+      }finally{
+        flushBusy=false;
+      }
+    }
+
+    /**
+     * PATCH with retries for common Airtable mismatches: missing "STI Verified" field,
+     * Wristband as single-select (string) vs multi-select (array).
+     */
+    async function patchGuestResilient(recordId,fields,tableName){
+      let f={...fields};
+      const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristband');
+      for(let attempt=0; attempt<12; attempt++){
+        try{
+          await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
+          return;
+        }catch(e){
+          const low=String(e.message||'').toLowerCase();
+          if((low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
+            if(Object.prototype.hasOwnProperty.call(f,'Patron')){
+              const next={...f};
+              delete next['Patron'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Wristband')){
+              const next={...f};
+              delete next['Wristband'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'STI Verified')){
+              const next={...f};
+              delete next['STI Verified'];
+              next['STI Tests']=f['STI Verified'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'STI Tests')){
+              const next={...f};
+              delete next['STI Tests'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Checked In')){
+              const next={...f};
+              next['Check-in']=next['Checked In'];
+              delete next['Checked In'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Check-in')){
+              const next={...f};
+              next['Checked In']=next['Check-in'];
+              delete next['Check-in'];
+              f=next;
+              continue;
+            }
+          }
+          if(Object.prototype.hasOwnProperty.call(f,'NDA') && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /nda|choice|select|option|cell/i.test(low)){
+            if(f.NDA==='Signed'){ f={...f,NDA:'Yes'}; continue; }
+            if(f.NDA==='Yes'){ f={...f,NDA:'Signed'}; continue; }
+          }
+          if((Object.prototype.hasOwnProperty.call(f,'STI Verified')||Object.prototype.hasOwnProperty.call(f,'STI Tests')) && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /sti|choice|select|option|cell/i.test(low)){
+            const next={...f};
+            delete next['STI Verified'];
+            delete next['STI Tests'];
+            f=next;
+            continue;
+          }
+          if(!hasWB) throw e;
+          const w=f.Wristband;
+          if(Array.isArray(w)){
+            if(w.length===0){
+              f={...f,Wristband:null};
+              continue;
+            }
+            if(w.length===1){
+              f={...f,Wristband:w[0]};
+              continue;
+            }
+            f={...f,Wristband:w[0]};
+            continue;
+          }
+          if(w===null && (low.includes('invalid')||low.includes('cannot'))){
+            f={...f,Wristband:[]};
+            continue;
+          }
+          if(typeof w==='string' && (low.includes('array')||low.includes('multiple')||(low.includes('invalid')&&low.includes('wristband')))){
+            f={...f,Wristband:[w]};
+            continue;
+          }
+          throw e;
+        }
+      }
+      throw new Error('Could not save after retries');
+    }
+
+    function sortGuestsByName(list){
+      return [...list].sort((a,b)=>{
+        const an=(a?.name||'').trim();
+        const bn=(b?.name||'').trim();
+        return an.localeCompare(bn,undefined,{sensitivity:'base'});
+      });
+    }
+
+    function ndaIsSigned(raw){
+      const s=String(raw==null?'':raw).trim();
+      return s==='Signed'||s==='Yes';
+    }
+
+    function pickField(candidates){
+      for(const n of candidates){
+        if(tableFields.has(n)) return n;
+      }
+      return candidates[0];
+    }
+    function fieldAny(f,candidates){
+      for(const n of candidates){
+        if(Object.prototype.hasOwnProperty.call(f,n)) return f[n];
+      }
+      return undefined;
+    }
+    function fieldStr(f,candidates){
+      const v=fieldAny(f,candidates);
+      return v==null||v===''?'':String(v);
+    }
+
+    function toG(r){
+      const f=r.fields;
+      const wbArr=parseWristbandsFromFields(f);
+      const patron=!!f.Patron;
+      const stiVerified=stiVerifiedFromFields(f,wbArr);
+      const ndaRaw=f.NDA==null||f.NDA===''?'No':String(f.NDA);
+      const phoneRaw=f.Phone==null||f.Phone===''?'':String(f.Phone);
+      const emailRaw=f.Email==null||f.Email===''?'':String(f.Email);
+      return {
+        id:r.id,name:f['Full Name']||'',checkedIn:!!fieldAny(f,F_CHECKED_IN),
+        rsvp:f.RSVP==null||f.RSVP===''?'':String(f.RSVP),
+        photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
+        list:Array.isArray(f.List)?f.List.filter(Boolean).join(', '):(f.List==null||f.List===''?'':String(f.List)),
+        nda:ndaRaw,
+        ndaSigned:ndaIsSigned(ndaRaw),
+        phone:phoneRaw,
+        patron,
+        stiVerified,
+        wristbands:wbArr,
+        wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
+        email:emailRaw,
+        sti:stiVerified,
+        coatCheck:fieldStr(f,F_COAT),
+        phoneCheckNum:fieldStr(f,F_PHONE_CHECK),
+        doorNotes:fieldStr(f,F_NOTES)
+      };
+    }
+
+    async function load(){
+      document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
+      buildTabs();
+      try{
+        let recs=[],offset=null;
+        do{
+          const d=await req(offset?'?offset='+offset:'');
+          if(d.records)recs=recs.concat(d.records);
+          offset=d.offset;
+        }while(offset);
+        tableFields=new Set();
+        for(const r of recs){
+          const f=r&&r.fields?r.fields:{};
+          for(const k of Object.keys(f)) tableFields.add(k);
+        }
+        guests=sortGuestsByName(recs.map(toG));
+        render();
+        flushPendingQueue().catch(()=>{});
+      }catch(e){
+        document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">Reset Door Password</button></div>`;
+      }
+    }
+
+    function buildTabs(){
+      const tabs=getTabsForCurrentTable();
+      if(!tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
+      document.getElementById('tabs').innerHTML=tabs.map(t=>
+        `<button class="tab ${t.id===curTab?'active':''}" onclick="setTab('${t.id}')">${t.lbl}</button>`
+      ).join('');
+    }
+    function setTab(id){curTab=id;buildTabs();render();}
+
+    function render(){
+      const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
+      let list=guests;
+      if(curTab==='tables') list=list.filter(g=>g.patron||(g.list||'').toLowerCase()==='table');
+      else if(curTab==='guest') list=list.filter(g=>(g.list||'').toLowerCase()==='guest');
+      else if(curTab==='dinner') list=list.filter(g=>(g.list||'').toLowerCase()==='dinner');
+      else if(curTab==='after') list=list.filter(g=>(g.list||'').toLowerCase()==='after');
+      else if(curTab==='working') list=list.filter(g=>(g.list||'').toLowerCase()==='working');
+      if(q) list=list.filter(g=>{
+        const phone=(g.phone||'');
+        const em=(g.email||'').toLowerCase();
+        return (g.name||'').toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
+      });
+      list=[...list].sort((a,b)=>{
+        if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
+        return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
+      });
+      const chk=list.filter(g=>g.checkedIn).length;
+      const pend=pendingCountForTable(curTable);
+      const pendHtml=pend?`<div class="stat stat-pending" title="Saved on this device — will sync automatically"><b>${pend}</b> queued</div>`:'';
+      document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>${pendHtml}`;
+      if(!list.length){
+        document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
+        return;
+      }
+      document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
+    }
+
+    function gCard(g){
+      const ph=g.photo
+        ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
+        :`<div class="card-init">${ini(g.name)}</div>`;
+      const dot=(g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
+      return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
+        ${ph}
+        <div class="card-body">
+          <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
+          <div class="card-tag">${dot}${esc(g.list||'')}</div>
+        </div>
+      </div>`;
+    }
+
+    function openDetail(id){
+      const g=guests.find(x=>x.id===id); if(!g) return;
+      curG=g;
+      const loc=local[id]||{};
+      const coatVal=loc.coat!=null?loc.coat:(g.coatCheck||'');
+      const phoneCkVal=loc.phone!=null?loc.phone:(g.phoneCheckNum||'');
+      const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
+      const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
+      const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
+      const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
+      const showPatron=!isDoNotDisturbTable();
+      const ndaRow=!ndaSig
+        ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`
+        :'';
+
+      document.getElementById('detailContent').innerHTML=`
+        <div class="detail-head">
+          <div class="detail-nav"><button type="button" class="back-btn" onclick="closeDetail()" aria-label="Back to guest list">BACK</button></div>
+          <div class="detail-avatar-wrap">${ph}</div>
+          <div class="detail-name">${esc(g.name)}</div>
+          <div class="detail-sub">${esc(g.list||'')}${g.rsvp?' · RSVP: '+esc(g.rsvp):''}</div>
+          <div class="detail-chips">
+            ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
+            ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
+          </div>
+        </div>
+        <div class="det-cards">
+          <div class="det-card">
+            <div class="det-row">
+              <div class="det-lbl">✓ Checked In:</div>
+              <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
+            </div>
+            <div class="wb-display">
+              <div class="wb-display-lbl">Wristbands</div>
+              <div id="wbPillDisplay">${wbPill}</div>
+            </div>
+            ${showPatron?`<div class="det-row">
+              <div class="det-row-left">
+                <div class="det-lbl">👑 Patron</div>
+                <div class="det-sublbl">💛 Patrons receive GOLD WRISTBANDS</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
+            </div>`:''}
+            <div class="det-row">
+              <div class="det-row-left">
+                <div class="det-lbl">💉 STI Tests Verified</div>
+                <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="dSTI" ${g.stiVerified?'checked':''} onchange="onSTI(this)"><span class="slider"></span></label>
+            </div>
+            <div class="det-row">
+              <div class="det-lbl">🤫 NDA Signed:</div>
+              <label class="toggle"><input type="checkbox" id="dNDA" ${ndaSig?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
+            </div>
+            <div id="ndaBox">${ndaRow}</div>
+          </div>
+          <div class="det-card">
+            <div class="det-input-wrap">
+              <div class="det-input-lbl">🧥 Coat Check #</div>
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
+            </div>
+            <div class="det-input-wrap">
+              <div class="det-input-lbl">📱 Phone Check #</div>
+              <input class="det-input" id="dPhoneCk" value="${esc(phoneCkVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
+            </div>
+          </div>
+          <div class="det-card">
+            <div class="det-input-wrap">
+              <div class="det-input-lbl">📝 Door Notes:</div>
+              <textarea class="det-input" id="dNotes" placeholder="Enter any additional notes" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+            </div>
+          </div>
+        </div>`;
+      document.getElementById('app').style.display='none';
+      document.getElementById('detailView').style.display='block';
+      document.getElementById('detailView').scrollTop=0;
+    }
+
+    function updateWBDisplay(){
+      const box=document.getElementById('wbPillDisplay');
+      const dPat=document.getElementById('dPat');
+      const sti=document.getElementById('dSTI');
+      if(!box)return;
+      const cP=dPat?dPat.checked:false;
+      const cS=sti && sti.checked;
+      box.innerHTML=buildWBDisplayHTML(cP,cS);
+    }
+
+    function onSTI(cb){
+      updateWBDisplay();
+      autoSave();
+    }
+
+    function onPatron(cb){
+      updateWBDisplay();
+      autoSave();
+    }
+
+    function onNDA(cb){
+      document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`;
+      autoSave();
+    }
+
+    function onAddNDAChange(cb){
+      const hint=document.getElementById('mNdaHint');
+      if(!hint)return;
+      hint.style.display=cb.checked?'none':'flex';
+    }
+
+    let localSaveTimer=null;
+    function saveLocalDebounced(){
+      clearTimeout(localSaveTimer);
+      localSaveTimer=setTimeout(()=>{ saveLocal(); },450);
+    }
+
+    async function saveLocal(){
+      if(!curG)return;
+      const coat=document.getElementById('dCoat');
+      const phCk=document.getElementById('dPhoneCk');
+      const notes=document.getElementById('dNotes');
+      if(!coat||!phCk||!notes)return;
+      const vCoat=coat.value.trim();
+      const vPhoneCk=phCk.value.trim();
+      const vNotes=notes.value.trim();
+      const fields={[pickField(F_COAT)]:vCoat,[pickField(F_PHONE_CHECK)]:vPhoneCk,[pickField(F_NOTES)]:vNotes};
+      try{
+        await patchGuestResilient(curG.id, fields);
+        local[curG.id]={coat:vCoat,phone:vPhoneCk,notes:vNotes};
+        const i=guests.findIndex(x=>x.id===curG.id);
+        if(i>-1){
+          guests[i]={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
+        }
+        showToast('Saved ✓');
+      }catch(e){
+        console.error('Coat/phone/notes save failed',e);
+        enqueuePending(curG.id, curTable, fields);
+        showToast('Could not save numbers/notes: '+fmtErr(e)+' — queued to retry',8000);
+        try{ render(); }catch(_){}
+      }
+    }
+
+    let saveTimer=null;
+    function autoSave(){
+      clearTimeout(saveTimer);
+      const myGen=++saveGen;
+      saveTimer=setTimeout(async()=>{
+        if(!curG)return;
+        const dCI=document.getElementById('dCI');
+        const dNDA=document.getElementById('dNDA');
+        const dPat=document.getElementById('dPat');
+        const stiEl=document.getElementById('dSTI');
+        if(!dCI||!dNDA)return;
+        const cI=dCI.checked;
+        const cN=dNDA.checked;
+        const cP=dPat?dPat.checked:false;
+        const cS=stiEl && stiEl.checked;
+        const wb=[];
+        if(cP) wb.push('Gold');
+        if(cS) wb.push('Black');
+        const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
+        const wristFields={ 'Wristband':wb };
+        if(!isDoNotDisturbTable()) wristFields[pickField(F_STI)]=cS;
+        if(!isDoNotDisturbTable()) wristFields.Patron=cP;
+        const applyLocal=()=>{
+          const i=guests.findIndex(g=>g.id===curG.id);
+          if(i>-1){
+            guests[i]={
+              ...guests[i],
+              checkedIn:cI,
+              nda:cN?'Signed':'No',
+              ndaSigned:!!cN,
+              patron:cP,
+              stiVerified:cS,
+              wristbands:wb,
+              wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
+              sti:cS
+            };
+          }
+        };
+        try{
+          await patchGuestResilient(curG.id, criticalFields);
+        }catch(e){
+          console.error('Door critical save failed',e);
+          enqueuePending(curG.id, curTable, {...criticalFields,...wristFields});
+          if(myGen!==saveGen) return;
+          applyLocal();
+          const msg=isTransientErr(e)
+            ?'Network hiccup — queued on device. Will retry.'
+            :('Airtable rejected save: '+fmtErr(e)+' — queued locally; fix field names/types in base.');
+          showToast(msg, 8000);
+          try{ render(); }catch(_){}
+          return;
+        }
+        let wristErr=null;
+        try{
+          await patchGuestResilient(curG.id, wristFields);
+        }catch(e){
+          console.error('Door wristband save failed',e);
+          wristErr=e;
+          enqueuePending(curG.id, curTable, wristFields);
+        }
+        if(myGen!==saveGen) return;
+        applyLocal();
+        if(wristErr){
+          showToast('Check-in saved · wristbands queued — '+fmtErr(wristErr), 7000);
+        }else{
+          showToast('Saved ✓');
+        }
+        try{ render(); }catch(_){}
+        flushPendingQueue().catch(()=>{});
+      },600);
+    }
+
+    function closeDetail(){
+      saveGen++;
+      document.getElementById('detailView').style.display='none';
+      document.getElementById('app').style.display='block';
+      curG=null;
+      render();
+    }
+
+    function openAdd(){
+      document.getElementById('addModal').classList.add('open');
+      document.getElementById('aN').focus();
+      const nda=document.getElementById('mNDA');
+      if(nda) onAddNDAChange(nda);
+    }
+
+    function closeAdd(){
+      document.getElementById('addModal').classList.remove('open');
+      ['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');
+      ['mCI','mNDA'].forEach(id=>document.getElementById(id).checked=false);
+      onAddNDAChange({checked:false});
+    }
+
+    async function doAdd(){
+      const name=document.getElementById('aN').value.trim();
+      if(!name){alert('Guest name required');return;}
+      const btn=document.getElementById('addBtn');
+      btn.textContent='Adding…';
+
+      const fields={'Full Name':name};
+      if(document.getElementById('mCI').checked)fields[pickField(F_CHECKED_IN)]=true;
+      if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
+
+      const coat=document.getElementById('mCoat').value.trim();
+      const ph=document.getElementById('mPhone').value.trim();
+      const notes=document.getElementById('mNotes').value.trim();
+
+      try{
+        const d=await req('',{method:'POST',body:JSON.stringify({fields})});
+        if(d.id){
+          if(coat||ph||notes){
+            try{
+              await patchGuestResilient(d.id,{[pickField(F_COAT)]:coat,[pickField(F_PHONE_CHECK)]:ph,[pickField(F_NOTES)]:notes});
+            }catch(e2){
+              alert('Guest created but coat/phone/notes did not save: '+fmtErr(e2));
+            }
+          }
+          let rec=d;
+          try{ rec=await req('/'+d.id); }catch(_){}
+          local[d.id]={coat,phone:ph,notes};
+          guests.push(toG(rec));
+          closeAdd();
+          render();
+          showToast('Guest added ✓');
+        }
+      }catch(e){
+        alert('Airtable: '+fmtErr(e));
+      }
+      btn.textContent='Add Guest';
+    }
+
+    (function(){ const el=document.querySelector('.modal-wb-note'); if(el) el.textContent=WB_NOTE; })();
+    buildEvList();
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
+    });
+    window.addEventListener('online', ()=>flushPendingQueue().catch(()=>{}));
+    setInterval(()=>flushPendingQueue().catch(()=>{}), 30000);
+  </script>
 </body>
 </html>
