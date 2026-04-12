@@ -297,7 +297,7 @@
     ];
     const DND_TABS=[
       {id:'dinner',lbl:'Dinner Guests'},
-      {id:'after',lbl:'After Guests'},
+      {id:'nightcap',lbl:'Nightcap'},
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
@@ -694,7 +694,7 @@
         });
       }
       else if(curTab==='dinner') list=list.filter(g=>listSegmentsLower(g).includes('dinner'));
-      else if(curTab==='after') list=list.filter(g=>listSegmentsLower(g).includes('after'));
+      else if(curTab==='nightcap') list=list.filter(g=>listSegmentsLower(g).includes('nightcap'));
       else if(curTab==='working') list=list.filter(g=>listSegmentsLower(g).includes('working'));
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
