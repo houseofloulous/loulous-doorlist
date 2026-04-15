@@ -286,7 +286,7 @@
     const BASE='appY6p2HwRtDmOvAf';
     const EVENTS=[
       {name:"Do Not Disturb",date:"April 18th",table:"4/18 Door List"},
-      {name:"Obsura",date:"May 2nd",table:"Obscura Premiere"},
+      {name:"Obscura",date:"May 2nd",table:"Obscura Premiere"},
       {name:"L'Atelier",date:"May 16th",table:"5/16 Door List"},
     ];
     const BASE_TABS=[
@@ -297,7 +297,7 @@
     ];
     const DND_TABS=[
       {id:'dinner',lbl:'Dinner Guests'},
-      {id:'nightcap',lbl:'Nightcap'},
+      {id:'after',lbl:'After Guests'},
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
@@ -307,6 +307,8 @@
     const F_COAT=['Coat Check #'];
     const F_PHONE_CHECK=['Phone Check #','Phone Check'];
     const F_NOTES=['Door Notes'];
+    /** 4/18 Door List uses plural "Wristbands"; other lists may still use "Wristband". */
+    const F_WRISTBAND=['Wristbands','Wristband'];
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
@@ -354,11 +356,24 @@
     }
     function esc(s=''){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
     function ini(n){ return n.split(' ').map(p=>p[0]||'').join('').substring(0,2).toUpperCase(); }
+    function rawWristbandFromFields(f){
+      if(!f||typeof f!=='object') return undefined;
+      for(const n of F_WRISTBAND){
+        if(Object.prototype.hasOwnProperty.call(f,n)) return f[n];
+      }
+      return undefined;
+    }
     function parseWristbandsFromFields(f){
-      const w=f.Wristband;
+      const w=rawWristbandFromFields(f);
       if(Array.isArray(w)) return w.filter(Boolean);
       if(w) return [w];
       return [];
+    }
+    function wristKeyInFields(obj){
+      if(!obj||typeof obj!=='object') return null;
+      if(Object.prototype.hasOwnProperty.call(obj,'Wristbands')) return 'Wristbands';
+      if(Object.prototype.hasOwnProperty.call(obj,'Wristband')) return 'Wristband';
+      return null;
     }
     function stiVerifiedFromFields(f,wbArr){
       if(typeof f['STI Verified']==='boolean') return f['STI Verified'];
@@ -504,7 +519,7 @@
      */
     async function patchGuestResilient(recordId,fields,tableName){
       let f={...fields};
-      const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristband');
+      const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristbands')||Object.prototype.hasOwnProperty.call(f,'Wristband');
       for(let attempt=0; attempt<12; attempt++){
         try{
           await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
@@ -515,6 +530,12 @@
             if(Object.prototype.hasOwnProperty.call(f,'Patron')){
               const next={...f};
               delete next['Patron'];
+              f=next;
+              continue;
+            }
+            if(Object.prototype.hasOwnProperty.call(f,'Wristbands')){
+              const next={...f};
+              delete next['Wristbands'];
               f=next;
               continue;
             }
@@ -564,25 +585,27 @@
             continue;
           }
           if(!hasWB) throw e;
-          const w=f.Wristband;
+          const wk=wristKeyInFields(f);
+          if(!wk) throw e;
+          const w=f[wk];
           if(Array.isArray(w)){
             if(w.length===0){
-              f={...f,Wristband:null};
+              f={...f,[wk]:null};
               continue;
             }
             if(w.length===1){
-              f={...f,Wristband:w[0]};
+              f={...f,[wk]:w[0]};
               continue;
             }
-            f={...f,Wristband:w[0]};
+            f={...f,[wk]:w[0]};
             continue;
           }
           if(w===null && (low.includes('invalid')||low.includes('cannot'))){
-            f={...f,Wristband:[]};
+            f={...f,[wk]:[]};
             continue;
           }
-          if(typeof w==='string' && (low.includes('array')||low.includes('multiple')||(low.includes('invalid')&&low.includes('wristband')))){
-            f={...f,Wristband:[w]};
+          if(typeof w==='string' && (low.includes('array')||low.includes('multiple')||(low.includes('invalid')&&(low.includes('wristband')||low.includes('wristbands'))))){
+            f={...f,[wk]:[w]};
             continue;
           }
           throw e;
@@ -694,7 +717,7 @@
         });
       }
       else if(curTab==='dinner') list=list.filter(g=>listSegmentsLower(g).includes('dinner'));
-      else if(curTab==='nightcap') list=list.filter(g=>listSegmentsLower(g).includes('nightcap'));
+      else if(curTab==='after') list=list.filter(g=>listSegmentsLower(g).includes('after'));
       else if(curTab==='working') list=list.filter(g=>listSegmentsLower(g).includes('working'));
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
@@ -890,7 +913,7 @@
         if(cP) wb.push('Gold');
         if(cS) wb.push('Black');
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
-        const wristFields={ 'Wristband':wb };
+        const wristFields={ [pickField(F_WRISTBAND)]:wb };
         if(!isDoNotDisturbTable()) wristFields[pickField(F_STI)]=cS;
         if(!isDoNotDisturbTable()) wristFields.Patron=cP;
         const applyLocal=()=>{
