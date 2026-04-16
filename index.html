@@ -400,7 +400,12 @@
 
     /** Airtable List is often multi-select; normalize to lowercase segments. */
     function listSegmentsLower(g){
-      return (g.list||'').toLowerCase().split(/[,;]/).map(s=>s.trim()).filter(Boolean);
+      const s=(g.list||'').toLowerCase()
+        .replace(/\s*·\s*/g,',')
+        .replace(/\s*\/\s*/g,',')
+        .replace(/\s+and\s+/g,',')
+        .replace(/\n+/g,',');
+      return s.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
     }
 
     function buildEvList(){
@@ -718,7 +723,11 @@
         });
       }
       else if(curTab==='dinner') list=list.filter(g=>listSegmentsLower(g).includes('dinner'));
-      else if(curTab==='after') list=list.filter(g=>listSegmentsLower(g).includes('after'));
+      // Nightcap only (Airtable category). Legacy tab id `after` still exists in some cached builds—
+      // if unhandled, no branch matches and the full guest list is shown by mistake.
+      else if(curTab==='nightcap'||curTab==='after'){
+        list=list.filter(g=>listSegmentsLower(g).includes('nightcap'));
+      }
       else if(curTab==='working') list=list.filter(g=>listSegmentsLower(g).includes('working'));
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
