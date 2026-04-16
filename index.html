@@ -379,11 +379,11 @@
       if(typeof f['STI Verified']==='boolean') return f['STI Verified'];
       return wbArr.includes('Black');
     }
-    function buildWBDisplayHTML(patron,stiVerified){
+    function buildWBDisplayHTML(hasGold,stiVerified){
       let html='';
       if(stiVerified) html+='<div class="wb-pill black"><span class="wb-circle black"></span>Black</div>';
-      if(patron) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
-      if(!patron && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
+      if(hasGold) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
+      if(!hasGold && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
       return html;
     }
 
@@ -647,7 +647,8 @@
     function toG(r){
       const f=r.fields;
       const wbArr=parseWristbandsFromFields(f);
-      const patron=!!f.Patron;
+      const hasGold=wbArr.includes('Gold');
+      const patron=!!f.Patron||hasGold;
       const stiVerified=stiVerifiedFromFields(f,wbArr);
       const ndaRaw=f.NDA==null||f.NDA===''?'No':String(f.NDA);
       const phoneRaw=f.Phone==null||f.Phone===''?'':String(f.Phone);
@@ -907,7 +908,8 @@
         if(!dCI||!dNDA)return;
         const cI=dCI.checked;
         const cN=dNDA.checked;
-        const cP=dPat?dPat.checked:false;
+        const hasExistingGold=!!(curG&&Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
+        const cP=dPat?dPat.checked:hasExistingGold;
         const cS=stiEl && stiEl.checked;
         const wb=[];
         if(cP) wb.push('Gold');
