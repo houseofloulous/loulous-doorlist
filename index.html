@@ -46,8 +46,9 @@
     .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
     .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
     .hbtn.nda{border-color:var(--accent);color:var(--accent);}
-    .tabs{display:flex;overflow-x:hidden;border-top:1px solid rgba(255,255,255,.07);}
-    .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;flex:1 1 0;min-width:0;transition:all .18s;-webkit-hyphens:auto;hyphens:auto;}
+    /* Four tabs per event: equal columns + equal column gaps (flex + wrap looked uneven on phone). */
+    .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:6px;align-items:stretch;padding:0 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
+    .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:all .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;border-bottom-color:var(--accent);}
     @media(min-width:400px){
       .tab{padding:10px 4px;font-size:11px;letter-spacing:.05em;}
@@ -161,7 +162,8 @@
       .search-wrap{flex:1 1 100%;min-width:0;}
       .search-input,.s-icon{font-size:17px;}
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
-      .tabs .tab{padding:11px 0;font-size:14px;letter-spacing:0;line-height:1.15;}
+      .tabs{padding:0 4px;column-gap:4px;}
+      .tabs .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -406,6 +408,11 @@
         .replace(/\s+and\s+/g,',')
         .replace(/\n+/g,',');
       return s.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+    }
+    /** Match a List option even if Airtable uses spaces ("Night Cap" vs "Nightcap"). */
+    function listFieldMatches(g, token){
+      const want=String(token||'').toLowerCase().replace(/\s+/g,'');
+      return listSegmentsLower(g).some(s=>String(s||'').toLowerCase().replace(/\s+/g,'')===want);
     }
 
     function buildEvList(){
@@ -713,22 +720,22 @@
     function render(){
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
-      if(curTab==='tables') list=list.filter(g=>g.patron||listSegmentsLower(g).includes('table'));
+      if(curTab==='tables') list=list.filter(g=>g.patron||listFieldMatches(g,'table'));
       else if(curTab==='guest'){
-        if(isDoNotDisturbTable()) list=list.filter(g=>listSegmentsLower(g).includes('guest'));
+        if(isDoNotDisturbTable()) list=list.filter(g=>listFieldMatches(g,'guest'));
         else list=list.filter(g=>{
           const segs=listSegmentsLower(g);
           if(!segs.length) return true;
-          return !segs.includes('working');
+          return !listFieldMatches(g,'working');
         });
       }
-      else if(curTab==='dinner') list=list.filter(g=>listSegmentsLower(g).includes('dinner'));
+      else if(curTab==='dinner') list=list.filter(g=>listFieldMatches(g,'dinner'));
       // Nightcap only (Airtable category). Legacy tab id `after` still exists in some cached builds—
       // if unhandled, no branch matches and the full guest list is shown by mistake.
       else if(curTab==='nightcap'||curTab==='after'){
-        list=list.filter(g=>listSegmentsLower(g).includes('nightcap'));
+        list=list.filter(g=>listFieldMatches(g,'nightcap'));
       }
-      else if(curTab==='working') list=list.filter(g=>listSegmentsLower(g).includes('working'));
+      else if(curTab==='working') list=list.filter(g=>listFieldMatches(g,'working'));
       if(q) list=list.filter(g=>{
         const phone=(g.phone||'');
         const em=(g.email||'').toLowerCase();
@@ -846,7 +853,8 @@
       const dPat=document.getElementById('dPat');
       const sti=document.getElementById('dSTI');
       if(!box)return;
-      const cP=dPat?dPat.checked:false;
+      const hasGoldFromBands=!!(curG&&Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
+      const cP=(dPat&&dPat.checked)||(!dPat&&hasGoldFromBands);
       const cS=sti && sti.checked;
       box.innerHTML=buildWBDisplayHTML(cP,cS);
     }
