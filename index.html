@@ -114,7 +114,11 @@
     .card-body{padding:7px 8px 8px;}
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
+    .ob-notes-summary{background:rgba(201,169,110,.08);}
+    .ob-date-line{font-size:16px;font-style:italic;color:var(--dark);margin:4px 0 2px;}
+    .ob-pair-line{font-size:13px;margin:8px 0 0;color:var(--warm);line-height:1.4;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
+    .card .card-date-ob{font-size:9px;letter-spacing:.04em;text-transform:none;color:var(--accent);line-height:1.25;margin-top:3px;font-style:italic;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
@@ -371,7 +375,8 @@
     const F_STI=['STI Verified','STI Tests'];
     const F_COAT=['Coat Check #'];
     const F_PHONE_CHECK=['Phone Check #','Phone Check'];
-    const F_NOTES=['Door Notes'];
+    /** Obscura and many tables use "Notes"; door lists also use "Door Notes". */
+    const F_NOTES=['Notes','Door Notes'];
     /** Optional second notes column (only shown in UI if the field exists in the table). */
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
@@ -740,17 +745,58 @@
       return v==null||v===''?'':String(v);
     }
 
-    /** Parse partner name from Door Notes only, e.g. "Date: Alex Meshechok" or "date: Jane Doe". */
-    function parseDateNameFromNotes(notesStr){
-      const t=String(notesStr||'').trim();
-      if(!t) return '';
-      const m=t.match(/^\s*Date:\s*([^\n]+)/im) || t.match(/Date[:\s]+([^\n]+)/i);
+    function normNameKey(s){
+      return String(s||'')
+        .trim()
+        .toLowerCase()
+        .replace(/['\u2019\u2018]/g,'')
+        .replace(/\s+/g,' ')
+        .replace(/[.]+$/,'')
+        .trim();
+    }
+    /**
+     * Partner name from the Notes / Door Notes field. Looks for a line with Date: (any line in the cell).
+     * Also accepts: "date:", multiple spaces, text after "Date - …"
+     */
+    /** One line to show in UI (includes TBD) even when parsing skips TBD for pairing. */
+    function dateLineForDisplay(notesStr,dateNameFromNotes){
+      if(dateNameFromNotes) return 'Date: '+dateNameFromNotes;
+      const t=String(notesStr||'');
+      const m=t.match(/(?:^|\n)\s*(Date\s*:[^\n]+)/im);
       return m?m[1].trim():'';
+    }
+
+    function isPlaceholderDateName(name){
+      const n=normNameKey(String(name||''));
+      if(!n) return true;
+      if(n==='tbd'||n==='n/a'||n==='na'||n==='none'||n==='—'||n==='-') return true;
+      if(/^(tbd|to be determined|n\/?a|none)\b/.test(n)) return true;
+      return false;
+    }
+    function parseDateNameFromNotes(notesStr){
+      const t=String(notesStr||'');
+      if(!t.trim()) return '';
+      const patterns=[
+        /(?:^|\n)\s*Date\s*:\s*([^\n]+)/im,
+        /(?:^|\n)\s*date\s*:\s*([^\n]+)/i,
+        /\bDate\s*:\s*([^\n]+)/i
+      ];
+      for(const re of patterns){
+        const m=t.match(re);
+        if(m&&m[1]&&m[1].trim()){
+          let name=m[1].trim();
+          name=name.replace(/^\([^)]+\)\s*/,'');
+          if(/^solo\b/i.test(name)) return '';
+          if(isPlaceholderDateName(name)) return '';
+          return name;
+        }
+      }
+      return '';
     }
 
     function toG(r){
       const f=r.fields;
-      const nDoor=fieldStr(f,F_NOTES);
+      const nDoor=fieldStr(f,F_NOTES)||fieldStr(f,['Note']);
       const wbArr=parseWristbandsFromFields(f);
       const hasGold=wbArr.includes('Gold');
       const patron=!!f.Patron||hasGold;
@@ -777,20 +823,30 @@
         doorNotes:nDoor,
         doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
         partnerId:null,
-        _dateNameFromNotes:parseDateNameFromNotes(nDoor)
+        /** From Notes line "Date: First Last" (same as Airtable Notes column) — used for pairing + profile. */
+        dateNameFromNotes:parseDateNameFromNotes(nDoor)
       };
     }
 
     function resolveDatePartnersFromGuests(guests){
-      const byNameKey=new Map();
+      const byNormKey=new Map();
       guests.forEach(g=>{
-        const k=(g.name||'').trim().toLowerCase();
-        if(k) byNameKey.set(k,g);
+        const nk=normNameKey(g.name||'');
+        if(nk && !byNormKey.has(nk)) byNormKey.set(nk,g);
       });
       function getByName(n){
         if(!n) return null;
-        const k=String(n).trim().toLowerCase();
-        return byNameKey.get(k)||null;
+        const nk=normNameKey(n);
+        if(!nk) return null;
+        if(byNormKey.has(nk)) return byNormKey.get(nk);
+        const all=guests.map(g=>({g,gk:normNameKey(g.name||'')}));
+        const ex=all.filter(x=>x.gk===nk);
+        if(ex.length===1) return ex[0].g;
+        if(nk.indexOf(' ')===-1){
+          const st=all.filter(x=>x.gk.startsWith(nk+' '));
+          if(st.length===1) return st[0].g;
+        }
+        return null;
       }
       function tryPair(a,b){
         if(!a||!b||a.id===b.id) return;
@@ -802,12 +858,12 @@
       guests.forEach(g=>{ g.partnerId=null; });
       if(isObscuraTable()){
         guests.forEach(g=>{
-          if(!g._dateNameFromNotes) return;
-          const p=getByName(g._dateNameFromNotes);
+          const dn=g.dateNameFromNotes;
+          if(!dn||isPlaceholderDateName(dn)) return;
+          const p=getByName(dn);
           if(p) tryPair(g,p);
         });
       }
-      guests.forEach(g=>{ delete g._dateNameFromNotes; });
     }
 
     function buildObscuraCoupleGroups(list){
@@ -945,10 +1001,13 @@
         ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=isObscuraTable()?'':((g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:''));
+      const dMini=isObscuraTable()?dateLineForDisplay(g.doorNotes,g.dateNameFromNotes):'';
+      const dateMini=dMini?`<div class="card-date-ob">${esc(dMini)}</div>`:'';
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
+          ${dateMini}
           <div class="card-tag">${dot}${esc(g.list||'')}</div>
         </div>
       </div>`;
@@ -965,12 +1024,23 @@
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       if(isObscuraTable()){
         const showExtra=hasNotesExtraField();
+        const pFromList=g.partnerId?guests.find(x=>x.id===g.partnerId):null;
         const n2=showExtra?`
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Internal / table notes</div>
               <div class="det-sublbl" style="margin-bottom:6px">Who approved, comp name, table or booth assignment, plus-ones</div>
               <textarea class="det-input" id="dNotes2" rows="3" placeholder="e.g. Table 4 · comp · approved by name" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
             </div>`:'';
+        const disp=dateLineForDisplay(g.doorNotes,g.dateNameFromNotes);
+        const dateReadout=disp
+          ?`<p class="ob-date-line">${esc(disp)}</p>`
+          :`<p class="det-sublbl" style="font-style:italic;margin:0 0 6px">Add a line in Notes: <strong>Date: First Last</strong> (same as their full name in the list) or <strong>Date: TBD</strong>.</p>`;
+        const pairReadout=pFromList
+          ?`<p class="ob-pair-line">On this list with: <strong>${esc(pFromList.name)}</strong> (gold frame on the list)</p>`
+          :'';
+        const noMatch=(g.dateNameFromNotes && !pFromList && !isPlaceholderDateName(g.dateNameFromNotes))
+          ?`<p class="det-sublbl" style="margin:6px 0 0;opacity:0.88">Not paired yet — the name must match another row’s <strong>Full name</strong>, or the date is on another list tab / not invited.</p>`
+          :'';
         document.getElementById('detailContent').innerHTML=`
         <div class="detail-head">
           <div class="detail-nav"><button type="button" class="back-btn" onclick="closeDetail()" aria-label="Back to guest list">BACK</button></div>
@@ -983,6 +1053,15 @@
           </div>
         </div>
         <div class="det-cards">
+          <div class="det-card ob-notes-summary">
+            <div class="det-input-wrap" style="border-bottom:none">
+              <div class="det-input-lbl">💞 The date (from Airtable Notes column)</div>
+              <p class="det-sublbl" style="margin-bottom:8px">We read the <strong>Date: …</strong> line from your <strong>Notes</strong> field. That is what pairs two guests in the app and shows below.</p>
+              ${dateReadout}
+              ${pairReadout}
+              ${noMatch}
+            </div>
+          </div>
           <div class="det-card">
             <div class="det-row">
               <div class="det-lbl">✓ Checked In</div>
@@ -1003,9 +1082,9 @@
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
-              <div class="det-input-lbl">📝 Door notes</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Arrival, escorts, late changes, ID issues, or anything the floor should know</div>
-              <textarea class="det-input" id="dNotes" rows="4" placeholder="Walk-in notes, who approved, dietary or accessibility, conflicts, special handling at the door" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <div class="det-input-lbl">📝 Notes (Airtable “Notes” — includes Date: name)</div>
+              <div class="det-sublbl" style="margin-bottom:6px">Edits here save to the <strong>Notes / Door notes</strong> field. Put <strong>Date: Full name</strong> in this box so the line above and pairing stay in sync.</div>
+              <textarea class="det-input" id="dNotes" rows="4" placeholder="Date: Firstname Lastname — plus anything else the door should know" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
             ${n2}
           </div>
@@ -1147,7 +1226,14 @@
         if(i>-1){
           const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
           if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
+          if(isObscuraTable()) gNext.dateNameFromNotes=parseDateNameFromNotes(vNotes);
           guests[i]=gNext;
+          if(curG && curG.id===guests[i].id) curG=guests[i];
+        }
+        if(isObscuraTable()){
+          resolveDatePartnersFromGuests(guests);
+          try{ render(); }catch(_){}
+          if(document.getElementById('detailView')?.style?.display!=='none' && curG) openDetail(curG.id);
         }
         showToast('Saved ✓');
       }catch(e){
