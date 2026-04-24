@@ -90,6 +90,22 @@
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
     @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
+    /* Obscura: full-width row for a matched pair; gold frame keeps dates together visually. */
+    .couple-ring{
+      grid-column:1 / -1;
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+      padding:8px 10px 10px;
+      border:1.5px solid var(--accent);
+      border-radius:14px;
+      background:rgba(201,169,110,.08);
+      box-shadow:0 0 0 1px rgba(201,169,110,.2);
+    }
+    .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+    @media(max-width:380px){
+      .couple-ring{grid-template-columns:1fr;gap:8px;}
+    }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .card:active{transform:scale(.96);}
     .card.checked{filter:grayscale(1);opacity:.62;}
@@ -724,8 +740,17 @@
       return v==null||v===''?'':String(v);
     }
 
+    /** Parse partner name from Door Notes only, e.g. "Date: Alex Meshechok" or "date: Jane Doe". */
+    function parseDateNameFromNotes(notesStr){
+      const t=String(notesStr||'').trim();
+      if(!t) return '';
+      const m=t.match(/^\s*Date:\s*([^\n]+)/im) || t.match(/Date[:\s]+([^\n]+)/i);
+      return m?m[1].trim():'';
+    }
+
     function toG(r){
       const f=r.fields;
+      const nDoor=fieldStr(f,F_NOTES);
       const wbArr=parseWristbandsFromFields(f);
       const hasGold=wbArr.includes('Gold');
       const patron=!!f.Patron||hasGold;
@@ -749,9 +774,66 @@
         sti:stiVerified,
         coatCheck:fieldStr(f,F_COAT),
         phoneCheckNum:fieldStr(f,F_PHONE_CHECK),
-        doorNotes:fieldStr(f,F_NOTES),
-        doorNotesExtra:fieldStr(f,F_NOTES_EXTRA)
+        doorNotes:nDoor,
+        doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
+        partnerId:null,
+        _dateNameFromNotes:parseDateNameFromNotes(nDoor)
       };
+    }
+
+    function resolveDatePartnersFromGuests(guests){
+      const byNameKey=new Map();
+      guests.forEach(g=>{
+        const k=(g.name||'').trim().toLowerCase();
+        if(k) byNameKey.set(k,g);
+      });
+      function getByName(n){
+        if(!n) return null;
+        const k=String(n).trim().toLowerCase();
+        return byNameKey.get(k)||null;
+      }
+      function tryPair(a,b){
+        if(!a||!b||a.id===b.id) return;
+        if(a.partnerId && a.partnerId!==b.id) return;
+        if(b.partnerId && b.partnerId!==a.id) return;
+        a.partnerId=b.id;
+        b.partnerId=a.id;
+      }
+      guests.forEach(g=>{ g.partnerId=null; });
+      if(isObscuraTable()){
+        guests.forEach(g=>{
+          if(!g._dateNameFromNotes) return;
+          const p=getByName(g._dateNameFromNotes);
+          if(p) tryPair(g,p);
+        });
+      }
+      guests.forEach(g=>{ delete g._dateNameFromNotes; });
+    }
+
+    function buildObscuraCoupleGroups(list){
+      const byId=Object.fromEntries(list.map(x=>[x.id,x]));
+      const inList=new Set(list.map(x=>x.id));
+      const used=new Set();
+      const out=[];
+      for(const g of list){
+        if(used.has(g.id)) continue;
+        const p=g.partnerId&&inList.has(g.partnerId)?byId[g.partnerId]:null;
+        if(p && !used.has(p.id)){
+          used.add(g.id);
+          used.add(p.id);
+          const pair=((a,b)=>((a.name||'').localeCompare(b.name||'',undefined,{sensitivity:'base'})<=0)?[a,b]:[b,a])(g,p);
+          out.push({pair:true,members:pair});
+        }else{
+          used.add(g.id);
+          out.push({pair:false,members:[g]});
+        }
+      }
+      return out;
+    }
+
+    function guestMatchesSearch(g,q){
+      const em=(g.email||'').toLowerCase();
+      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q);
     }
 
     async function load(){
@@ -770,6 +852,7 @@
           for(const k of Object.keys(f)) tableFields.add(k);
         }
         guests=sortGuestsByName(recs.map(toG));
+        resolveDatePartnersFromGuests(guests);
         const ndaB=document.getElementById('ndaToolbarBtn');
         if(ndaB) ndaB.style.display=isObscuraTable()?'none':'';
         render();
@@ -823,10 +906,14 @@
         return !listFieldMatches(g,'working');
       });
       else if(curTab==='working') list=list.filter(g=>listFieldMatches(g,'working'));
+      const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
       if(q) list=list.filter(g=>{
-        const phone=(g.phone||'');
-        const em=(g.email||'').toLowerCase();
-        return (g.name||'').toLowerCase().includes(q)||phone.includes(q)||em.includes(q);
+        if(guestMatchesSearch(g,q)) return true;
+        if(g.partnerId){
+          const p=byIdAll[g.partnerId];
+          if(p && guestMatchesSearch(p,q)) return true;
+        }
+        return false;
       });
       list=[...list].sort((a,b)=>{
         if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
@@ -840,7 +927,17 @@
         document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
         return;
       }
-      document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
+      if(isObscuraTable()){
+        const gr=buildObscuraCoupleGroups(list);
+        const body=gr.map(grp=>
+          grp.pair
+            ?`<div class="couple-ring" role="group" aria-label="Guest couple">${grp.members.map(m=>gCard(m)).join('')}</div>`
+            :gCard(grp.members[0])
+        ).join('');
+        document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
+      }else{
+        document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
+      }
     }
 
     function gCard(g){
