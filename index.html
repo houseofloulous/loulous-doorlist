@@ -342,12 +342,12 @@
     ];
     /** Tabs for Obscura — `match` = Airtable `List` option. `lbl` = short on-screen only. */
     const OBSCURA_TABS=[
-      {id:'ob_working',match:'Working',lbl:'Working'},
       {id:'ob_ga',match:'GA',lbl:'GA'},
       {id:'ob_s2',match:'Salon Table for 2',lbl:'Salon (2)'},
       {id:'ob_s4',match:'Salon Table for 4',lbl:'Salon (4)'},
       {id:'ob_booth',match:"Madame's Booth for 6",lbl:"Madame's booth"},
       {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'Stage seat'},
+      {id:'ob_working',match:'Working',lbl:'Working'},
       {id:'all',lbl:'All'},
     ];
     /** Airtable field aliases across older/newer schemas. */
@@ -773,6 +773,11 @@
         const ndaB=document.getElementById('ndaToolbarBtn');
         if(ndaB) ndaB.style.display=isObscuraTable()?'none':'';
         render();
+        if(isObscuraTable()){
+          requestAnimationFrame(()=>{
+            document.querySelector('#tabs .tab.active')?.scrollIntoView?.({inline:'center',block:'nearest'});
+          });
+        }
         flushPendingQueue().catch(()=>{});
       }catch(e){
         document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">Reset Door Password</button></div>`;
