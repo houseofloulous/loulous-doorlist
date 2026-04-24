@@ -46,14 +46,34 @@
     .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
     .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
     .hbtn.nda{border-color:var(--accent);color:var(--accent);}
-    /* Default: four tabs. Obscura: six list types + full list (two-column grid on narrow phones). */
+    /* L’Atelier: four equal text tabs. Obscura: one horizontal scroller of pill chips (no cramped grid / wrap). */
     .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:6px;row-gap:4px;align-items:stretch;padding:0 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
-    .tabs.tabs-obscura{grid-template-columns:repeat(2,minmax(0,1fr));}
-    @media(min-width:520px){
-      .tabs.tabs-obscura{grid-template-columns:repeat(3,minmax(0,1fr));}
+    .obscura-tabs-hint{
+      display:block;margin:0;padding:4px 16px 2px;
+      font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.32);
     }
-    @media(min-width:800px){
-      .tabs.tabs-obscura{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .obscura-tabs-hint[hidden]{display:none;}
+    .tabs.tabs-obscura{
+      display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:8px;
+      padding:4px 12px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;
+    }
+    .tabs.tabs-obscura::-webkit-scrollbar{height:4px;}
+    .tabs.tabs-obscura::-webkit-scrollbar-track{background:transparent;}
+    .tabs.tabs-obscura::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
+    .tabs.tabs-obscura .tab{
+      flex:0 0 auto;width:auto;min-width:0;max-width:none;
+      margin:0;padding:9px 14px;border-radius:999px;
+      border:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);
+      background:rgba(0,0,0,.1);
+      font-size:12px;letter-spacing:.01em;font-style:normal;font-weight:500;
+      line-height:1.2;white-space:nowrap;text-align:center;
+      text-transform:none;color:rgba(255,255,255,.75);
+    }
+    .tabs.tabs-obscura .tab.active{
+      color:#fff;border-color:var(--accent);
+      background:linear-gradient(180deg,rgba(201,169,110,.18),rgba(201,169,110,.1));
+      box-shadow:0 0 0 1px rgba(201,169,110,.2);
     }
     .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:all .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;border-bottom-color:var(--accent);}
@@ -168,7 +188,9 @@
       .search-input,.s-icon{font-size:17px;}
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
       .tabs{padding:0 4px;column-gap:4px;}
-      .tabs .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
+      .tabs:not(.tabs-obscura) .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
+      .tabs.tabs-obscura{padding:4px 10px 12px;gap:7px;}
+      .tabs.tabs-obscura .tab{padding:10px 14px;font-size:13px;letter-spacing:0;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -221,7 +243,8 @@
         <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
         <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="window.open('https://forms.gle/asRXJtR6zHhDoGZJ8','_blank')">NDA</button>
       </div>
-      <div class="tabs" id="tabs"></div>
+      <p class="obscura-tabs-hint" id="obscuraTabHint" hidden>List filter</p>
+      <div class="tabs" id="tabs" role="tablist"></div>
     </div>
     <div class="stats" id="stats"></div>
     <div id="main"></div>
@@ -317,15 +340,15 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
-    /** Tabs for Obscura — `match` must match the Airtable `List` single-/multi-select option label. */
+    /** Tabs for Obscura — `match` = Airtable `List` option. `lbl` = short on-screen only. */
     const OBSCURA_TABS=[
       {id:'ob_working',match:'Working',lbl:'Working'},
       {id:'ob_ga',match:'GA',lbl:'GA'},
-      {id:'ob_s2',match:'Salon Table for 2',lbl:'Salon Table for 2'},
-      {id:'ob_s4',match:'Salon Table for 4',lbl:'Salon Table for 4'},
-      {id:'ob_booth',match:"Madame's Booth for 6",lbl:"Madame's Booth for 6"},
-      {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'Intimate Stage Table Seat'},
-      {id:'all',lbl:'Full List'},
+      {id:'ob_s2',match:'Salon Table for 2',lbl:'Salon (2)'},
+      {id:'ob_s4',match:'Salon Table for 4',lbl:'Salon (4)'},
+      {id:'ob_booth',match:"Madame's Booth for 6",lbl:"Madame's booth"},
+      {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'Stage seat'},
+      {id:'all',lbl:'All'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -759,13 +782,26 @@
     function buildTabs(){
       const tabs=getTabsForCurrentTable();
       if(!tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
+      const hint=document.getElementById('obscuraTabHint');
+      if(hint) hint.hidden=!isObscuraTable();
       const wrap=document.getElementById('tabs');
       wrap.className='tabs'+(isObscuraTable()?' tabs-obscura':'');
+      wrap.setAttribute('aria-label', isObscuraTable()?'Filter by list assignment':'Guest segments');
       wrap.innerHTML=tabs.map(t=>
-        `<button type="button" class="tab ${t.id===curTab?'active':''}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`
+        `<button type="button" role="tab" class="tab ${t.id===curTab?'active':''}" aria-selected="${t.id===curTab?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`
       ).join('');
     }
-    function setTab(id){curTab=id;buildTabs();render();}
+    function setTab(id){
+      curTab=id;
+      buildTabs();
+      if(isObscuraTable()){
+        requestAnimationFrame(()=>{
+          const a=document.querySelector('#tabs .tab.active');
+          a?.scrollIntoView?.({inline:'center',block:'nearest',behavior:'smooth'});
+        });
+      }
+      render();
+    }
 
     function render(){
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
