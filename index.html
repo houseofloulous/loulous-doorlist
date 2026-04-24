@@ -50,7 +50,7 @@
     .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:6px;row-gap:4px;align-items:stretch;padding:0 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .obscura-tabs-hint{
       display:block;margin:0;padding:4px 16px 2px;
-      font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:rgba(255,255,255,.32);
+      font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);
     }
     .obscura-tabs-hint[hidden]{display:none;}
     .tabs.tabs-obscura{
@@ -63,12 +63,12 @@
     .tabs.tabs-obscura::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
     .tabs.tabs-obscura .tab{
       flex:0 0 auto;width:auto;min-width:0;max-width:none;
-      margin:0;padding:9px 14px;border-radius:999px;
+      margin:0;padding:10px 16px;border-radius:999px;
       border:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);
       background:rgba(0,0,0,.1);
-      font-size:12px;letter-spacing:.01em;font-style:normal;font-weight:500;
+      font-size:14px;letter-spacing:.08em;font-style:normal;font-weight:500;
       line-height:1.2;white-space:nowrap;text-align:center;
-      text-transform:none;color:rgba(255,255,255,.75);
+      text-transform:uppercase;color:rgba(255,255,255,.8);
     }
     .tabs.tabs-obscura .tab.active{
       color:#fff;border-color:var(--accent);
@@ -190,7 +190,7 @@
       .tabs{padding:0 4px;column-gap:4px;}
       .tabs:not(.tabs-obscura) .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
       .tabs.tabs-obscura{padding:4px 10px 12px;gap:7px;}
-      .tabs.tabs-obscura .tab{padding:10px 14px;font-size:13px;letter-spacing:0;}
+      .tabs.tabs-obscura .tab{padding:11px 16px;font-size:15px;letter-spacing:.07em;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
