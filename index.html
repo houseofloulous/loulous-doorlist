@@ -114,11 +114,10 @@
     .card-body{padding:7px 8px 8px;}
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
-    .ob-notes-summary{background:rgba(201,169,110,.08);}
-    .ob-date-line{font-size:16px;font-style:italic;color:var(--dark);margin:4px 0 2px;}
+    .ob-date-card{background:rgba(201,169,110,.08);}
     .ob-pair-line{font-size:13px;margin:8px 0 0;color:var(--warm);line-height:1.4;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
-    .card .card-date-ob{font-size:9px;letter-spacing:.04em;text-transform:none;color:var(--accent);line-height:1.25;margin-top:3px;font-style:italic;}
+    .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal;font-weight:500;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
@@ -214,6 +213,7 @@
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
+      .card .card-date-ob{font-size:14px;margin-top:5px;}
       .card-tag{font-size:13px;letter-spacing:.04em;margin-top:3px;}
       .card-tick{font-size:20px;}
       .cstate-txt{font-size:15px;}
@@ -291,6 +291,15 @@
         </div>
         <div class="modal-card">
           <div class="modal-toggle-row"><div class="modal-toggle-lbl">✓ Checked In:</div><label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label></div>
+        </div>
+        <div class="modal-card" id="mGuestDateBlock" style="display:none">
+          <div class="modal-row" style="align-items:flex-start">
+            <span class="modal-ico" style="margin-top:2px">💞</span>
+            <div class="modal-field">
+              <div class="modal-field-lbl" id="mGuestDateLbl">The Date</div>
+              <input class="modal-input" id="mGuestDate" placeholder="Full name of their date (as in the list)">
+            </div>
+          </div>
         </div>
         <div class="modal-card" id="addWristNdaBlock">
           <div class="wb-display" style="border-top:none;border-bottom:1px solid rgba(0,0,0,.05);">
@@ -375,8 +384,10 @@
     const F_STI=['STI Verified','STI Tests'];
     const F_COAT=['Coat Check #'];
     const F_PHONE_CHECK=['Phone Check #','Phone Check'];
-    /** Obscura and many tables use "Notes"; door lists also use "Door Notes". */
+    /** Obscura: operational copy only — not for +1 (use Date field for that). */
     const F_NOTES=['Notes','Door Notes'];
+    /** Obscura: who they’re with — one line, full name(s) as in the list (TBD ok). Pairs the gold frame. */
+    const F_GUEST_DATE=['Date','Date name','Guest date','Plus one'];
     /** Optional second notes column (only shown in UI if the field exists in the table). */
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
@@ -755,15 +766,31 @@
         .trim();
     }
     /**
-     * Partner name from the Notes / Door Notes field. Looks for a line with Date: (any line in the cell).
-     * Also accepts: "date:", multiple spaces, text after "Date - …"
+     * First name segment to find in the list (strips *markdown*, legacy "Date: " pasted in this field, splits on , or and).
      */
-    /** One line to show in UI (includes TBD) even when parsing skips TBD for pairing. */
-    function dateLineForDisplay(notesStr,dateNameFromNotes){
-      if(dateNameFromNotes) return 'Date: '+dateNameFromNotes;
-      const t=String(notesStr||'');
-      const m=t.match(/(?:^|\n)\s*(Date\s*:[^\n]+)/im);
-      return m?m[1].trim():'';
+    function firstPartnerNameFromField(raw){
+      if(raw==null) return '';
+      let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
+      if(!s) return '';
+      s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
+      const parts=s.split(/[,;]|\s+and\s+/i);
+      for(const part of parts){
+        const t=part.trim();
+        if(!t) continue;
+        if(/^solo\b/i.test(t)) continue;
+        if(isPlaceholderDateName(t)) continue;
+        return t;
+      }
+      return '';
+    }
+
+    /** List + inputs: show only the name(s), not a pasted "Date: " prefix (legacy Airtable text). */
+    function guestDateDisplayText(raw){
+      if(raw==null) return '';
+      let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
+      if(!s) return '';
+      s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
+      return s;
     }
 
     function isPlaceholderDateName(name){
@@ -773,30 +800,10 @@
       if(/^(tbd|to be determined|n\/?a|none)\b/.test(n)) return true;
       return false;
     }
-    function parseDateNameFromNotes(notesStr){
-      const t=String(notesStr||'');
-      if(!t.trim()) return '';
-      const patterns=[
-        /(?:^|\n)\s*Date\s*:\s*([^\n]+)/im,
-        /(?:^|\n)\s*date\s*:\s*([^\n]+)/i,
-        /\bDate\s*:\s*([^\n]+)/i
-      ];
-      for(const re of patterns){
-        const m=t.match(re);
-        if(m&&m[1]&&m[1].trim()){
-          let name=m[1].trim();
-          name=name.replace(/^\([^)]+\)\s*/,'');
-          if(/^solo\b/i.test(name)) return '';
-          if(isPlaceholderDateName(name)) return '';
-          return name;
-        }
-      }
-      return '';
-    }
-
     function toG(r){
       const f=r.fields;
       const nDoor=fieldStr(f,F_NOTES)||fieldStr(f,['Note']);
+      const gDate=fieldStr(f,F_GUEST_DATE);
       const wbArr=parseWristbandsFromFields(f);
       const hasGold=wbArr.includes('Gold');
       const patron=!!f.Patron||hasGold;
@@ -823,8 +830,8 @@
         doorNotes:nDoor,
         doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
         partnerId:null,
-        /** From Notes line "Date: First Last" (same as Airtable Notes column) — used for pairing + profile. */
-        dateNameFromNotes:parseDateNameFromNotes(nDoor)
+        /** Airtable "Date" field — name(s) only; not mixed with door Notes. */
+        guestDate:gDate
       };
     }
 
@@ -858,8 +865,8 @@
       guests.forEach(g=>{ g.partnerId=null; });
       if(isObscuraTable()){
         guests.forEach(g=>{
-          const dn=g.dateNameFromNotes;
-          if(!dn||isPlaceholderDateName(dn)) return;
+          const dn=firstPartnerNameFromField(g.guestDate);
+          if(!dn) return;
           const p=getByName(dn);
           if(p) tryPair(g,p);
         });
@@ -889,7 +896,8 @@
 
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
-      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q);
+      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
+        ||(isObscuraTable() && String(g.guestDate||'').toLowerCase().includes(q));
     }
 
     async function load(){
@@ -1001,7 +1009,7 @@
         ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=isObscuraTable()?'':((g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:''));
-      const dMini=isObscuraTable()?dateLineForDisplay(g.doorNotes,g.dateNameFromNotes):'';
+      const dMini=isObscuraTable()?guestDateDisplayText(g.guestDate):'';
       const dateMini=dMini?`<div class="card-date-ob">${esc(dMini)}</div>`:'';
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
@@ -1031,15 +1039,14 @@
               <div class="det-sublbl" style="margin-bottom:6px">Who approved, comp name, table or booth assignment, plus-ones</div>
               <textarea class="det-input" id="dNotes2" rows="3" placeholder="e.g. Table 4 · comp · approved by name" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
             </div>`:'';
-        const disp=dateLineForDisplay(g.doorNotes,g.dateNameFromNotes);
-        const dateReadout=disp
-          ?`<p class="ob-date-line">${esc(disp)}</p>`
-          :`<p class="det-sublbl" style="font-style:italic;margin:0 0 6px">Add a line in Notes: <strong>Date: First Last</strong> (same as their full name in the list) or <strong>Date: TBD</strong>.</p>`;
+        const gdv=loc.guestDate!=null?loc.guestDate:(g.guestDate||'');
+        const gdvShow=guestDateDisplayText(gdv);
+        const pnm=firstPartnerNameFromField(gdv);
         const pairReadout=pFromList
-          ?`<p class="ob-pair-line">On this list with: <strong>${esc(pFromList.name)}</strong> (gold frame on the list)</p>`
+          ?`<p class="ob-pair-line">With in this list: <strong>${esc(pFromList.name)}</strong></p>`
           :'';
-        const noMatch=(g.dateNameFromNotes && !pFromList && !isPlaceholderDateName(g.dateNameFromNotes))
-          ?`<p class="det-sublbl" style="margin:6px 0 0;opacity:0.88">Not paired yet — the name must match another row’s <strong>Full name</strong>, or the date is on another list tab / not invited.</p>`
+        const noMatch=pnm && !pFromList
+          ?`<p class="det-sublbl" style="margin:6px 0 0;opacity:0.85">Not paired — check spelling against <strong>Full name</strong> on the other row, or they’re on another tab.</p>`
           :'';
         document.getElementById('detailContent').innerHTML=`
         <div class="detail-head">
@@ -1053,11 +1060,10 @@
           </div>
         </div>
         <div class="det-cards">
-          <div class="det-card ob-notes-summary">
+          <div class="det-card ob-date-card">
             <div class="det-input-wrap" style="border-bottom:none">
-              <div class="det-input-lbl">💞 The date (from Airtable Notes column)</div>
-              <p class="det-sublbl" style="margin-bottom:8px">We read the <strong>Date: …</strong> line from your <strong>Notes</strong> field. That is what pairs two guests in the app and shows below.</p>
-              ${dateReadout}
+              <div class="det-input-lbl">The Date</div>
+              <input class="det-input" id="dGuestDate" value="${esc(gdvShow)}" placeholder="e.g. Rob Schnabel" style="min-height:44px" oninput="saveLocalDebounced()" onblur="saveLocal()">
               ${pairReadout}
               ${noMatch}
             </div>
@@ -1082,9 +1088,9 @@
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
-              <div class="det-input-lbl">📝 Notes (Airtable “Notes” — includes Date: name)</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Edits here save to the <strong>Notes / Door notes</strong> field. Put <strong>Date: Full name</strong> in this box so the line above and pairing stay in sync.</div>
-              <textarea class="det-input" id="dNotes" rows="4" placeholder="Date: Firstname Lastname — plus anything else the door should know" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <div class="det-input-lbl">📝 Notes</div>
+              <div class="det-sublbl" style="margin-bottom:6px">Other door or ops notes only — the date is in <strong>The Date</strong> above.</div>
+              <textarea class="det-input" id="dNotes" rows="3" placeholder="VIPs, issues at the door, special handling…" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
             ${n2}
           </div>
@@ -1207,11 +1213,15 @@
       const phCk=document.getElementById('dPhoneCk');
       const notes=document.getElementById('dNotes');
       if(!coat||!phCk||!notes)return;
+      const dGD=isObscuraTable()?document.getElementById('dGuestDate'):null;
+      if(isObscuraTable() && !dGD) return;
       const vCoat=coat.value.trim();
       const vPhoneCk=phCk.value.trim();
       const vNotes=notes.value.trim();
+      const vGD=dGD?guestDateDisplayText(dGD.value):'';
       const n2el=document.getElementById('dNotes2');
       const fields={[pickField(F_COAT)]:vCoat,[pickField(F_PHONE_CHECK)]:vPhoneCk,[pickField(F_NOTES)]:vNotes};
+      if(isObscuraTable()) fields[pickField(F_GUEST_DATE)]=vGD;
       let v2='';
       if(n2el && hasNotesExtraField()){
         v2=n2el.value.trim();
@@ -1220,13 +1230,14 @@
       try{
         await patchGuestResilient(curG.id, fields);
         const locNext={...local[curG.id],coat:vCoat,phone:vPhoneCk,notes:vNotes};
+        if(isObscuraTable()) locNext.guestDate=vGD;
         if(n2el && hasNotesExtraField()) locNext.notes2=v2;
         local[curG.id]=locNext;
         const i=guests.findIndex(x=>x.id===curG.id);
         if(i>-1){
           const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
           if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
-          if(isObscuraTable()) gNext.dateNameFromNotes=parseDateNameFromNotes(vNotes);
+          if(isObscuraTable()) gNext.guestDate=vGD;
           guests[i]=gNext;
           if(curG && curG.id===guests[i].id) curG=guests[i];
         }
@@ -1357,11 +1368,13 @@
       document.getElementById('aN').focus();
       const wr=document.getElementById('addWristNdaBlock');
       if(wr) wr.style.display=isObscuraTable()?'none':'';
+      const mgb=document.getElementById('mGuestDateBlock');
+      if(mgb) mgb.style.display=isObscuraTable()?'block':'none';
       const mnl=document.getElementById('mNotesLbl');
-      if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Door notes (recommended)':'Door Notes <span style="color:var(--red)">Required</span>';
+      if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'Door Notes <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder=isObscuraTable()
-        ?'Who approved entry, comp vs GA, table/booth/stage, dietary or accessibility, escorts, ID issues, conflicts'
+        ?'Other door or ops notes (not the date — use The Date on the line above).'
         :'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
       const mPhEl=document.getElementById('mPhone');
@@ -1376,6 +1389,8 @@
 
     function closeAdd(){
       document.getElementById('addModal').classList.remove('open');
+      const mgd=document.getElementById('mGuestDate');
+      if(mgd) mgd.value='';
       ['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');
       ['mCI','mNDA','mSTI','mPat'].forEach(id=>{
         const n=document.getElementById(id);
@@ -1386,6 +1401,8 @@
       if(wr) wr.style.display='';
       const mnl=document.getElementById('mNotesLbl');
       if(mnl) mnl.innerHTML='Door Notes <span style="color:var(--red)">Required</span>';
+      const mgbC=document.getElementById('mGuestDateBlock');
+      if(mgbC) mgbC.style.display='none';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
@@ -1402,8 +1419,11 @@
       btn.textContent='Adding…';
 
       if(isObscuraTable()){
+        const mGd=document.getElementById('mGuestDate');
+        const gdv=mGd?guestDateDisplayText(mGd.value):'';
         const fields={'Full Name':name};
         if(document.getElementById('mCI').checked) fields[pickField(F_CHECKED_IN)]=true;
+        if(gdv) fields[pickField(F_GUEST_DATE)]=gdv;
         const coat=document.getElementById('mCoat').value.trim();
         const ph=document.getElementById('mPhone').value.trim();
         const notes=document.getElementById('mNotes').value.trim();
@@ -1419,9 +1439,10 @@
             }
             let rec=d;
             try{ rec=await req('/'+d.id); }catch(_){}
-            local[d.id]={coat,phone:ph,notes};
+            local[d.id]={coat,phone:ph,notes,guestDate:gdv};
             guests.push(toG(rec));
             closeAdd();
+            resolveDatePartnersFromGuests(guests);
             render();
             showToast('Guest added ✓');
           }
