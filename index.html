@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewposrt" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>House of LouLou's — Door</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,7 +27,7 @@
     .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .ev-logo{height:62px;margin-bottom:0;}
     .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
-    .ev-list{width:100%;max-width:min(100%,280px);display:flex;flex-direction:column;gap:12px;}
+    .ev-list{width:100%;max-width:min(100%,280px);display:flex;flex-direction:column;gap:20px;}
     button.ev-item.ev-item-art{
       display:block;width:100%;padding:0;margin:0;border:none;border-radius:12px;cursor:pointer;
       background:var(--blue);overflow:hidden;-webkit-tap-highlight-color:transparent;line-height:0;position:relative;
@@ -40,8 +40,11 @@
     button.ev-item.ev-item-art:active{transform:scale(.985);opacity:.95;}
     .ev-item-art .ev-art{
       display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;vertical-align:bottom;
+      border:0;outline:0;border-radius:12px;
+      backface-visibility:hidden;-webkit-backface-visibility:hidden;
+      transform:translateZ(0);
     }
-    .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,280px);padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
+    .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,280px);margin-top:6px;padding:22px 10px max(18px, env(safe-area-inset-bottom));opacity:.55;background:none;border:none;color:#fff;font-size:12px;letter-spacing:.04em;cursor:pointer;text-align:center;}
     #app{display:none;}
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
