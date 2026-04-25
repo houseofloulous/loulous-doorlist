@@ -88,19 +88,19 @@
     .stat{font-size:12px;color:var(--warm);}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
-    .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;container-type:inline-size;}
+    .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;justify-items:stretch;}
     @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
-    /* Pairs / trios: one row per group, centered; width matches the same gspan tracks as a plain grid row so card sizes still match a solo. */
+    /* Pairs / trios: one row per group, centered. 100% = full .grid content width (not 100cqw — fixes Safari + avoids stretch eating margin auto). */
     .couple-ring{
       --ring-cols:2;
       --gspan:2;
       display:grid;
       grid-template-columns:repeat(var(--ring-cols),minmax(0,1fr));
       grid-column:1 / -1;
-      width:min(100%,calc((100cqw - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid)));
-      margin-left:auto;
-      margin-right:auto;
+      width:min(100%,calc((100% - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid)));
+      max-width:100%;
+      justify-self:center;
       justify-items:stretch;
       align-items:start;
       gap:10px;
@@ -1016,8 +1016,15 @@
       return out;
     }
 
-    /** Pairs / trios first, then solos. Sort key = alphabetically first name in the cluster (members are already A–Z). */
+    function obscuraGroupIsDone(grp){
+      if(grp.pair) return grp.members.length>0 && grp.members.every(m=>m.checkedIn);
+      return !!grp.members[0]?.checkedIn;
+    }
+    /** Not fully checked first (as on the flat list), then pairs, then A–Z by first name in the cluster. */
     function compareObscuraDisplayGroups(a,b){
+      const dA=obscuraGroupIsDone(a);
+      const dB=obscuraGroupIsDone(b);
+      if(dA!==dB) return dA?1:-1;
       if(!!a.pair!==!!b.pair) return a.pair?-1:1;
       const an=(a.members[0]?.name||'').trim();
       const bn=(b.members[0]?.name||'').trim();
