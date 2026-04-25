@@ -91,6 +91,9 @@
     .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;justify-items:stretch;}
     @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
+    .ob-all-wrap{background:var(--cream);min-height:0;}
+    .ob-sec{grid-column:1 / -1;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);margin:18px 0 8px;padding:0 14px;max-width:1200px;box-sizing:border-box;margin-left:auto;margin-right:auto;}
+    .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
     /* Pairs / trios: one row per group, centered. 100% = full .grid content width (not 100cqw — fixes Safari + avoids stretch eating margin auto). */
     .couple-ring{
       --ring-cols:2;
@@ -1030,6 +1033,50 @@
       const bn=(b.members[0]?.name||'').trim();
       return an.localeCompare(bn,undefined,{sensitivity:'base'});
     }
+    function obscuraListTabIdForGuest(g){
+      for(const t of OBSCURA_TABS){
+        if(t.id==='all'||!t.match) continue;
+        if(listFieldMatches(g,t.match)) return t.id;
+      }
+      return 'ob_other';
+    }
+    function obscuraGroupListSectionId(grp){
+      const ids=grp.members.map(obscuraListTabIdForGuest);
+      const first=ids[0];
+      if(ids.every(id=>id===first)) return first;
+      return 'ob_mixed';
+    }
+    function obscuraAllSectionOrder(){
+      return OBSCURA_TABS.filter(t=>t.id!=='all'&&t.match)
+        .map(t=>({id:t.id,lbl:t.lbl})).concat([{id:'ob_mixed',lbl:'MIXED'},{id:'ob_other',lbl:'OTHER'}]);
+    }
+    function renderObscuraGroupHtml(grp){
+      if(grp.pair){
+        const n=grp.members.length, wide=n>3;
+        return wide
+          ?`<div class="couple-ring couple-ring-wide" style="--ring-cols:${Math.min(n,3)}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`
+          :`<div class="couple-ring" style="--ring-cols:${n};--gspan:${n}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`;
+      }
+      return gCard(grp.members[0]);
+    }
+    function buildObscuraAllGroupedMainHtml(list){
+      const groups=buildObscuraCoupleGroups(list);
+      const buckets=Object.create(null);
+      for(const g of groups){
+        const id=obscuraGroupListSectionId(g);
+        if(!buckets[id]) buckets[id]=[];
+        buckets[id].push(g);
+      }
+      const parts=[];
+      for(const {id, lbl} of obscuraAllSectionOrder()){
+        const arr=buckets[id];
+        if(!arr||!arr.length) continue;
+        arr.sort(compareObscuraDisplayGroups);
+        const body=arr.map(renderObscuraGroupHtml).join('');
+        parts.push(`<h2 class="ob-sec" id="ob-sec-${esc(id)}">${esc(lbl)}</h2><div class="grid">${body}</div>`);
+      }
+      return `<div class="ob-all-wrap">${parts.join('')}</div>`;
+    }
 
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
@@ -1129,15 +1176,13 @@
         return;
       }
       if(isObscuraTable()){
-        const gr=buildObscuraCoupleGroups(list).sort(compareObscuraDisplayGroups);
-        const body=gr.map(grp=>
-          grp.pair
-            ?(()=>{ const n=grp.members.length; const wide=n>3; return wide
-              ?`<div class="couple-ring couple-ring-wide" style="--ring-cols:${Math.min(n,3)}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`
-              :`<div class="couple-ring" style="--ring-cols:${n};--gspan:${n}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`;})()
-            :gCard(grp.members[0])
-        ).join('');
-        document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
+        if(curTab==='all'){
+          document.getElementById('main').innerHTML=buildObscuraAllGroupedMainHtml(list);
+        }else{
+          const gr=buildObscuraCoupleGroups(list).sort(compareObscuraDisplayGroups);
+          const body=gr.map(renderObscuraGroupHtml).join('');
+          document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
+        }
       }else{
         document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
       }
