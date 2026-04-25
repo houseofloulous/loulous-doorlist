@@ -115,6 +115,7 @@
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
     .ob-date-card{background:rgba(201,169,110,.08);}
+    .ob-date-readout{font-size:16px;color:var(--dark);line-height:1.45;padding:0 0 2px;word-wrap:break-word;}
     .ob-pair-line{font-size:13px;margin:8px 0 0;color:var(--warm);line-height:1.4;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
     .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal;font-weight:500;}
@@ -225,6 +226,7 @@
       .wb-pill{font-size:16px;}
       .nda-text{font-size:14px;}
       .det-input,.det-input-lbl{font-size:16px;}
+      .ob-date-readout{font-size:18px;}
       .modal-title{font-size:24px;}
       .modal-toggle-lbl{font-size:16px;}
       .modal-field-lbl{font-size:12px;}
@@ -383,11 +385,11 @@
     const F_CHECKED_IN=['Checked In','Check-in'];
     const F_STI=['STI Verified','STI Tests'];
     const F_COAT=['Coat Check #'];
-    const F_PHONE_CHECK=['Phone Check #','Phone Check'];
+    const F_PHONE_CHECK=['Phone Check #','Phone check #','Phone Check','Pouch #','Phone pouch'];
     /** Obscura: operational copy only — not for +1 (use Date field for that). */
     const F_NOTES=['Notes','Door Notes'];
-    /** Obscura: who they’re with — one line, full name(s) as in the list (TBD ok). Pairs the gold frame. */
-    const F_GUEST_DATE=['Date','Date name','Guest date','Plus one'];
+    /** +1 / date name — text column(s) only. Obscura uses a **Date** field (not Relationship). */
+    const F_GUEST_DATE=['Date','Date name','Guest date','Plus one','+1','Date (guest)'];
     /** Optional second notes column (only shown in UI if the field exists in the table). */
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
@@ -639,6 +641,14 @@
         }catch(e){
           const low=String(e.message||'').toLowerCase();
           if((low.includes('unknown field')||low.includes('could not find field')||low.includes('field name')||low.includes('unknown_column')||low.includes('invalid_column'))){
+            const msg0=String(e.message||'');
+            const mBad=msg0.match(/"([^"]+)"/);
+            if(mBad && mBad[1] && Object.prototype.hasOwnProperty.call(f,mBad[1])){
+              const next={...f};
+              delete next[mBad[1]];
+              f=next;
+              continue;
+            }
             if(Object.prototype.hasOwnProperty.call(f,'Patron')){
               const next={...f};
               delete next['Patron'];
@@ -743,7 +753,22 @@
       for(const n of candidates){
         if(tableFields.has(n)) return n;
       }
-      return candidates[0];
+      const lower=new Map();
+      for(const k of tableFields) lower.set(k.toLowerCase(),k);
+      for(const n of candidates){
+        const k=lower.get(n.toLowerCase());
+        if(k) return k;
+      }
+      return null;
+    }
+    function pickFieldOrGuessPhone(){
+      const k=pickField(F_PHONE_CHECK);
+      if(k) return k;
+      for(const n of tableFields)
+        if(/\bphone\b/i.test(n) && /\bcheck\b/i.test(n)) return n;
+      for(const n of tableFields)
+        if(/^pouch\b/i.test(n) || (/\blocker\b/i.test(n) && /#/.test(n))) return n;
+      return null;
     }
     function fieldAny(f,candidates){
       for(const n of candidates){
@@ -754,6 +779,25 @@
     function fieldStr(f,candidates){
       const v=fieldAny(f,candidates);
       return v==null||v===''?'':String(v);
+    }
+    /** Use for +1 / date name: text, or skip unresolved linked-record ID arrays (use a Lookup in Airtable for those). */
+    function airtableValueToNameLine(v){
+      if(v==null||v==='') return '';
+      if(typeof v==='string' || typeof v==='number' || typeof v==='boolean') return String(v).trim();
+      if(Array.isArray(v)){
+        if(!v.length) return '';
+        if(v.every(x=>typeof x==='string' && /^rec[a-zA-Z0-9]{10,}/.test(x))) return '';
+        return v.map(airtableValueToNameLine).filter(Boolean).join(', ');
+      }
+      return '';
+    }
+    function fieldStrGuestDate(f){
+      for(const n of F_GUEST_DATE){
+        if(!Object.prototype.hasOwnProperty.call(f,n)) continue;
+        const s=airtableValueToNameLine(f[n]);
+        if(s) return s;
+      }
+      return '';
     }
 
     function normNameKey(s){
@@ -792,6 +836,21 @@
       s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
       return s;
     }
+    /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
+    function parseDateNameFromNotes(notes){
+      if(notes==null) return '';
+      for(const line of String(notes).split(/\n/)){
+        const t=line.replace(/\*+/g,' ').trim();
+        const m=t.match(/^\*?\s*Date\s*:\s*(.+)$/i);
+        if(m) return m[1].replace(/\*+$/,'').trim();
+      }
+      return '';
+    }
+    function dateLineFromGuest(g){
+      const f=String(g.guestDate||'').trim();
+      if(f) return f;
+      return parseDateNameFromNotes(g.doorNotes);
+    }
 
     function isPlaceholderDateName(name){
       const n=normNameKey(String(name||''));
@@ -803,7 +862,7 @@
     function toG(r){
       const f=r.fields;
       const nDoor=fieldStr(f,F_NOTES)||fieldStr(f,['Note']);
-      const gDate=fieldStr(f,F_GUEST_DATE);
+      const gDate=fieldStrGuestDate(f);
       const wbArr=parseWristbandsFromFields(f);
       const hasGold=wbArr.includes('Gold');
       const patron=!!f.Patron||hasGold;
@@ -830,7 +889,7 @@
         doorNotes:nDoor,
         doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
         partnerId:null,
-        /** Airtable "Date" field — name(s) only; not mixed with door Notes. */
+        /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
         guestDate:gDate
       };
     }
@@ -865,7 +924,7 @@
       guests.forEach(g=>{ g.partnerId=null; });
       if(isObscuraTable()){
         guests.forEach(g=>{
-          const dn=firstPartnerNameFromField(g.guestDate);
+          const dn=firstPartnerNameFromField(dateLineFromGuest(g));
           if(!dn) return;
           const p=getByName(dn);
           if(p) tryPair(g,p);
@@ -897,7 +956,7 @@
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
       return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
-        ||(isObscuraTable() && String(g.guestDate||'').toLowerCase().includes(q));
+        ||(isObscuraTable() && String(dateLineFromGuest(g)||'').toLowerCase().includes(q));
     }
 
     async function load(){
@@ -1009,7 +1068,8 @@
         ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=isObscuraTable()?'':((g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:''));
-      const dMini=isObscuraTable()?guestDateDisplayText(g.guestDate):'';
+      const rawD=isObscuraTable()?dateLineFromGuest(g):'';
+      const dMini=rawD?guestDateDisplayText(rawD):'';
       const dateMini=dMini?`<div class="card-date-ob">${esc(dMini)}</div>`:'';
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
@@ -1039,8 +1099,9 @@
               <div class="det-sublbl" style="margin-bottom:6px">Who approved, comp name, table or booth assignment, plus-ones</div>
               <textarea class="det-input" id="dNotes2" rows="3" placeholder="e.g. Table 4 · comp · approved by name" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
             </div>`:'';
-        const gdv=loc.guestDate!=null?loc.guestDate:(g.guestDate||'');
-        const gdvShow=guestDateDisplayText(gdv);
+        const gdv=dateLineFromGuest(g);
+        const gdvText=guestDateDisplayText(gdv);
+        const gdvShow=gdvText||'—';
         const pnm=firstPartnerNameFromField(gdv);
         const pairReadout=pFromList
           ?`<p class="ob-pair-line">With in this list: <strong>${esc(pFromList.name)}</strong></p>`
@@ -1063,7 +1124,7 @@
           <div class="det-card ob-date-card">
             <div class="det-input-wrap" style="border-bottom:none">
               <div class="det-input-lbl">The Date</div>
-              <input class="det-input" id="dGuestDate" value="${esc(gdvShow)}" placeholder="e.g. Rob Schnabel" style="min-height:44px" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <div class="ob-date-readout">${esc(gdvShow)}</div>
               ${pairReadout}
               ${noMatch}
             </div>
@@ -1089,7 +1150,7 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Notes</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Other door or ops notes only — the date is in <strong>The Date</strong> above.</div>
+              <div class="det-sublbl" style="margin-bottom:6px">Door or ops only. <strong>Date</strong> is read from the Date column in Airtable (or a legacy <code>Date: name</code> line here).</div>
               <textarea class="det-input" id="dNotes" rows="3" placeholder="VIPs, issues at the door, special handling…" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
             ${n2}
@@ -1213,31 +1274,33 @@
       const phCk=document.getElementById('dPhoneCk');
       const notes=document.getElementById('dNotes');
       if(!coat||!phCk||!notes)return;
-      const dGD=isObscuraTable()?document.getElementById('dGuestDate'):null;
-      if(isObscuraTable() && !dGD) return;
       const vCoat=coat.value.trim();
       const vPhoneCk=phCk.value.trim();
       const vNotes=notes.value.trim();
-      const vGD=dGD?guestDateDisplayText(dGD.value):'';
       const n2el=document.getElementById('dNotes2');
-      const fields={[pickField(F_COAT)]:vCoat,[pickField(F_PHONE_CHECK)]:vPhoneCk,[pickField(F_NOTES)]:vNotes};
-      if(isObscuraTable()) fields[pickField(F_GUEST_DATE)]=vGD;
+      const fields={};
+      const kC=pickField(F_COAT);
+      if(kC) fields[kC]=vCoat;
+      const kP=pickFieldOrGuessPhone();
+      if(kP) fields[kP]=vPhoneCk;
+      const kN=pickField(F_NOTES);
+      if(kN) fields[kN]=vNotes;
       let v2='';
       if(n2el && hasNotesExtraField()){
         v2=n2el.value.trim();
-        fields[pickField(F_NOTES_EXTRA)]=v2;
+        const k2=pickField(F_NOTES_EXTRA);
+        if(k2) fields[k2]=v2;
       }
       try{
+        if(Object.keys(fields).length===0) throw new Error('No known Airtable fields to save (refresh the list or check your base).');
         await patchGuestResilient(curG.id, fields);
         const locNext={...local[curG.id],coat:vCoat,phone:vPhoneCk,notes:vNotes};
-        if(isObscuraTable()) locNext.guestDate=vGD;
         if(n2el && hasNotesExtraField()) locNext.notes2=v2;
         local[curG.id]=locNext;
         const i=guests.findIndex(x=>x.id===curG.id);
         if(i>-1){
           const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
           if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
-          if(isObscuraTable()) gNext.guestDate=vGD;
           guests[i]=gNext;
           if(curG && curG.id===guests[i].id) curG=guests[i];
         }
@@ -1265,8 +1328,13 @@
           const dCI=document.getElementById('dCI');
           if(!dCI) return;
           const cI=dCI.checked;
+          const cKey=pickField(F_CHECKED_IN);
+          if(!cKey){
+            showToast('Could not find “Checked In” in this table — check Airtable.');
+            return;
+          }
           try{
-            await patchGuestResilient(curG.id, {[pickField(F_CHECKED_IN)]:cI});
+            await patchGuestResilient(curG.id, {[cKey]:cI});
             const i=guests.findIndex(g=>g.id===curG.id);
             if(i>-1) guests[i]={...guests[i], checkedIn:cI};
             if(myGen!==saveGen) return;
@@ -1275,7 +1343,7 @@
             flushPendingQueue().catch(()=>{});
           }catch(e){
             console.error('Obscura check-in save failed',e);
-            enqueuePending(curG.id, curTable, {[pickField(F_CHECKED_IN)]:cI});
+            enqueuePending(curG.id, curTable, {[cKey]:cI});
             if(myGen!==saveGen) return;
             const i=guests.findIndex(g=>g.id===curG.id);
             if(i>-1) guests[i]={...guests[i], checkedIn:cI};
@@ -1369,12 +1437,12 @@
       const wr=document.getElementById('addWristNdaBlock');
       if(wr) wr.style.display=isObscuraTable()?'none':'';
       const mgb=document.getElementById('mGuestDateBlock');
-      if(mgb) mgb.style.display=isObscuraTable()?'block':'none';
+      if(mgb) mgb.style.display='none';
       const mnl=document.getElementById('mNotesLbl');
       if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'Door Notes <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder=isObscuraTable()
-        ?'Other door or ops notes (not the date — use The Date on the line above).'
+        ?'Door / ops (date names live in Airtable or a Date: line in notes).'
         :'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
       const mPhEl=document.getElementById('mPhone');
@@ -1419,11 +1487,11 @@
       btn.textContent='Adding…';
 
       if(isObscuraTable()){
-        const mGd=document.getElementById('mGuestDate');
-        const gdv=mGd?guestDateDisplayText(mGd.value):'';
         const fields={'Full Name':name};
-        if(document.getElementById('mCI').checked) fields[pickField(F_CHECKED_IN)]=true;
-        if(gdv) fields[pickField(F_GUEST_DATE)]=gdv;
+        if(document.getElementById('mCI').checked){
+          const cIn=pickField(F_CHECKED_IN);
+          if(cIn) fields[cIn]=true;
+        }
         const coat=document.getElementById('mCoat').value.trim();
         const ph=document.getElementById('mPhone').value.trim();
         const notes=document.getElementById('mNotes').value.trim();
@@ -1432,14 +1500,21 @@
           if(d.id){
             if(coat||ph||notes){
               try{
-                await patchGuestResilient(d.id,{[pickField(F_COAT)]:coat,[pickField(F_PHONE_CHECK)]:ph,[pickField(F_NOTES)]:notes});
+                const follow={};
+                const kC=pickField(F_COAT);
+                if(kC) follow[kC]=coat;
+                const kP=pickFieldOrGuessPhone();
+                if(kP) follow[kP]=ph;
+                const kN=pickField(F_NOTES);
+                if(kN) follow[kN]=notes;
+                if(Object.keys(follow).length) await patchGuestResilient(d.id,follow);
               }catch(e2){
                 alert('Guest created but coat/phone/notes did not save: '+fmtErr(e2));
               }
             }
             let rec=d;
             try{ rec=await req('/'+d.id); }catch(_){}
-            local[d.id]={coat,phone:ph,notes,guestDate:gdv};
+            local[d.id]={coat,phone:ph,notes};
             guests.push(toG(rec));
             closeAdd();
             resolveDatePartnersFromGuests(guests);
