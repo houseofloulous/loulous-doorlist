@@ -94,12 +94,13 @@
     /* Obscura pair: don’t let photos scale to half the monitor — cap column width. */
     .couple-ring{
       grid-column:1 / -1;
+      --ring-cols:2;
       display:grid;
-      grid-template-columns:repeat(2,minmax(0,200px));
+      grid-template-columns:repeat(var(--ring-cols),minmax(0,200px));
       justify-content:center;
       justify-items:stretch;
       gap:10px;
-      max-width:min(100%,440px);
+      max-width:min(100%,calc(var(--ring-cols) * 200px + (var(--ring-cols) - 1) * 10px));
       margin-left:auto;
       margin-right:auto;
       padding:8px 10px 10px;
@@ -110,7 +111,7 @@
     }
     .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0;max-width:200px;}
     @media(max-width:380px){
-      .couple-ring{grid-template-columns:1fr;max-width:100%;}
+      .couple-ring{--ring-cols:1 !important;grid-template-columns:1fr;max-width:100%;}
       .couple-ring .card{max-width:none;}
     }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
@@ -125,9 +126,8 @@
     .ob-date-readout{font-size:16px;color:var(--dark);line-height:1.45;padding:0 0 2px;word-wrap:break-word;}
     .ob-date-name-line{font-size:16px;color:var(--dark);line-height:1.4;}
     .ob-date-name-line+.ob-date-name-line{margin-top:6px;}
-    .ob-pair-line{font-size:13px;margin:8px 0 0;color:var(--warm);line-height:1.4;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
-    .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal;font-weight:500;}
+    .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal !important;font-weight:500;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
@@ -179,7 +179,8 @@
     .det-input-wrap:last-child{border-bottom:none;}
     .det-input-lbl{font-size:13px;color:var(--dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;}
     .det-input{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--warm);outline:none;}
-    .det-input::placeholder{color:#bbb5ae;}
+    .det-input::placeholder{color:#bbb5ae;font-style:normal;}
+    #addModal .det-input::placeholder{font-style:normal;}
     textarea.det-input{resize:none;min-height:80px;}
     .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
     .modal-bg.open{opacity:1;pointer-events:all;}
@@ -188,7 +189,19 @@
     .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
     .modal-title{font-size:22px;color:var(--dark);}
     .modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
-    .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
+    .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:12px;}
+    #addModalBody.add-ob .add-sec-name{order:1;}
+    #addModalBody.add-ob .add-sec-ci{order:2;}
+    #addModalBody.add-ob .add-sec-mdate{order:8;display:none !important;}
+    #addModalBody.add-ob .add-sec-wb{order:8;display:none !important;}
+    #addModalBody.add-ob .add-sec-coat{order:3;}
+    #addModalBody.add-ob .add-sec-notes{order:4;}
+    #addModalBody.add-at .add-sec-name{order:1;}
+    #addModalBody.add-at .add-sec-ci{order:2;}
+    #addModalBody.add-at .add-sec-wb{order:3;}
+    #addModalBody.add-at .add-sec-mdate{order:9;display:none !important;}
+    #addModalBody.add-at .add-sec-coat{order:4;}
+    #addModalBody.add-at .add-sec-notes{order:5;}
     .modal-card{background:#fff;border-radius:14px;overflow:hidden;}
     .modal-row{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:10px;}
     .modal-row:last-child{border-bottom:none;}
@@ -290,29 +303,26 @@
         <div class="modal-title">Add New Guest</div>
         <button class="modal-close" onclick="closeAdd()">×</button>
       </div>
-      <div class="modal-body">
-        <div class="modal-card">
-          <div class="modal-row">
-            <span class="modal-ico">👤</span>
-            <div class="modal-field">
-              <div class="modal-field-lbl">Guest Name <span style="color:var(--red)">Required</span></div>
-              <input class="modal-input" id="aN" placeholder="Enter guest's full name">
-            </div>
+      <div class="modal-body add-at" id="addModalBody">
+        <div class="modal-card add-sec add-sec-name">
+          <div class="det-input-wrap" style="border-bottom:none">
+            <div class="det-input-lbl">Full name <span style="color:var(--red)">Required</span></div>
+            <input class="det-input" id="aN" type="text" placeholder="" autocomplete="name">
           </div>
         </div>
-        <div class="modal-card">
-          <div class="modal-toggle-row"><div class="modal-toggle-lbl">✓ Checked In:</div><label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label></div>
-        </div>
-        <div class="modal-card" id="mGuestDateBlock" style="display:none">
-          <div class="modal-row" style="align-items:flex-start">
-            <span class="modal-ico" style="margin-top:2px">💞</span>
-            <div class="modal-field">
-              <div class="modal-field-lbl" id="mGuestDateLbl">The Date</div>
-              <input class="modal-input" id="mGuestDate" placeholder="Full name of their date (as in the list)">
-            </div>
+        <div class="modal-card add-sec add-sec-ci">
+          <div class="det-row" style="border-bottom:none">
+            <div class="det-lbl">✓ Checked In</div>
+            <label class="toggle"><input type="checkbox" id="mCI"><span class="slider"></span></label>
           </div>
         </div>
-        <div class="modal-card" id="addWristNdaBlock">
+        <div class="modal-card add-sec add-sec-mdate" id="mGuestDateBlock" style="display:none">
+          <div class="det-input-wrap" style="border-bottom:none">
+            <div class="det-input-lbl" id="mGuestDateLbl">💞 The Date</div>
+            <input class="det-input" id="mGuestDate" placeholder="Full name as in the list">
+          </div>
+        </div>
+        <div class="modal-card add-sec add-sec-wb" id="addWristNdaBlock">
           <div class="wb-display" style="border-top:none;border-bottom:1px solid rgba(0,0,0,.05);">
             <div class="wb-display-lbl">Wristbands</div>
             <div id="addWbPillDisplay" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;"></div>
@@ -334,22 +344,16 @@
           <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed:</div><label class="toggle"><input type="checkbox" id="mNDA" onchange="onAddNDAChange(this)"><span class="slider"></span></label></div>
           <div id="mNdaHint" class="modal-nda-hint"><span>🔴 If NDA is unsigned, please click here and have them sign:</span><a class="modal-nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>
         </div>
-        <div class="modal-card">
-          <div class="modal-row">
-            <span class="modal-ico">🧥</span>
-            <div class="modal-field">
-              <div class="modal-field-lbl">Coat Check #</div>
-              <input class="modal-input" id="mCoat" placeholder="">
-            </div>
+        <div class="modal-card add-sec add-sec-coat">
+          <div class="det-input-wrap" style="border-bottom:none">
+            <div class="det-input-lbl">🧥 Coat Check #</div>
+            <input class="det-input" id="mCoat" placeholder="e.g. 69">
           </div>
         </div>
-        <div class="modal-card">
-          <div class="modal-row" style="align-items:flex-start">
-            <span class="modal-ico" style="margin-top:2px">📝</span>
-            <div class="modal-field">
-              <div class="modal-field-lbl" id="mNotesLbl">Door Notes <span style="color:var(--red)">Required</span></div>
-              <textarea class="modal-input" id="mNotes" rows="3" placeholder="Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)" style="resize:none;line-height:1.5"></textarea>
-            </div>
+        <div class="modal-card add-sec add-sec-notes">
+          <div class="det-input-wrap" style="border-bottom:none">
+            <div class="det-input-lbl" id="mNotesLbl">📝 Notes</div>
+            <textarea class="det-input" id="mNotes" rows="3" placeholder="Issues at the Door" style="resize:none;min-height:80px"></textarea>
           </div>
         </div>
       </div>
@@ -906,64 +910,103 @@
         doorNotes:nDoor,
         doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
         partnerId:null,
+        dateClusterMates:[],
         /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
         guestDate:gDate
       };
     }
 
-    function resolveDatePartnersFromGuests(guests){
+    function getGuestByMentionedName(mentioned, guestPool, byNormKey){
+      if(!mentioned) return null;
+      const nk=normNameKey(mentioned);
+      if(!nk) return null;
+      if(byNormKey.has(nk)) return byNormKey.get(nk);
+      const all=guestPool.map(g=>({g,gk:normNameKey(g.name||'')}));
+      const ex=all.filter(x=>x.gk===nk);
+      if(ex.length===1) return ex[0].g;
+      if(nk.indexOf(' ')===-1){
+        const st=all.filter(x=>x.gk.startsWith(nk+' '));
+        if(st.length===1) return st[0].g;
+      }
+      return null;
+    }
+
+    /** Edges: each name in a guest’s Date line → link to that row (pairs, trios, …). */
+    function buildDateEdgesForPool(guestPool){
       const byNormKey=new Map();
-      guests.forEach(g=>{
+      guestPool.forEach(g=>{
         const nk=normNameKey(g.name||'');
         if(nk && !byNormKey.has(nk)) byNormKey.set(nk,g);
       });
-      function getByName(n){
-        if(!n) return null;
-        const nk=normNameKey(n);
-        if(!nk) return null;
-        if(byNormKey.has(nk)) return byNormKey.get(nk);
-        const all=guests.map(g=>({g,gk:normNameKey(g.name||'')}));
-        const ex=all.filter(x=>x.gk===nk);
-        if(ex.length===1) return ex[0].g;
-        if(nk.indexOf(' ')===-1){
-          const st=all.filter(x=>x.gk.startsWith(nk+' '));
-          if(st.length===1) return st[0].g;
+      const adj=new Map();
+      function addEdge(a,b){
+        if(!a||!b||a===b) return;
+        if(!adj.has(a)) adj.set(a,new Set());
+        if(!adj.has(b)) adj.set(b,new Set());
+        adj.get(a).add(b);
+        adj.get(b).add(a);
+      }
+      guestPool.forEach(g=>{
+        for(const n of splitGuestDateNames(dateLineFromGuest(g))){
+          const p=getGuestByMentionedName(n, guestPool, byNormKey);
+          if(p && p.id!==g.id) addEdge(g.id,p.id);
         }
-        return null;
-      }
-      function tryPair(a,b){
-        if(!a||!b||a.id===b.id) return;
-        if(a.partnerId && a.partnerId!==b.id) return;
-        if(b.partnerId && b.partnerId!==a.id) return;
-        a.partnerId=b.id;
-        b.partnerId=a.id;
-      }
-      guests.forEach(g=>{ g.partnerId=null; });
-      if(isObscuraTable()){
-        guests.forEach(g=>{
-          const dn=firstPartnerNameFromField(dateLineFromGuest(g));
-          if(!dn) return;
-          const p=getByName(dn);
-          if(p) tryPair(g,p);
-        });
+      });
+      return adj;
+    }
+
+    function resolveDatePartnersFromGuests(guests){
+      guests.forEach(g=>{ g.partnerId=null; g.dateClusterMates=[]; });
+      if(!isObscuraTable()) return;
+      const adj=buildDateEdgesForPool(guests);
+      const byId=Object.fromEntries(guests.map(x=>[x.id,x]));
+      const seen=new Set();
+      for(const g of guests){
+        if(seen.has(g.id)) continue;
+        const compIds=[];
+        (function visit(id){
+          if(seen.has(id)) return;
+          seen.add(id);
+          compIds.push(id);
+          const nbrs=adj.get(id);
+          if(nbrs) nbrs.forEach(nb=>visit(nb));
+        })(g.id);
+        if(compIds.length<2) continue;
+        for(const id of compIds){
+          const oth=compIds.filter(x=>x!==id);
+          const guest=byId[id];
+          if(guest){
+            guest.dateClusterMates=oth;
+            guest.partnerId=oth[0]||null;
+          }
+        }
       }
     }
 
+    /** One visual group per connected cluster (2+) in the current filtered list. */
     function buildObscuraCoupleGroups(list){
+      if(!list.length) return [];
+      const adj=buildDateEdgesForPool(list);
       const byId=Object.fromEntries(list.map(x=>[x.id,x]));
-      const inList=new Set(list.map(x=>x.id));
-      const used=new Set();
+      const seen=new Set();
       const out=[];
       for(const g of list){
-        if(used.has(g.id)) continue;
-        const p=g.partnerId&&inList.has(g.partnerId)?byId[g.partnerId]:null;
-        if(p && !used.has(p.id)){
-          used.add(g.id);
-          used.add(p.id);
-          const pair=((a,b)=>((a.name||'').localeCompare(b.name||'',undefined,{sensitivity:'base'})<=0)?[a,b]:[b,a])(g,p);
-          out.push({pair:true,members:pair});
+        if(seen.has(g.id)) continue;
+        const comp=[];
+        (function visit(id){
+          if(seen.has(id)) return;
+          seen.add(id);
+          const ug=byId[id];
+          if(ug) comp.push(ug);
+          const nbrs=adj.get(id);
+          if(nbrs) nbrs.forEach(nb=>visit(nb));
+        })(g.id);
+        if(comp.length>1){
+          sortGuestsByName(comp);
+          out.push({pair:true,members:comp});
+        }else if(comp.length===1){
+          out.push({pair:false,members:[comp[0]]});
         }else{
-          used.add(g.id);
           out.push({pair:false,members:[g]});
         }
       }
@@ -1049,8 +1092,8 @@
       const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
       if(q) list=list.filter(g=>{
         if(guestMatchesSearch(g,q)) return true;
-        if(g.partnerId){
-          const p=byIdAll[g.partnerId];
+        for(const id of (g.dateClusterMates||[])){
+          const p=byIdAll[id];
           if(p && guestMatchesSearch(p,q)) return true;
         }
         return false;
@@ -1071,7 +1114,7 @@
         const gr=buildObscuraCoupleGroups(list);
         const body=gr.map(grp=>
           grp.pair
-            ?`<div class="couple-ring" role="group" aria-label="Guest couple">${grp.members.map(m=>gCard(m)).join('')}</div>`
+            ?`<div class="couple-ring" style="--ring-cols:${grp.members.length}" role="group" aria-label="Date group (${grp.members.length})">${grp.members.map(m=>gCard(m)).join('')}</div>`
             :gCard(grp.members[0])
         ).join('');
         document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
@@ -1108,7 +1151,6 @@
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       if(isObscuraTable()){
         const showExtra=hasNotesExtraField();
-        const pFromList=g.partnerId?guests.find(x=>x.id===g.partnerId):null;
         const n2=showExtra?`
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Internal / table notes</div>
@@ -1116,9 +1158,6 @@
             </div>`:'';
         const gdv=dateLineFromGuest(g);
         const gdvBody=guestDateReadoutHtmlFromRaw(gdv);
-        const pairReadout=pFromList
-          ?`<p class="ob-pair-line">With in this list: <strong>${esc(pFromList.name)}</strong></p>`
-          :'';
         document.getElementById('detailContent').innerHTML=`
         <div class="detail-head">
           <div class="detail-nav"><button type="button" class="back-btn" onclick="closeDetail()" aria-label="Back to guest list">BACK</button></div>
@@ -1135,7 +1174,6 @@
             <div class="det-input-wrap" style="border-bottom:none">
               <div class="det-input-lbl">💞 The Date</div>
               <div class="ob-date-readout">${gdvBody}</div>
-              ${pairReadout}
             </div>
           </div>
           <div class="det-card">
@@ -1147,7 +1185,7 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
@@ -1213,7 +1251,7 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
@@ -1427,17 +1465,19 @@
 
     function openAdd(){
       document.getElementById('addModal').classList.add('open');
+      const mb=document.getElementById('addModalBody');
+      if(mb) mb.className='modal-body '+(isObscuraTable()?'add-ob':'add-at');
       document.getElementById('aN').focus();
       const wr=document.getElementById('addWristNdaBlock');
       if(wr) wr.style.display=isObscuraTable()?'none':'';
       const mgb=document.getElementById('mGuestDateBlock');
       if(mgb) mgb.style.display='none';
       const mnl=document.getElementById('mNotesLbl');
-      if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'Door Notes <span style="color:var(--red)">Required</span>';
+      if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'📝 Door Notes: <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder=isObscuraTable()?'Issues at the Door':'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
-      if(mCoatEl) mCoatEl.placeholder=isObscuraTable()?'':'Enter coat check number';
+      if(mCoatEl) mCoatEl.placeholder='e.g. 69';
       const nda=document.getElementById('mNDA');
       if(nda) onAddNDAChange(nda);
       const pr=document.getElementById('mPatRow');
@@ -1447,6 +1487,8 @@
 
     function closeAdd(){
       document.getElementById('addModal').classList.remove('open');
+      const mbReset=document.getElementById('addModalBody');
+      if(mbReset) mbReset.className='modal-body add-at';
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
       ['aN','mCoat','mNotes'].forEach(id=>document.getElementById(id).value='');
@@ -1458,13 +1500,13 @@
       const wr=document.getElementById('addWristNdaBlock');
       if(wr) wr.style.display='';
       const mnl=document.getElementById('mNotesLbl');
-      if(mnl) mnl.innerHTML='Door Notes <span style="color:var(--red)">Required</span>';
+      if(mnl) mnl.innerHTML='📝 Door Notes: <span style="color:var(--red)">Required</span>';
       const mgbC=document.getElementById('mGuestDateBlock');
       if(mgbC) mgbC.style.display='none';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
-      if(mCoatEl) mCoatEl.placeholder='Enter coat check number';
+      if(mCoatEl) mCoatEl.placeholder='e.g. 69';
       updateAddWbPills();
     }
 
