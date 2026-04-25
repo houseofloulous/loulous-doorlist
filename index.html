@@ -27,12 +27,24 @@
     .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .ev-logo{height:62px;margin-bottom:0;}
     .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
-    .ev-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
-    .ev-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .18s;}
-    .ev-item:active{background:rgba(255,255,255,.1);border-color:var(--accent);}
-    .ev-name{font-size:20px;color:#fff;}
-    .ev-date{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
-    .ev-reset{flex-shrink:0;width:100%;max-width:320px;padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
+    .ev-list{width:100%;max-width:min(100%,400px);display:flex;flex-direction:column;gap:14px;}
+    button.ev-item.ev-item-art{
+      display:block;width:100%;padding:0;margin:0;border:none;border-radius:14px;cursor:pointer;
+      background:#050508;overflow:hidden;-webkit-tap-highlight-color:transparent;line-height:0;position:relative;
+      box-shadow:0 4px 24px rgba(0,0,0,.4),0 0 0 1px rgba(255,255,255,.1);
+      transition:transform .16s,box-shadow .16s,opacity .16s;
+    }
+    button.ev-item.ev-item-art::after{
+      content:'';position:absolute;inset:0;pointer-events:none;border-radius:14px;
+      box-shadow:inset 0 0 0 1px rgba(0,0,0,.2),inset 0 10px 36px rgba(0,0,0,.12);
+    }
+    button.ev-item.ev-item-art:hover{box-shadow:0 6px 28px rgba(0,0,0,.5),0 0 0 1px rgba(201,169,110,.2);}
+    button.ev-item.ev-item-art:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+    button.ev-item.ev-item-art:active{transform:scale(.985);opacity:.95;}
+    .ev-item-art .ev-art{
+      display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;vertical-align:bottom;
+    }
+    .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,400px);padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
     #app{display:none;}
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
@@ -237,8 +249,7 @@
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
     @media(max-width:480px){
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
-      .ev-sub,.ev-date{font-size:13px;letter-spacing:.14em;}
-      .ev-name{font-size:23px;}
+      .ev-sub{font-size:13px;letter-spacing:.14em;}
       .event-title{font-size:24px;line-height:1.28;letter-spacing:0;}
       .toolbar{flex-wrap:wrap;row-gap:8px;}
       .search-wrap{flex:1 1 100%;min-width:0;}
@@ -383,9 +394,9 @@
   <script>
     const BASE='appY6p2HwRtDmOvAf';
     const EVENTS=[
-      {name:"Obscura",date:"May 2nd",label:"OBSCURA | May 2nd",table:"Obscura Premiere"},
-      {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List"},
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13"},
+      {name:"Obscura",date:"May 2nd",label:"OBSCURA | May 2nd",table:"Obscura Premiere",art:"/landing-events/obscura-may-2.jpg"},
+      {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.jpg"},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -557,7 +568,9 @@
 
     function buildEvList(){
       document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
-        `<div class="ev-item" onclick="pickEv(${i})"><div class="ev-name">${esc(e.label)}</div></div>`
+        `<button type="button" class="ev-item ev-item-art" onclick="pickEv(${i})" aria-label="${esc(e.label)}">` +
+        `<img class="ev-art" src="${esc(e.art)}" alt="${esc(e.label)}" width="800" height="450" loading="eager" decoding="async">` +
+        `</button>`
       ).join('');
     }
 
