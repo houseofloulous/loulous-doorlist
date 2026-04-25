@@ -1249,7 +1249,7 @@
         const n2=showExtra?`
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Internal / table notes</div>
-              <textarea class="det-input" id="dNotes2" rows="3" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
+              <textarea class="det-input" id="dNotes2" rows="3" placeholder="" onblur="saveLocal()">${esc(notes2Val)}</textarea>
             </div>`:'';
         const gdv=dateLineFromGuest(g);
         const gdvBody=guestDateReadoutHtmlFromRaw(gdv);
@@ -1280,13 +1280,13 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Notes</div>
-              <textarea class="det-input" id="dNotes" rows="3" placeholder="Issues at the Door" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <textarea class="det-input" id="dNotes" rows="3" placeholder="Issues at the Door" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
             ${n2}
           </div>
@@ -1346,13 +1346,13 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Door Notes:</div>
-              <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
           </div>
         </div>`;
@@ -1393,12 +1393,6 @@
       hint.style.display=cb.checked?'none':'flex';
     }
 
-    let localSaveTimer=null;
-    function saveLocalDebounced(){
-      clearTimeout(localSaveTimer);
-      localSaveTimer=setTimeout(()=>{ saveLocal(); },450);
-    }
-
     async function saveLocal(){
       if(!curG)return;
       const coat=document.getElementById('dCoat');
@@ -1433,8 +1427,8 @@
         }
         if(isObscuraTable()){
           resolveDatePartnersFromGuests(guests);
+          /* Refresh list only — do not openDetail() here: it re-builds the form and killed focus / interrupted typing. */
           try{ render(); }catch(_){}
-          if(document.getElementById('detailView')?.style?.display!=='none' && curG) openDetail(curG.id);
         }
         showToast('Saved ✓');
       }catch(e){
