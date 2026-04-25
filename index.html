@@ -91,11 +91,11 @@
     .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;justify-items:stretch;}
     @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
-    .ob-all-wrap{background:var(--cream);min-height:0;}
-    .ob-sec{grid-column:1 / -1;width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
-    .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
-    /* Pairs / trios: one row per group, centered. 100% = full .grid content width (not 100cqw — fixes Safari + avoids stretch eating margin auto). */
-    .couple-ring{
+    .app-obscura .ob-all-wrap{background:var(--cream);min-height:0;}
+    .app-obscura .ob-sec{grid-column:1 / -1;width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
+    .app-obscura .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
+    /* Obscura only — Pairs / trios: one row per group, centered. */
+    .app-obscura .couple-ring{
       --ring-cols:2;
       --gspan:2;
       display:grid;
@@ -106,17 +106,17 @@
       justify-self:center;
       justify-items:stretch;
       align-items:start;
-      gap:14px;
+      gap:22px;
       min-width:0;
       box-sizing:border-box;
-      padding:6px 8px 8px;
+      padding:6px 10px 8px;
       border:1.5px solid var(--accent);
       border-radius:12px;
       background:rgba(201,169,110,.08);
       box-shadow:0 0 0 1px rgba(201,169,110,.2);
     }
-    .couple-ring-wide{width:100%;}
-    .couple-ring .card{
+    .app-obscura .couple-ring-wide{width:100%;}
+    .app-obscura .couple-ring .card{
       box-shadow:0 3px 12px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.1);
       border:1px solid rgba(0,0,0,.1);
       border-radius:10px;
@@ -125,9 +125,10 @@
       width:100%;
     }
     @media(max-width:380px){
-      .couple-ring{padding:4px 6px 6px;gap:12px;}
+      .app-obscura .couple-ring{padding:4px 7px 6px;gap:16px;}
     }
-    .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);transition:transform .12s,filter .15s,opacity .15s,box-shadow .15s;}
+    .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
+    .app-obscura .card{box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);transition:transform .12s,filter .15s,opacity .15s,box-shadow .15s;}
     .card:active{transform:scale(.96);}
     .card.checked{filter:grayscale(1);opacity:.62;}
     .card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
@@ -246,7 +247,7 @@
       .tabs:not(.tabs-obscura) .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
       .tabs.tabs-obscura{padding:4px 10px 12px;gap:7px;}
       .tabs.tabs-obscura .tab{padding:11px 16px;font-size:15px;letter-spacing:.07em;}
-      .ob-sec{font-size:19px;letter-spacing:.08em;}
+      .app-obscura .ob-sec{font-size:19px;letter-spacing:.08em;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -517,6 +518,11 @@
 
     function isObscuraTable(){
       return curTable==='Obscura Premiere';
+    }
+    function syncAppObscuraClass(){
+      const app=document.getElementById('app');
+      if(!app) return;
+      app.classList.toggle('app-obscura',isObscuraTable());
     }
     function getTabsForCurrentTable(){
       if(isObscuraTable()) return OBSCURA_TABS;
@@ -1105,6 +1111,7 @@
     }
 
     async function load(){
+      syncAppObscuraClass();
       document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
       buildTabs();
       try{
