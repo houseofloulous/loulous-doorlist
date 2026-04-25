@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewposrt" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>House of LouLou's — Door</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -27,7 +27,8 @@
     .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .ev-logo{height:62px;margin-bottom:0;}
     .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
-    .ev-list{width:100%;max-width:min(100%,280px);display:flex;flex-direction:column;gap:20px;}
+    #evScreen .ev-list{width:100%;max-width:min(100%,220px);display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;row-gap:0;column-gap:0;}
+    #evScreen .ev-list>button.ev-item+.ev-item{margin-top:36px;}
     button.ev-item.ev-item-art{
       display:block;width:100%;padding:0;margin:0;border:none;border-radius:12px;cursor:pointer;
       background:var(--blue);overflow:hidden;-webkit-tap-highlight-color:transparent;line-height:0;position:relative;
@@ -44,7 +45,7 @@
       backface-visibility:hidden;-webkit-backface-visibility:hidden;
       transform:translateZ(0);
     }
-    .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,280px);margin-top:6px;padding:22px 10px max(18px, env(safe-area-inset-bottom));opacity:.55;background:none;border:none;color:#fff;font-size:12px;letter-spacing:.04em;cursor:pointer;text-align:center;}
+    #evScreen .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,220px);margin-top:20px;padding:24px 12px max(20px, env(safe-area-inset-bottom));background:none;border:none;cursor:pointer;text-align:center;-webkit-font-smoothing:antialiased;font-size:16px;font-weight:500;letter-spacing:.06em;color:rgba(255,255,255,.88);}
     #app{display:none;}
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
@@ -249,6 +250,8 @@
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
     @media(max-width:480px){
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+      #evScreen .ev-list>button.ev-item+.ev-item{margin-top:40px;}
+      #evScreen .ev-reset{font-size:17px;}
       .ev-sub{font-size:13px;letter-spacing:.14em;}
       .event-title{font-size:24px;line-height:1.28;letter-spacing:0;}
       .toolbar{flex-wrap:wrap;row-gap:8px;}
