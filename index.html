@@ -88,16 +88,19 @@
     .stat{font-size:12px;color:var(--warm);}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;}
-    @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
-    @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
-    /* Pairs / trios: span only the same number of grid tracks as people — each card width matches a single cell. */
+    .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;container-type:inline-size;}
+    @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
+    @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
+    /* Pairs / trios: one row per group, centered; width matches the same gspan tracks as a plain grid row so card sizes still match a solo. */
     .couple-ring{
       --ring-cols:2;
       --gspan:2;
       display:grid;
       grid-template-columns:repeat(var(--ring-cols),minmax(0,1fr));
-      grid-column:span var(--gspan);
+      grid-column:1 / -1;
+      width:min(100%,calc((100cqw - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid)));
+      margin-left:auto;
+      margin-right:auto;
       justify-items:stretch;
       align-items:start;
       gap:10px;
@@ -109,7 +112,7 @@
       background:rgba(201,169,110,.08);
       box-shadow:0 0 0 1px rgba(201,169,110,.2);
     }
-    .couple-ring-wide{grid-column:1 / -1;}
+    .couple-ring-wide{width:100%;}
     .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0;max-width:none;width:100%;}
     @media(max-width:380px){
       .couple-ring{padding:2px;gap:8px;}
