@@ -111,22 +111,23 @@
       box-sizing:border-box;
       /* No horizontal padding — keeps each card the same width as a solo cell (was shrinking cards). */
       padding:6px 0 8px;
-      border:1.5px solid var(--accent);
+      border:none;
       border-radius:12px;
       background:linear-gradient(180deg,rgba(201,169,110,.1),rgba(201,169,110,.16));
-      box-shadow:0 0 0 1px rgba(201,169,110,.22),inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(0,0,0,.04);
+      /* Ring drawn with shadow so border does not eat inner width (was shrinking profile photos). */
+      box-shadow:0 0 0 1.5px var(--accent),0 0 0 1px rgba(201,169,110,.18),0 1px 4px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(0,0,0,.04);
     }
     .app-obscura .couple-ring-wide{width:100%;}
     .app-obscura .couple-ring .card{
-      box-shadow:0 3px 12px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.1);
-      border:1px solid rgba(0,0,0,.1);
+      border:none;
+      box-shadow:0 0 0 1px rgba(0,0,0,.1),0 3px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.08);
       border-radius:10px;
       min-width:0;
       max-width:none;
       width:100%;
     }
     @media(max-width:380px){
-      .app-obscura .couple-ring{padding:4px 0 6px;gap:8px;}
+      .app-obscura .couple-ring{padding:4px 0 6px;gap:var(--ggrid);}
     }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .app-obscura .card{box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);transition:transform .12s,filter .15s,opacity .15s,box-shadow .15s;}
