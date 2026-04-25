@@ -91,28 +91,28 @@
     .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;}
     @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
-    /* Obscura pair: don’t let photos scale to half the monitor — cap column width. */
+    /* Pairs / trios: span only the same number of grid tracks as people — each card width matches a single cell. */
     .couple-ring{
-      grid-column:1 / -1;
       --ring-cols:2;
+      --gspan:2;
       display:grid;
-      grid-template-columns:repeat(var(--ring-cols),minmax(0,200px));
-      justify-content:center;
+      grid-template-columns:repeat(var(--ring-cols),minmax(0,1fr));
+      grid-column:span var(--gspan);
       justify-items:stretch;
+      align-items:start;
       gap:10px;
-      max-width:min(100%,calc(var(--ring-cols) * 200px + (var(--ring-cols) - 1) * 10px));
-      margin-left:auto;
-      margin-right:auto;
-      padding:8px 10px 10px;
+      min-width:0;
+      box-sizing:border-box;
+      padding:2px 4px 4px;
       border:1.5px solid var(--accent);
-      border-radius:14px;
+      border-radius:12px;
       background:rgba(201,169,110,.08);
       box-shadow:0 0 0 1px rgba(201,169,110,.2);
     }
-    .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0;max-width:200px;}
+    .couple-ring-wide{grid-column:1 / -1;}
+    .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0;max-width:none;width:100%;}
     @media(max-width:380px){
-      .couple-ring{--ring-cols:1 !important;grid-template-columns:1fr;max-width:100%;}
-      .couple-ring .card{max-width:none;}
+      .couple-ring{padding:2px;gap:8px;}
     }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .card:active{transform:scale(.96);}
@@ -379,13 +379,13 @@
     ];
     /** Tabs for Obscura — `match` = Airtable `List` option. `lbl` = short on-screen only. */
     const OBSCURA_TABS=[
+      {id:'all',lbl:'ALL'},
       {id:'ob_ga',match:'GA',lbl:'GA'},
-      {id:'ob_s2',match:'Salon Table for 2',lbl:'Salon (2)'},
-      {id:'ob_s4',match:'Salon Table for 4',lbl:'Salon (4)'},
-      {id:'ob_booth',match:"Madame's Booth",lbl:"Madame's Booth"},
-      {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'Stage seat'},
-      {id:'ob_working',match:'Working',lbl:'Working'},
-      {id:'all',lbl:'All'},
+      {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'STAGE'},
+      {id:'ob_s2',match:'Salon Table for 2',lbl:'SALON | 2'},
+      {id:'ob_s4',match:'Salon Table for 4',lbl:'SALON | 4'},
+      {id:'ob_booth',match:"Madame's Booth",lbl:"MADAME'S BOOTH"},
+      {id:'ob_working',match:'Working',lbl:'WORKING'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -498,7 +498,7 @@
       return BASE_TABS;
     }
     function defaultTabForCurrentTable(){
-      if(isObscuraTable()) return 'ob_working';
+      if(isObscuraTable()) return 'all';
       return 'guest';
     }
     function hasNotesExtraField(){
@@ -1013,6 +1013,14 @@
       return out;
     }
 
+    /** Pairs / trios first, then solos. Sort key = alphabetically first name in the cluster (members are already A–Z). */
+    function compareObscuraDisplayGroups(a,b){
+      if(!!a.pair!==!!b.pair) return a.pair?-1:1;
+      const an=(a.members[0]?.name||'').trim();
+      const bn=(b.members[0]?.name||'').trim();
+      return an.localeCompare(bn,undefined,{sensitivity:'base'});
+    }
+
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
       return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
@@ -1111,10 +1119,12 @@
         return;
       }
       if(isObscuraTable()){
-        const gr=buildObscuraCoupleGroups(list);
+        const gr=buildObscuraCoupleGroups(list).sort(compareObscuraDisplayGroups);
         const body=gr.map(grp=>
           grp.pair
-            ?`<div class="couple-ring" style="--ring-cols:${grp.members.length}" role="group" aria-label="Date group (${grp.members.length})">${grp.members.map(m=>gCard(m)).join('')}</div>`
+            ?(()=>{ const n=grp.members.length; const wide=n>3; return wide
+              ?`<div class="couple-ring couple-ring-wide" style="--ring-cols:${Math.min(n,3)}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`
+              :`<div class="couple-ring" style="--ring-cols:${n};--gspan:${n}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`;})()
             :gCard(grp.members[0])
         ).join('');
         document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
