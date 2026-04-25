@@ -11,13 +11,14 @@
   <meta name="theme-color" content="#162B3B">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/apple-touch-icon.jpg">
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap" rel="stylesheet">
   <style>
     :root { --blue:#162B3B; --cream:#f5f0eb; --dark:#1a1a1a; --warm:#8c7b6b; --accent:#c9a96e; --green:#34c759; --red:#c0392b; --border:rgba(0,0,0,0.07); }
     * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-    html { font-family:'Instrument Serif',serif; }
-    body { background:#f2ede8; font-family:'Instrument Serif',serif; color:var(--dark); min-height:100vh; }
+    html { font-family:'Instrument Serif',serif; font-style:normal; }
+    body { background:#f2ede8; font-family:'Instrument Serif',serif; color:var(--dark); min-height:100vh; font-style:normal; }
     button, input, textarea, select, option { font-family:'Instrument Serif',serif; }
+    #app, #detailView, #addModal, #evScreen, button, input, textarea, select { font-style:normal; }
     #evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100dvh;padding:max(14px, env(safe-area-inset-top)) 24px max(12px, env(safe-area-inset-bottom));overflow-y:auto;}
     .ev-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;min-height:0;padding-top:4px;}
     /* Logo: no blend/filter — avoids Safari “black box” on PNG over blue */
@@ -29,7 +30,7 @@
     .ev-list{width:100%;max-width:320px;display:flex;flex-direction:column;gap:10px;}
     .ev-item{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:18px 20px;cursor:pointer;transition:all .18s;}
     .ev-item:active{background:rgba(255,255,255,.1);border-color:var(--accent);}
-    .ev-name{font-size:20px;color:#fff;font-style:italic;}
+    .ev-name{font-size:20px;color:#fff;}
     .ev-date{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.45);margin-top:4px;}
     .ev-reset{flex-shrink:0;width:100%;max-width:320px;padding:20px 8px max(16px, env(safe-area-inset-bottom));opacity:.4;background:none;border:none;color:white;font-size:10px;cursor:pointer;text-align:center;}
     #app{display:none;}
@@ -41,7 +42,7 @@
     .event-title{font-size:18px;font-style:normal;color:rgba(255,255,255,.92);letter-spacing:.02em;line-height:1.25;}
     .toolbar{display:flex;gap:8px;padding:0 14px 12px;}
     .search-wrap{flex:1;position:relative;}
-    .search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:#fff;outline:none;font-style:italic;}
+    .search-input{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:9px 12px 9px 32px;font-size:13px;color:#fff;outline:none;}
     .search-input::placeholder{color:rgba(255,255,255,.3);}
     .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
     .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
@@ -84,38 +85,46 @@
       .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
-    .stat{font-size:12px;color:var(--warm);font-style:italic;}
+    .stat{font-size:12px;color:var(--warm);}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
-    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
+    .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;}
     @media(min-width:480px){.grid{grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{grid-template-columns:repeat(5,1fr);}}
-    /* Obscura: full-width row for a matched pair; gold frame keeps dates together visually. */
+    /* Obscura pair: don’t let photos scale to half the monitor — cap column width. */
     .couple-ring{
       grid-column:1 / -1;
       display:grid;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:repeat(2,minmax(0,200px));
+      justify-content:center;
+      justify-items:stretch;
       gap:10px;
+      max-width:min(100%,440px);
+      margin-left:auto;
+      margin-right:auto;
       padding:8px 10px 10px;
       border:1.5px solid var(--accent);
       border-radius:14px;
       background:rgba(201,169,110,.08);
       box-shadow:0 0 0 1px rgba(201,169,110,.2);
     }
-    .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);}
+    .couple-ring .card{box-shadow:0 2px 6px rgba(0,0,0,.08);min-width:0;max-width:200px;}
     @media(max-width:380px){
-      .couple-ring{grid-template-columns:1fr;gap:8px;}
+      .couple-ring{grid-template-columns:1fr;max-width:100%;}
+      .couple-ring .card{max-width:none;}
     }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .card:active{transform:scale(.96);}
     .card.checked{filter:grayscale(1);opacity:.62;}
     .card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
-    .card-init{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#ebe5dd,#d9d1c7);display:flex;align-items:center;justify-content:center;font-size:26px;font-style:italic;color:var(--warm);}
+    .card-init{width:100%;aspect-ratio:1;background:linear-gradient(135deg,#ebe5dd,#d9d1c7);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--warm);}
     .card-body{padding:7px 8px 8px;}
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
     .ob-date-card{background:rgba(201,169,110,.08);}
     .ob-date-readout{font-size:16px;color:var(--dark);line-height:1.45;padding:0 0 2px;word-wrap:break-word;}
+    .ob-date-name-line{font-size:16px;color:var(--dark);line-height:1.4;}
+    .ob-date-name-line+.ob-date-name-line{margin-top:6px;}
     .ob-pair-line{font-size:13px;margin:8px 0 0;color:var(--warm);line-height:1.4;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
     .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal;font-weight:500;}
@@ -125,15 +134,15 @@
     .cstate{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:64px 20px;gap:14px;}
     .spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
-    .cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;font-style:italic;}
+    .cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;}
     #detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
     .detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
     .detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
     .back-btn{background:none;border:none;color:rgba(255,255,255,.92);cursor:pointer;font-size:13px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;opacity:1;display:flex;align-items:center;padding:4px 0;text-align:left;-webkit-font-smoothing:antialiased;}
     .detail-avatar-wrap{margin-top:14px;display:flex;justify-content:center;}
     .detail-avatar{width:88px;height:88px;border-radius:50%;object-fit:cover;border:3px solid #fff;}
-    .detail-init{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:30px;font-style:italic;color:#fff;}
-    .detail-name{font-size:22px;color:#fff;margin-top:10px;font-style:italic;}
+    .detail-init{width:88px;height:88px;border-radius:50%;background:rgba(255,255,255,.15);border:3px solid rgba(255,255,255,.4);display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;}
+    .detail-name{font-size:22px;color:#fff;margin-top:10px;}
     .detail-sub{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;letter-spacing:.06em;}
     .detail-chips{display:flex;justify-content:center;gap:8px;margin-top:10px;flex-wrap:wrap;padding:0 20px;}
     .det-chip{background:rgba(255,255,255,.12);color:rgba(255,255,255,.85);border-radius:6px;padding:5px 12px;font-size:11px;text-decoration:none;}
@@ -148,7 +157,7 @@
     .det-sublbl{font-size:11px;color:var(--warm);line-height:1.35;}
     .det-sublbl{margin-top:2px;}
     .wb-pill{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);}
-    .wb-pill.none{color:var(--warm);font-style:italic;}
+    .wb-pill.none{color:var(--warm);}
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
     #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
@@ -169,7 +178,7 @@
     .det-input-wrap{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
     .det-input-wrap:last-child{border-bottom:none;}
     .det-input-lbl{font-size:13px;color:var(--dark);display:flex;align-items:center;gap:6px;margin-bottom:8px;}
-    .det-input{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--warm);outline:none;font-style:italic;}
+    .det-input{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:10px 14px;font-size:14px;color:var(--warm);outline:none;}
     .det-input::placeholder{color:#bbb5ae;}
     textarea.det-input{resize:none;min-height:80px;}
     .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -177,7 +186,7 @@
     .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:40px;}
     .modal-handle{width:36px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;margin:12px auto 0;}
     .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
-    .modal-title{font-size:22px;font-style:italic;color:var(--dark);}
+    .modal-title{font-size:22px;color:var(--dark);}
     .modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
     .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:10px;}
     .modal-card{background:#fff;border-radius:14px;overflow:hidden;}
@@ -186,7 +195,7 @@
     .modal-ico{font-size:16px;flex-shrink:0;}
     .modal-field{flex:1;}
     .modal-field-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);margin-bottom:2px;}
-    .modal-input{width:100%;background:none;border:none;outline:none;font-size:15px;color:var(--dark);font-style:italic;}
+    .modal-input{width:100%;background:none;border:none;outline:none;font-size:15px;color:var(--dark);}
     .modal-input::placeholder{color:#c0b8ae;}
     .modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
     .modal-toggle-row:last-child{border-bottom:none;}
@@ -194,7 +203,7 @@
     .modal-nda-hint{padding:10px 16px 14px;font-size:12px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(0,0,0,.05);line-height:1.4;}
     .modal-nda-link{font-size:16px;text-decoration:none;flex-shrink:0;}
     .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
-    .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);font-style:italic;}
+    .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);}
     .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
 
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
@@ -330,14 +339,7 @@
             <span class="modal-ico">🧥</span>
             <div class="modal-field">
               <div class="modal-field-lbl">Coat Check #</div>
-              <input class="modal-input" id="mCoat" placeholder="Enter coat check number">
-            </div>
-          </div>
-          <div class="modal-row">
-            <span class="modal-ico">📱</span>
-            <div class="modal-field">
-              <div class="modal-field-lbl">Phone Check #</div>
-              <input class="modal-input" id="mPhone" placeholder="Enter phone check number">
+              <input class="modal-input" id="mCoat" placeholder="">
             </div>
           </div>
         </div>
@@ -761,15 +763,6 @@
       }
       return null;
     }
-    function pickFieldOrGuessPhone(){
-      const k=pickField(F_PHONE_CHECK);
-      if(k) return k;
-      for(const n of tableFields)
-        if(/\bphone\b/i.test(n) && /\bcheck\b/i.test(n)) return n;
-      for(const n of tableFields)
-        if(/^pouch\b/i.test(n) || (/\blocker\b/i.test(n) && /#/.test(n))) return n;
-      return null;
-    }
     function fieldAny(f,candidates){
       for(const n of candidates){
         if(Object.prototype.hasOwnProperty.call(f,n)) return f[n];
@@ -810,31 +803,55 @@
         .trim();
     }
     /**
-     * First name segment to find in the list (strips *markdown*, legacy "Date: " pasted in this field, splits on , or and).
+     * Split a Date cell into separate names: internal "Date: …" phrases, commas, and "and".
      */
-    function firstPartnerNameFromField(raw){
-      if(raw==null) return '';
+    function splitGuestDateNames(raw){
+      if(raw==null) return [];
       let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
-      if(!s) return '';
+      if(!s) return [];
       s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
-      const parts=s.split(/[,;]|\s+and\s+/i);
-      for(const part of parts){
-        const t=part.trim();
-        if(!t) continue;
-        if(/^solo\b/i.test(t)) continue;
-        if(isPlaceholderDateName(t)) continue;
-        return t;
+      const chunks=s.split(/\s*Date\s*:\s*/i).map(x=>x.trim()).filter(Boolean);
+      const out=[];
+      for(const c of chunks){
+        for(const p of c.split(/[,;]|\s+and\s+/i)){
+          const t=p.trim();
+          if(t) out.push(t);
+        }
       }
-      return '';
+      if(out.length) return out;
+      return s?[s]:[];
     }
-
-    /** List + inputs: show only the name(s), not a pasted "Date: " prefix (legacy Airtable text). */
+    /** Strip a single segment’s leading "Date: " and markdown (Airtable / legacy). */
     function guestDateDisplayText(raw){
       if(raw==null) return '';
       let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
       if(!s) return '';
       s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
       return s;
+    }
+    function guestDateDisplayLine(raw){
+      const parts=splitGuestDateNames(raw);
+      if(!parts.length) return '';
+      return parts.map(p=>guestDateDisplayText(p)).filter(Boolean).join(' · ');
+    }
+    /** First listable +1 name (for gold-frame pairing). */
+    function firstPartnerNameFromField(raw){
+      if(raw==null) return '';
+      const names=splitGuestDateNames(raw);
+      for(const t of names){
+        const x=String(t).trim();
+        if(!x) continue;
+        if(/^solo\b/i.test(x)) continue;
+        if(isPlaceholderDateName(x)) continue;
+        return x;
+      }
+      return '';
+    }
+    function guestDateReadoutHtmlFromRaw(rawD){
+      const parts=splitGuestDateNames(rawD).map(p=>guestDateDisplayText(p)).filter(Boolean);
+      if(!parts.length) return '—';
+      if(parts.length===1) return esc(parts[0]);
+      return parts.map(n=>`<div class="ob-date-name-line">${esc(n)}</div>`).join('');
     }
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
     function parseDateNameFromNotes(notes){
@@ -1069,8 +1086,8 @@
         :`<div class="card-init">${ini(g.name)}</div>`;
       const dot=isObscuraTable()?'':((g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:''));
       const rawD=isObscuraTable()?dateLineFromGuest(g):'';
-      const dMini=rawD?guestDateDisplayText(rawD):'';
-      const dateMini=dMini?`<div class="card-date-ob">${esc(dMini)}</div>`:'';
+      const dLine=rawD?guestDateDisplayLine(rawD):'';
+      const dateMini=dLine?`<div class="card-date-ob">${esc(dLine)}</div>`:'';
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
@@ -1086,7 +1103,6 @@
       curG=g;
       const loc=local[id]||{};
       const coatVal=loc.coat!=null?loc.coat:(g.coatCheck||'');
-      const phoneCkVal=loc.phone!=null?loc.phone:(g.phoneCheckNum||'');
       const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
       const notes2Val=loc.notes2!=null?loc.notes2:(g.doorNotesExtra||'');
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
@@ -1096,18 +1112,12 @@
         const n2=showExtra?`
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Internal / table notes</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Who approved, comp name, table or booth assignment, plus-ones</div>
-              <textarea class="det-input" id="dNotes2" rows="3" placeholder="e.g. Table 4 · comp · approved by name" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
+              <textarea class="det-input" id="dNotes2" rows="3" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notes2Val)}</textarea>
             </div>`:'';
         const gdv=dateLineFromGuest(g);
-        const gdvText=guestDateDisplayText(gdv);
-        const gdvShow=gdvText||'—';
-        const pnm=firstPartnerNameFromField(gdv);
+        const gdvBody=guestDateReadoutHtmlFromRaw(gdv);
         const pairReadout=pFromList
           ?`<p class="ob-pair-line">With in this list: <strong>${esc(pFromList.name)}</strong></p>`
-          :'';
-        const noMatch=pnm && !pFromList
-          ?`<p class="det-sublbl" style="margin:6px 0 0;opacity:0.85">Not paired — check spelling against <strong>Full name</strong> on the other row, or they’re on another tab.</p>`
           :'';
         document.getElementById('detailContent').innerHTML=`
         <div class="detail-head">
@@ -1123,10 +1133,9 @@
         <div class="det-cards">
           <div class="det-card ob-date-card">
             <div class="det-input-wrap" style="border-bottom:none">
-              <div class="det-input-lbl">The Date</div>
-              <div class="ob-date-readout">${esc(gdvShow)}</div>
+              <div class="det-input-lbl">💞 The Date</div>
+              <div class="ob-date-readout">${gdvBody}</div>
               ${pairReadout}
-              ${noMatch}
             </div>
           </div>
           <div class="det-card">
@@ -1138,20 +1147,13 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Tag or basket number for outerwear</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 42" oninput="saveLocalDebounced()" onblur="saveLocal()">
-            </div>
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📱 Phone Check #</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Pouch or locker for phone hold</div>
-              <input class="det-input" id="dPhoneCk" value="${esc(phoneCkVal)}" placeholder="e.g. 12" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Notes</div>
-              <div class="det-sublbl" style="margin-bottom:6px">Door or ops only. <strong>Date</strong> is read from the Date column in Airtable (or a legacy <code>Date: name</code> line here).</div>
-              <textarea class="det-input" id="dNotes" rows="3" placeholder="VIPs, issues at the door, special handling…" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <textarea class="det-input" id="dNotes" rows="3" placeholder="Issues at the Door" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
             ${n2}
           </div>
@@ -1211,17 +1213,13 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
-            </div>
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📱 Phone Check #</div>
-              <input class="det-input" id="dPhoneCk" value="${esc(phoneCkVal)}" placeholder="e.g. 69" oninput="saveLocalDebounced()" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="" oninput="saveLocalDebounced()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Door Notes:</div>
-              <textarea class="det-input" id="dNotes" placeholder="Any additional info including who approved them (Sam, Daniel &amp; LouLou are the only ones who can)" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" oninput="saveLocalDebounced()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
           </div>
         </div>`;
@@ -1271,18 +1269,14 @@
     async function saveLocal(){
       if(!curG)return;
       const coat=document.getElementById('dCoat');
-      const phCk=document.getElementById('dPhoneCk');
       const notes=document.getElementById('dNotes');
-      if(!coat||!phCk||!notes)return;
+      if(!coat||!notes)return;
       const vCoat=coat.value.trim();
-      const vPhoneCk=phCk.value.trim();
       const vNotes=notes.value.trim();
       const n2el=document.getElementById('dNotes2');
       const fields={};
       const kC=pickField(F_COAT);
       if(kC) fields[kC]=vCoat;
-      const kP=pickFieldOrGuessPhone();
-      if(kP) fields[kP]=vPhoneCk;
       const kN=pickField(F_NOTES);
       if(kN) fields[kN]=vNotes;
       let v2='';
@@ -1294,12 +1288,12 @@
       try{
         if(Object.keys(fields).length===0) throw new Error('No known Airtable fields to save (refresh the list or check your base).');
         await patchGuestResilient(curG.id, fields);
-        const locNext={...local[curG.id],coat:vCoat,phone:vPhoneCk,notes:vNotes};
+        const locNext={...local[curG.id],coat:vCoat,notes:vNotes};
         if(n2el && hasNotesExtraField()) locNext.notes2=v2;
         local[curG.id]=locNext;
         const i=guests.findIndex(x=>x.id===curG.id);
         if(i>-1){
-          const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhoneCk,doorNotes:vNotes};
+          const gNext={...guests[i],coatCheck:vCoat,doorNotes:vNotes};
           if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
           guests[i]=gNext;
           if(curG && curG.id===guests[i].id) curG=guests[i];
@@ -1311,9 +1305,9 @@
         }
         showToast('Saved ✓');
       }catch(e){
-        console.error('Coat/phone/notes save failed',e);
+        console.error('Coat/notes save failed',e);
         enqueuePending(curG.id, curTable, fields);
-        showToast('Could not save numbers/notes: '+fmtErr(e)+' — queued to retry',8000);
+        showToast('Could not save: '+fmtErr(e)+' — queued to retry',8000);
         try{ render(); }catch(_){}
       }
     }
@@ -1441,13 +1435,9 @@
       const mnl=document.getElementById('mNotesLbl');
       if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'Door Notes <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
-      if(mn) mn.placeholder=isObscuraTable()
-        ?'Door / ops (date names live in Airtable or a Date: line in notes).'
-        :'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
+      if(mn) mn.placeholder=isObscuraTable()?'Issues at the Door':'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
-      const mPhEl=document.getElementById('mPhone');
-      if(mCoatEl) mCoatEl.placeholder=isObscuraTable()?'e.g. tag for outerwear':'Enter coat check number';
-      if(mPhEl) mPhEl.placeholder=isObscuraTable()?'e.g. pouch or locker for phone':'Enter phone check number';
+      if(mCoatEl) mCoatEl.placeholder=isObscuraTable()?'':'Enter coat check number';
       const nda=document.getElementById('mNDA');
       if(nda) onAddNDAChange(nda);
       const pr=document.getElementById('mPatRow');
@@ -1459,7 +1449,7 @@
       document.getElementById('addModal').classList.remove('open');
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
-      ['aN','mCoat','mPhone','mNotes'].forEach(id=>document.getElementById(id).value='');
+      ['aN','mCoat','mNotes'].forEach(id=>document.getElementById(id).value='');
       ['mCI','mNDA','mSTI','mPat'].forEach(id=>{
         const n=document.getElementById(id);
         if(n) n.checked=false;
@@ -1474,9 +1464,7 @@
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
-      const mPhEl=document.getElementById('mPhone');
       if(mCoatEl) mCoatEl.placeholder='Enter coat check number';
-      if(mPhEl) mPhEl.placeholder='Enter phone check number';
       updateAddWbPills();
     }
 
@@ -1493,28 +1481,25 @@
           if(cIn) fields[cIn]=true;
         }
         const coat=document.getElementById('mCoat').value.trim();
-        const ph=document.getElementById('mPhone').value.trim();
         const notes=document.getElementById('mNotes').value.trim();
         try{
           const d=await req('',{method:'POST',body:JSON.stringify({fields})});
           if(d.id){
-            if(coat||ph||notes){
+            if(coat||notes){
               try{
                 const follow={};
                 const kC=pickField(F_COAT);
                 if(kC) follow[kC]=coat;
-                const kP=pickFieldOrGuessPhone();
-                if(kP) follow[kP]=ph;
                 const kN=pickField(F_NOTES);
                 if(kN) follow[kN]=notes;
                 if(Object.keys(follow).length) await patchGuestResilient(d.id,follow);
               }catch(e2){
-                alert('Guest created but coat/phone/notes did not save: '+fmtErr(e2));
+                alert('Guest created but coat/notes did not save: '+fmtErr(e2));
               }
             }
             let rec=d;
             try{ rec=await req('/'+d.id); }catch(_){}
-            local[d.id]={coat,phone:ph,notes};
+            local[d.id]={coat,notes};
             guests.push(toG(rec));
             closeAdd();
             resolveDatePartnersFromGuests(guests);
@@ -1545,22 +1530,26 @@
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
 
       const coat=document.getElementById('mCoat').value.trim();
-      const ph=document.getElementById('mPhone').value.trim();
       const notes=document.getElementById('mNotes').value.trim();
 
       try{
         const d=await req('',{method:'POST',body:JSON.stringify({fields})});
         if(d.id){
-          if(coat||ph||notes){
+          if(coat||notes){
             try{
-              await patchGuestResilient(d.id,{[pickField(F_COAT)]:coat,[pickField(F_PHONE_CHECK)]:ph,[pickField(F_NOTES)]:notes});
+              const addPatch={};
+              const kC=pickField(F_COAT);
+              if(kC) addPatch[kC]=coat;
+              const kN=pickField(F_NOTES);
+              if(kN) addPatch[kN]=notes;
+              if(Object.keys(addPatch).length) await patchGuestResilient(d.id,addPatch);
             }catch(e2){
-              alert('Guest created but coat/phone/notes did not save: '+fmtErr(e2));
+              alert('Guest created but coat/notes did not save: '+fmtErr(e2));
             }
           }
           let rec=d;
           try{ rec=await req('/'+d.id); }catch(_){}
-          local[d.id]={coat,phone:ph,notes};
+          local[d.id]={coat,notes};
           guests.push(toG(rec));
           closeAdd();
           render();
