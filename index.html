@@ -101,21 +101,20 @@
       display:grid;
       grid-template-columns:repeat(var(--ring-cols),minmax(0,1fr));
       grid-column:1 / -1;
-      width:min(100%,calc((100% - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid)));
+      /* +35px: border(3) + 12px L/R pad(24) + 8 to offset wider gap(18) vs list gap(10), so each photo stays solo-cell size. */
+      width:min(100%,calc((100% - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid) + 35px));
       max-width:100%;
       justify-self:center;
       justify-items:stretch;
       align-items:start;
-      gap:var(--ggrid);
+      gap:18px;
       min-width:0;
       box-sizing:border-box;
-      /* No horizontal padding — keeps each card the same width as a solo cell (was shrinking cards). */
-      padding:6px 0 8px;
-      border:none;
+      padding:12px 12px 14px;
+      border:1.5px solid var(--accent);
       border-radius:12px;
-      background:linear-gradient(180deg,rgba(201,169,110,.1),rgba(201,169,110,.16));
-      /* Ring drawn with shadow so border does not eat inner width (was shrinking profile photos). */
-      box-shadow:0 0 0 1.5px var(--accent),0 0 0 1px rgba(201,169,110,.18),0 1px 4px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(0,0,0,.04);
+      background:linear-gradient(180deg,rgba(201,169,110,.1),rgba(201,169,110,.2));
+      box-shadow:0 2px 10px rgba(0,0,0,.08),0 0 0 1px rgba(201,169,110,.2),inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(0,0,0,.04),inset 0 -4px 16px rgba(0,0,0,.04);
     }
     .app-obscura .couple-ring-wide{width:100%;}
     .app-obscura .couple-ring .card{
@@ -127,7 +126,7 @@
       width:100%;
     }
     @media(max-width:380px){
-      .app-obscura .couple-ring{padding:4px 0 6px;gap:var(--ggrid);}
+      .app-obscura .couple-ring{padding:9px 9px 11px;gap:14px;}
     }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .app-obscura .card{box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);transition:transform .12s,filter .15s,opacity .15s,box-shadow .15s;}
