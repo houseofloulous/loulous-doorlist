@@ -92,7 +92,7 @@
     @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
     @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
     .ob-all-wrap{background:var(--cream);min-height:0;}
-    .ob-sec{grid-column:1 / -1;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);margin:18px 0 8px;padding:0 14px;max-width:1200px;box-sizing:border-box;margin-left:auto;margin-right:auto;}
+    .ob-sec{grid-column:1 / -1;width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
     .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
     /* Pairs / trios: one row per group, centered. 100% = full .grid content width (not 100cqw — fixes Safari + avoids stretch eating margin auto). */
     .couple-ring{
@@ -394,6 +394,17 @@
       {id:'ob_booth',match:"Madame's Booth",lbl:"MADAME'S BOOTH"},
       {id:'ob_working',match:'Working',lbl:'WORKING'},
     ];
+    /** Full-width section titles on the Obscura ALL list only (filter chips keep short `lbl` above). */
+    const OBSCURA_ALL_SECTION_LABELS={
+      ob_ga:'GENERAL ADMISSION',
+      ob_stage:'INTIMATE STAGE TABLE',
+      ob_s2:'SALON TABLE OF 2',
+      ob_s4:'SALON TABLE OF 4',
+      ob_booth:"MADAME'S BOOTH",
+      ob_working:'WORKING',
+      ob_mixed:'MIXED',
+      ob_other:'OTHER',
+    };
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
     const F_STI=['STI Verified','STI Tests'];
@@ -1048,8 +1059,9 @@
       return 'ob_mixed';
     }
     function obscuraAllSectionOrder(){
+      const L=OBSCURA_ALL_SECTION_LABELS;
       return OBSCURA_TABS.filter(t=>t.id!=='all'&&t.match)
-        .map(t=>({id:t.id,lbl:t.lbl})).concat([{id:'ob_mixed',lbl:'MIXED'},{id:'ob_other',lbl:'OTHER'}]);
+        .map(t=>({id:t.id,lbl:L[t.id]||t.lbl})).concat([{id:'ob_mixed',lbl:L.ob_mixed},{id:'ob_other',lbl:L.ob_other}]);
     }
     function renderObscuraGroupHtml(grp){
       if(grp.pair){
