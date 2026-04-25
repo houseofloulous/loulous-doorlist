@@ -20,14 +20,14 @@
     button, input, textarea, select, option { font-family:'Instrument Serif',serif; }
     #app, #detailView, #addModal, #evScreen, button, input, textarea, select { font-style:normal; }
     #evScreen{position:fixed;inset:0;background:var(--blue);z-index:400;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:100vh;min-height:100dvh;padding:max(14px, env(safe-area-inset-top)) 24px max(12px, env(safe-area-inset-bottom));overflow-y:auto;}
-    .ev-main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;min-height:0;padding-top:4px;}
+    .ev-main{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;width:100%;min-height:0;padding-top:4px;}
     /* Logo: no blend/filter — avoids Safari “black box” on PNG over blue */
     .ev-logo,.logo-img{height:auto;width:auto;display:block;mix-blend-mode:normal;backface-visibility:hidden;-webkit-backface-visibility:hidden;}
     .ev-logo-link{display:inline-flex;line-height:0;margin-bottom:0;-webkit-tap-highlight-color:transparent;}
     .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .ev-logo{height:62px;margin-bottom:0;}
     .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
-    #evScreen .ev-list{width:100%;max-width:min(100%,320px);display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;row-gap:0;column-gap:0;}
+    #evScreen .ev-list{width:100%;max-width:min(100%,320px);display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;row-gap:0;column-gap:0;padding:0 0 28px;box-sizing:border-box;}
     #evScreen .ev-list>button.ev-item+.ev-item{margin-top:36px;}
     button.ev-item.ev-item-art{
       display:block;width:100%;padding:0;margin:0;border:none;border-radius:12px;cursor:pointer;
@@ -39,13 +39,16 @@
     button.ev-item.ev-item-art:hover{box-shadow:0 6px 22px rgba(0,0,0,.45);}
     button.ev-item.ev-item-art:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
     button.ev-item.ev-item-art:active{transform:scale(.985);opacity:.95;}
+    #evScreen .ev-list>button.ev-item.ev-item-art:last-child{box-shadow:0 2px 10px rgba(0,0,0,.28);}
+    #evScreen .ev-list>button.ev-item.ev-item-art:last-child:hover{box-shadow:0 3px 14px rgba(0,0,0,.38);}
     .ev-item-art .ev-art{
       display:block;width:100%;height:auto;aspect-ratio:16/9;object-fit:cover;vertical-align:bottom;
       border:0;outline:0;border-radius:12px;
       backface-visibility:hidden;-webkit-backface-visibility:hidden;
       transform:translateZ(0);
     }
-    #evScreen .ev-reset{flex-shrink:0;width:100%;max-width:min(100%,320px);margin-top:20px;padding:24px 12px max(20px, env(safe-area-inset-bottom));background:none;border:none;cursor:pointer;text-align:center;-webkit-font-smoothing:antialiased;font-size:16px;font-weight:500;letter-spacing:.06em;color:rgba(255,255,255,.88);}
+    #evScreen .ev-landing-spacer{flex:0 0 auto;width:100%;min-height:20px;max-height:20px;pointer-events:none;}
+    #evScreen .ev-reset{position:relative;z-index:2;flex-shrink:0;width:100%;max-width:min(100%,320px);margin-top:0;padding:8px 12px max(20px, env(safe-area-inset-bottom));background:var(--blue);border:none;cursor:pointer;text-align:center;-webkit-font-smoothing:antialiased;font-size:13px;font-weight:500;letter-spacing:.05em;color:rgba(255,255,255,.78);}
     #app{display:none;}
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
@@ -251,7 +254,8 @@
     @media(max-width:480px){
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
       #evScreen .ev-list>button.ev-item+.ev-item{margin-top:40px;}
-      #evScreen .ev-reset{font-size:17px;}
+      #evScreen .ev-landing-spacer{min-height:24px;max-height:24px;}
+      #evScreen .ev-reset{font-size:14px;}
       .ev-sub{font-size:13px;letter-spacing:.14em;}
       .event-title{font-size:24px;line-height:1.28;letter-spacing:0;}
       .toolbar{flex-wrap:wrap;row-gap:8px;}
@@ -298,6 +302,7 @@
       <div class="ev-sub">Select Event</div>
       <div class="ev-list" id="evList"></div>
     </div>
+    <div class="ev-landing-spacer" aria-hidden="true"></div>
     <button type="button" class="ev-reset" onclick="resetKey()">Reset Door Password</button>
   </div>
 
