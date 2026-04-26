@@ -192,6 +192,13 @@
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
     #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
+    #memPillDisplay{display:flex;flex-flow:row wrap;gap:8px;align-items:flex-start;}
+    .member-pill{display:inline-flex;align-items:center;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);font-weight:500;line-height:1.25;}
+    .member-pill.mem-member{background:#1e3d59;border-color:#2a5070;color:#fff;}
+    .member-pill.mem-prospective{background:#6b2834;border-color:#843744;color:#fff;}
+    .member-pill.mem-other{background:#f0ebe4;border-color:rgba(0,0,0,.1);color:var(--dark);}
+    .card-members{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px;align-items:center;max-width:100%;}
+    .card-members .member-pill{padding:5px 10px;font-size:9px;letter-spacing:.03em;border-radius:6px;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
     .wb-circle.gold{background:#c9a96e;}
     .wb-circle.black{background:#fff;}
@@ -280,6 +287,8 @@
       .det-lbl,.wb-display-lbl{font-size:17px;}
       .det-sublbl{font-size:13px;}
       .wb-pill{font-size:16px;}
+      .member-pill{font-size:16px;}
+      .card-members .member-pill{font-size:11px;}
       .nda-text{font-size:14px;}
       .det-input,.det-input-lbl{font-size:16px;}
       .ob-date-readout{font-size:18px;}
@@ -446,6 +455,8 @@
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
     const F_WRISTBAND=['Wristbands','Wristband'];
+    /** Obscura Premiere only — single-/multi-select member type (Airtable “Members”). */
+    const F_MEMBERS=['Members'];
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
@@ -522,6 +533,34 @@
       if(hasGold) html+='<div class="wb-pill gold"><span class="wb-circle gold"></span>Gold</div>';
       if(!hasGold && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
       return html;
+    }
+    function parseMembersFromFields(f){
+      if(!f||typeof f!=='object') return [];
+      for(const n of F_MEMBERS){
+        if(!Object.prototype.hasOwnProperty.call(f,n)) continue;
+        const v=f[n];
+        if(Array.isArray(v)) return v.filter(x=>x!=null&&String(x).trim()!=='').map(x=>String(x).trim());
+        if(v==null||v==='') return [];
+        return [String(v).trim()];
+      }
+      return [];
+    }
+    function memberPillClassFromLabel(s){
+      const t=String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+      if(t==='member') return 'member-pill mem-member';
+      if(t==='prospective member'||t==='prospective') return 'member-pill mem-prospective';
+      return 'member-pill mem-other';
+    }
+    function buildMembersDisplayHTML(members){
+      const arr=Array.isArray(members)?members.filter(Boolean):[];
+      if(!arr.length) return '<div class="member-pill mem-other" style="opacity:.75">No member status</div>';
+      return arr.map(m=>`<div class="${memberPillClassFromLabel(m)}">${esc(m)}</div>`).join('');
+    }
+    function membersCardRowHtml(members){
+      if(!isObscuraTable()) return '';
+      const arr=Array.isArray(members)?members.filter(Boolean):[];
+      if(!arr.length) return '';
+      return `<div class="card-members">${arr.map(m=>`<span class="${memberPillClassFromLabel(m)}">${esc(m)}</span>`).join('')}</div>`;
     }
 
     /** Add-guest modal: same wristband pills as guest profile (Black = STI, Gold = patron). */
@@ -956,6 +995,7 @@
         stiVerified,
         wristbands:wbArr,
         wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
+        members:parseMembersFromFields(f),
         email:emailRaw,
         sti:stiVerified,
         coatCheck:fieldStr(f,F_COAT),
@@ -1128,7 +1168,8 @@
 
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
-      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
+      const memHit=isObscuraTable() && Array.isArray(g.members) && g.members.some(m=>String(m).toLowerCase().includes(q));
+      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)||memHit
         ||(isObscuraTable() && String(dateLineFromGuest(g)||'').toLowerCase().includes(q));
     }
 
@@ -1245,6 +1286,7 @@
       const rawD=isObscuraTable()?dateLineFromGuest(g):'';
       const dLine=rawD?guestDateDisplayLine(rawD):'';
       const dateMini=dLine?`<div class="card-date-ob">${esc(dLine)}</div>`:'';
+      const membersMini=membersCardRowHtml(g.members);
       const showListTag=!isObscuraTable()||curTab==='all';
       const listTag=showListTag?`<div class="card-tag">${dot}${esc(g.list||'')}</div>`:'';
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
@@ -1252,6 +1294,7 @@
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
           ${dateMini}
+          ${membersMini}
           ${listTag}
         </div>
       </div>`;
@@ -1296,6 +1339,10 @@
             <div class="det-row">
               <div class="det-lbl">✓ Checked In</div>
               <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
+            </div>
+            <div class="wb-display" style="border-top:1px solid rgba(0,0,0,.05);">
+              <div class="wb-display-lbl">Members</div>
+              <div id="memPillDisplay">${buildMembersDisplayHTML(g.members)}</div>
             </div>
           </div>
           <div class="det-card">
