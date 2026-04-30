@@ -1137,11 +1137,25 @@
       }
       return 'ob_other';
     }
-    /** Guests bucketed as GENERAL ADMISSION — no table/booth assignment in Airtable. */
-    function isObscuraGaGuest(g){
-      return obscuraListTabIdForGuest(g)==='ob_ga';
+    /** True when List is GA / general admission only — no table, booth, stage, or working assignment. */
+    function listFieldMatchesGeneralAdmission(g){
+      return listSegmentsLower(g).some(seg=>{
+        const nk=normListKey(seg);
+        return nk==='ga'||nk==='generaladmission';
+      });
     }
-    /** Obscura profile subtitle: List · Seat (no RSVP). GA guests: list label only. */
+    function obscuraGuestHasAssignedSeatListType(g){
+      for(const t of OBSCURA_TABS){
+        if(t.id==='all'||t.id==='ob_ga'||!t.match) continue;
+        if(listFieldMatches(g,t.match)) return true;
+      }
+      return false;
+    }
+    function isObscuraGaGuest(g){
+      if(obscuraGuestHasAssignedSeatListType(g)) return false;
+      return listFieldMatchesGeneralAdmission(g);
+    }
+    /** Obscura profile subtitle: List · Seat (no RSVP). GA-only guests: list label only. */
     function obscuraDetailSubLineHtml(g){
       if(isObscuraGaGuest(g)) return esc(g.list||'');
       const list=String(g.list||'').trim();
@@ -1312,18 +1326,19 @@
       const dLine=rawD?guestDateDisplayLine(rawD):'';
       const dateMini=dLine?`<div class="card-date-ob">${esc(dLine)}</div>`:'';
       const membersMini=membersCardRowHtml(g.members);
-      const showListTag=!isObscuraTable()||curTab==='all';
       let listTag='';
-      if(showListTag){
-        if(isObscuraTable() && curTab==='all' && !isObscuraGaGuest(g)){
+      if(isObscuraTable()){
+        if(isObscuraGaGuest(g)){
+          listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
+        }else{
           const seat=String(g.seatAssignment||'').trim();
           const listCore=dot+esc(g.list||'');
           listTag=seat
             ?`<div class="card-tag">${listCore} · ${esc(seat)}</div>`
             :`<div class="card-tag">${listCore}</div>`;
-        }else{
-          listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
         }
+      }else{
+        listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
       }
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
