@@ -104,23 +104,36 @@
     .stat{font-size:12px;color:var(--warm);}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
-    .grid{--gcols:3;--ggrid:10px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--ggrid);padding:14px;max-width:1200px;margin:0 auto;box-sizing:border-box;justify-items:stretch;}
-    @media(min-width:480px){.grid{--gcols:4;grid-template-columns:repeat(4,1fr);}}
-    @media(min-width:700px){.grid{--gcols:5;grid-template-columns:repeat(5,1fr);}}
-    .app-obscura .ob-all-wrap{background:var(--cream);min-height:0;}
-    .app-obscura .ob-sec{grid-column:1 / -1;width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
+    /** Guest grids (Obscura + L’Atelier): flex-wrap + centered rows so stray cards / pairs aren’t stuck left. */
+    #main{width:100%;}
+    .grid{
+      --ggrid:10px;
+      --guest-card-w:clamp(138px,min(206px,(100vw - 48px)/3),216px);
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:stretch;
+      align-content:flex-start;
+      gap:var(--ggrid);
+      padding:14px;
+      max-width:1200px;
+      margin:0 auto;
+      box-sizing:border-box;
+      width:100%;
+    }
+    .grid>.card{flex:0 0 auto;width:var(--guest-card-w);}
+    .app-obscura .ob-all-wrap{background:var(--cream);min-height:0;display:flex;flex-direction:column;align-items:center;width:100%;}
+    .app-obscura .ob-sec{width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
     .app-obscura .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
-    /* Obscura only — Pairs / trios: one row per group, centered. */
+    /* Obscura — date clusters: intrinsic width so the flex wrapper can center each group like solo cards */
     .app-obscura .couple-ring{
       --ring-cols:2;
       --gspan:2;
+      flex:0 1 auto;
       display:grid;
-      grid-template-columns:repeat(var(--ring-cols),minmax(0,1fr));
-      grid-column:1 / -1;
-      /* +35px: border(3) + 12px L/R pad(24) + 8 to offset wider gap(18) vs list gap(10), so each photo stays solo-cell size. */
-      width:min(100%,calc((100% - (var(--gcols) - 1) * var(--ggrid)) * var(--gspan) / var(--gcols) + (var(--gspan) - 1) * var(--ggrid) + 35px));
+      grid-template-columns:repeat(var(--ring-cols),minmax(0,var(--guest-card-w)));
+      width:fit-content;
       max-width:100%;
-      justify-self:center;
       justify-items:stretch;
       align-items:start;
       gap:18px;
@@ -132,8 +145,11 @@
       background:linear-gradient(180deg,rgba(201,169,110,.1),rgba(201,169,110,.2));
       box-shadow:0 2px 10px rgba(0,0,0,.08),0 0 0 1px rgba(201,169,110,.2),inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(0,0,0,.04),inset 0 -4px 16px rgba(0,0,0,.04);
     }
-    .app-obscura .couple-ring-wide{width:100%;}
+    .app-obscura .couple-ring-wide{width:fit-content;max-width:100%;}
     .app-obscura .couple-ring .card{
+      width:100%;
+      min-width:0;
+      max-width:none;
       border:none;
       box-shadow:0 0 0 1px rgba(0,0,0,.1),0 3px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.08);
       border-radius:10px;
