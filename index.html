@@ -153,9 +153,9 @@
       border:none;
       box-shadow:0 0 0 1px rgba(0,0,0,.1),0 3px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.08);
       border-radius:10px;
-      min-width:0;
-      max-width:none;
-      width:100%;
+    }
+    .app-obscura .couple-ring .card.card-blacklist{
+      box-shadow:0 0 0 2px var(--red),0 6px 16px rgba(0,0,0,.55)!important;
     }
     @media(max-width:380px){
       .app-obscura .couple-ring{padding:9px 9px 11px;gap:14px;}
@@ -212,7 +212,17 @@
     .member-pill{display:inline-flex;align-items:center;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);font-weight:500;line-height:1.25;}
     .member-pill.mem-member{background:#1e3d59;border-color:#2a5070;color:#fff;}
     .member-pill.mem-prospective{background:#6b2834;border-color:#843744;color:#fff;}
+    .member-pill.mem-blacklist{background:#2a0a0a;border-color:#e74c3c;color:#ffb4a8;font-weight:600;letter-spacing:.04em;}
     .member-pill.mem-other{background:#f0ebe4;border-color:rgba(0,0,0,.1);color:var(--dark);}
+    .card.card-blacklist{background:#050505!important;box-shadow:0 0 0 2px var(--red),0 4px 14px rgba(0,0,0,.4)!important;}
+    .app-obscura .card.card-blacklist{box-shadow:0 0 0 2px var(--red),0 4px 14px rgba(0,0,0,.45)!important;}
+    .card.card-blacklist .card-body{background:transparent;}
+    .card.card-blacklist .card-name{color:rgba(255,255,255,.95);}
+    .card.card-blacklist .card-tag{color:var(--accent);}
+    .card.card-blacklist .card-date-ob{color:rgba(255,255,255,.78);}
+    .card.card-blacklist .card-tick{color:var(--accent);}
+    .card.card-blacklist .card-init{background:linear-gradient(135deg,#1f1f1f,#0a0a0a);color:rgba(255,255,255,.7);}
+    .card.card-blacklist.checked{filter:none!important;opacity:1!important;}
     .card-members{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px;align-items:center;max-width:100%;}
     .card-members .member-pill{padding:5px 10px;font-size:9px;letter-spacing:.03em;border-radius:6px;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
@@ -593,9 +603,15 @@
     }
     function memberPillClassFromLabel(s){
       const t=String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
+      const nk=normListKey(s);
+      if(nk.indexOf('blacklist')!==-1) return 'member-pill mem-blacklist';
       if(t==='member') return 'member-pill mem-member';
       if(t==='prospective'||t==='prospective member') return 'member-pill mem-prospective';
       return 'member-pill mem-other';
+    }
+    function guestMembersHasBlacklist(members){
+      if(!Array.isArray(members)) return false;
+      return members.some(m=>normListKey(m).indexOf('blacklist')!==-1);
     }
     function buildMembersDisplayHTML(members){
       const arr=Array.isArray(members)?members.filter(Boolean):[];
@@ -1461,7 +1477,8 @@
       }else{
         listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
       }
-      return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
+      const blk=guestMembersHasBlacklist(g.members);
+      return `<div class="card${g.checkedIn?' checked':''}${blk?' card-blacklist':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
