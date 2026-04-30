@@ -272,6 +272,22 @@
     .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
     .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);}
     .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
+    .hbtn-floor{border-color:var(--accent);color:var(--accent);}
+    .floor-map-overlay{
+      position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:350;display:flex;align-items:center;justify-content:center;
+      padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));box-sizing:border-box;
+      opacity:0;pointer-events:none;transition:opacity .22s ease;
+    }
+    .floor-map-overlay.open{opacity:1;pointer-events:auto;}
+    .floor-map-sheet{
+      background:var(--cream);border-radius:16px;max-width:min(940px,calc(100vw - 28px));max-height:min(92dvh,92vh);width:100%;
+      display:flex;flex-direction:column;overflow:hidden;box-shadow:0 14px 48px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);
+    }
+    .floor-map-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--blue);flex-shrink:0;}
+    .floor-map-sheet-head span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.93);}
+    .floor-map-close{background:none;border:none;color:rgba(255,255,255,.9);font-size:26px;line-height:1;cursor:pointer;padding:2px 6px;line-height:.85;}
+    .floor-map-sheet-body{padding:10px 10px 14px;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0;}
+    .floor-map-sheet-body img{display:block;width:100%;max-width:100%;height:auto;border-radius:10px;background:#fff;}
 
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
     @media(max-width:480px){
@@ -345,6 +361,7 @@
           <input class="search-input" id="searchInput" type="text" placeholder="Search guests…" oninput="render()">
         </div>
         <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
+        <button type="button" class="hbtn hbtn-floor" id="floorMapToolbarBtn" style="display:none" onclick="openFloorMap()" aria-label="Floor map">FLOOR MAP</button>
         <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="window.open('https://forms.gle/asRXJtR6zHhDoGZJ8','_blank')">NDA</button>
       </div>
       <p class="obscura-tabs-hint" id="obscuraTabHint" hidden>List filter</p>
@@ -355,6 +372,18 @@
   </div>
 
   <div id="detailView"><div id="detailContent"></div></div>
+
+  <div class="floor-map-overlay" id="floorMapOverlay" role="dialog" aria-modal="true" aria-labelledby="floorMapOverlayTitle" aria-hidden="true" onclick="floorMapBackdropClick(event)">
+    <div class="floor-map-sheet" onclick="event.stopPropagation()">
+      <div class="floor-map-sheet-head">
+        <span id="floorMapOverlayTitle">Seating map</span>
+        <button type="button" class="floor-map-close" onclick="closeFloorMap()" aria-label="Close floor map">×</button>
+      </div>
+      <div class="floor-map-sheet-body">
+        <img src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/obscura-seating-map-may-2.jpg" alt="Obscura seating map — May 2nd" loading="eager" decoding="async">
+      </div>
+    </div>
+  </div>
 
   <div class="modal-bg" id="addModal">
     <div class="modal">
@@ -598,7 +627,23 @@
     function syncAppObscuraClass(){
       const app=document.getElementById('app');
       if(!app) return;
-      app.classList.toggle('app-obscura',isObscuraTable());
+      const ob=isObscuraTable();
+      app.classList.toggle('app-obscura',ob);
+      const nda=document.getElementById('ndaToolbarBtn');
+      if(nda) nda.style.display=ob?'none':'';
+      const fm=document.getElementById('floorMapToolbarBtn');
+      if(fm) fm.style.display=ob?'':'none';
+    }
+    function openFloorMap(){
+      const el=document.getElementById('floorMapOverlay');
+      if(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
+    }
+    function closeFloorMap(){
+      const el=document.getElementById('floorMapOverlay');
+      if(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+    }
+    function floorMapBackdropClick(ev){
+      if(ev.target===ev.currentTarget) closeFloorMap();
     }
     function getTabsForCurrentTable(){
       if(isObscuraTable()) return OBSCURA_TABS;
@@ -639,6 +684,7 @@
     }
 
     function pickEv(i){
+      closeFloorMap();
       const e=EVENTS[i]; curTable=e.table;
       curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.label;
@@ -648,6 +694,7 @@
     }
 
     function showEvScreen(){
+      closeFloorMap();
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
       document.getElementById('detailView').style.display='none';
@@ -1298,8 +1345,6 @@
         }
         guests=sortGuestsByName(recs.map(toG));
         resolveDatePartnersFromGuests(guests);
-        const ndaB=document.getElementById('ndaToolbarBtn');
-        if(ndaB) ndaB.style.display=isObscuraTable()?'none':'';
         render();
         if(isObscuraTable()){
           requestAnimationFrame(()=>{
