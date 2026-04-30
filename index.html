@@ -1171,6 +1171,40 @@
       if(ids.every(id=>id===first)) return first;
       return 'ob_mixed';
     }
+    /**
+     * Earliest/lowest seat sort token among seated (non–GA-only) guests in a cluster.
+     * Omits GA-only attendees — they don't get table assignments from ops.
+     */
+    function obscuraGroupSeatSortToken(grp){
+      const vals=(grp.members||[])
+        .filter(m=>m && !isObscuraGaGuest(m))
+        .map(m=>String(m.seatAssignment||'').trim())
+        .filter(Boolean);
+      if(!vals.length) return null;
+      vals.sort((x,y)=>x.localeCompare(y,undefined,{numeric:true,sensitivity:'base'}));
+      return vals[0];
+    }
+    /**
+     * Order clusters for Obscura: GA sections keep name/pair UX only.
+     * All other buckets: unfinished check-ins first, then by Seat Assignment (non-GA members), blanks last; then ties.
+     */
+    function compareObscuraGroupsForBucket(a,b,bucketId){
+      if(bucketId==='ob_ga') return compareObscuraDisplayGroups(a,b);
+      const dA=obscuraGroupIsDone(a);
+      const dB=obscuraGroupIsDone(b);
+      if(dA!==dB) return dA?1:-1;
+      const ka=obscuraGroupSeatSortToken(a);
+      const kb=obscuraGroupSeatSortToken(b);
+      if(ka!==kb){
+        const na=ka==null,nb=kb==null;
+        if(na&&nb) return compareObscuraDisplayGroups(a,b);
+        if(na) return 1;
+        if(nb) return -1;
+        const c=ka.localeCompare(kb,undefined,{numeric:true,sensitivity:'base'});
+        if(c!==0) return c;
+      }
+      return compareObscuraDisplayGroups(a,b);
+    }
     function obscuraAllSectionOrder(){
       const L=OBSCURA_ALL_SECTION_LABELS;
       return OBSCURA_TABS.filter(t=>t.id!=='all'&&t.match)
@@ -1188,16 +1222,16 @@
     function buildObscuraAllGroupedMainHtml(list){
       const groups=buildObscuraCoupleGroups(list);
       const buckets=Object.create(null);
-      for(const g of groups){
-        const id=obscuraGroupListSectionId(g);
-        if(!buckets[id]) buckets[id]=[];
-        buckets[id].push(g);
+      for(const grp of groups){
+        const sid=obscuraGroupListSectionId(grp);
+        if(!buckets[sid]) buckets[sid]=[];
+        buckets[sid].push(grp);
       }
       const parts=[];
       for(const {id, lbl} of obscuraAllSectionOrder()){
         const arr=buckets[id];
         if(!arr||!arr.length) continue;
-        arr.sort(compareObscuraDisplayGroups);
+        arr.sort((a,b)=>compareObscuraGroupsForBucket(a,b,id));
         const body=arr.map(renderObscuraGroupHtml).join('');
         parts.push(`<h2 class="ob-sec" id="ob-sec-${esc(id)}">${esc(lbl)}</h2><div class="grid">${body}</div>`);
       }
@@ -1308,7 +1342,7 @@
         if(curTab==='all'){
           document.getElementById('main').innerHTML=buildObscuraAllGroupedMainHtml(list);
         }else{
-          const gr=buildObscuraCoupleGroups(list).sort(compareObscuraDisplayGroups);
+          const gr=buildObscuraCoupleGroups(list).sort((a,b)=>compareObscuraGroupsForBucket(a,b,curTab));
           const body=gr.map(renderObscuraGroupHtml).join('');
           document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
         }
