@@ -1105,7 +1105,13 @@
           if(nbrs) nbrs.forEach(nb=>visit(nb));
         })(g.id);
         if(comp.length>1){
-          sortGuestsByName(comp);
+          comp.sort((a,b)=>{
+            const ra=seatAssignmentSortRank(isObscuraGaGuest(a)?null:a.seatAssignment);
+            const rb=seatAssignmentSortRank(isObscuraGaGuest(b)?null:b.seatAssignment);
+            const rk=compareSeatAssignmentRanks(ra,rb);
+            if(rk!==0) return rk;
+            return (a.id||'').localeCompare(b.id||'');
+          });
           out.push({pair:true,members:comp});
         }else if(comp.length===1){
           out.push({pair:false,members:[comp[0]]});
@@ -1120,15 +1126,36 @@
       if(grp.pair) return grp.members.length>0 && grp.members.every(m=>m.checkedIn);
       return !!grp.members[0]?.checkedIn;
     }
-    /** Not fully checked first (as on the flat list), then pairs, then A–Z by first name in the cluster. */
-    function compareObscuraDisplayGroups(a,b){
-      const dA=obscuraGroupIsDone(a);
-      const dB=obscuraGroupIsDone(b);
-      if(dA!==dB) return dA?1:-1;
-      if(!!a.pair!==!!b.pair) return a.pair?-1:1;
-      const an=(a.members[0]?.name||'').trim();
-      const bn=(b.members[0]?.name||'').trim();
-      return an.localeCompare(bn,undefined,{sensitivity:'base'});
+    /** Parsed rank from Seat Assignment: 1 &lt; 2 &lt; 10 (numeric sequence), then string tail if needed — not guest name order. */
+    function seatAssignmentSortRank(raw){
+      const t=String(raw==null?'':raw).trim();
+      if(!t) return {empty:true,nums:[],norm:''};
+      const nums=[];
+      const re=/\d+/g;
+      let m;
+      while((m=re.exec(t))) nums.push(parseInt(m[0],10));
+      const norm=t.toLowerCase().replace(/\s+/g,' ').trim();
+      return {empty:false,nums,norm};
+    }
+    /** Lower rank = earlier in floor plan order (table 1 before table 2, etc.). */
+    function compareSeatAssignmentRanks(ra,rb){
+      if(ra.empty!==rb.empty) return ra.empty?1:-1;
+      if(ra.empty&&rb.empty) return 0;
+      const len=Math.max(ra.nums.length,rb.nums.length);
+      for(let i=0;i<len;i++){
+        const av=ra.nums[i], bv=rb.nums[i];
+        if(av==null&&bv==null) break;
+        if(av==null) return -1;
+        if(bv==null) return 1;
+        if(av!==bv) return av-bv;
+      }
+      return ra.norm.localeCompare(rb.norm,undefined,{numeric:true,sensitivity:'base'});
+    }
+    /** Deterministic tiebreak — Airtable record ids, never guest name alphabetical order. */
+    function compareObscuraGroupClusterIds(a,b){
+      const ia=(a.members||[]).map(m=>m.id||'').filter(Boolean).sort();
+      const ib=(b.members||[]).map(m=>m.id||'').filter(Boolean).sort();
+      return ia.join('\0').localeCompare(ib.join('\0'));
     }
     function obscuraListTabIdForGuest(g){
       for(const t of OBSCURA_TABS){
@@ -1172,8 +1199,7 @@
       return 'ob_mixed';
     }
     /**
-     * Earliest/lowest seat sort token among seated (non–GA-only) guests in a cluster.
-     * Omits GA-only attendees — they don't get table assignments from ops.
+     * Representative seat string for sorting a cluster: lowest numeric table/seat rank among non–GA-only members.
      */
     function obscuraGroupSeatSortToken(grp){
       const vals=(grp.members||[])
@@ -1181,29 +1207,21 @@
         .map(m=>String(m.seatAssignment||'').trim())
         .filter(Boolean);
       if(!vals.length) return null;
-      vals.sort((x,y)=>x.localeCompare(y,undefined,{numeric:true,sensitivity:'base'}));
+      vals.sort((x,y)=>compareSeatAssignmentRanks(seatAssignmentSortRank(x),seatAssignmentSortRank(y)));
       return vals[0];
     }
     /**
-     * Order clusters for Obscura: GA sections keep name/pair UX only.
-     * All other buckets: unfinished check-ins first, then by Seat Assignment (non-GA members), blanks last; then ties.
+     * Every tab & ALL section: pending check-in first; then table/seat number order (1,2,3…); never ABC by guest name.
      */
-    function compareObscuraGroupsForBucket(a,b,bucketId){
-      if(bucketId==='ob_ga') return compareObscuraDisplayGroups(a,b);
+    function compareObscuraGroupsForBucket(a,b,_bucketId){
       const dA=obscuraGroupIsDone(a);
       const dB=obscuraGroupIsDone(b);
       if(dA!==dB) return dA?1:-1;
       const ka=obscuraGroupSeatSortToken(a);
       const kb=obscuraGroupSeatSortToken(b);
-      if(ka!==kb){
-        const na=ka==null,nb=kb==null;
-        if(na&&nb) return compareObscuraDisplayGroups(a,b);
-        if(na) return 1;
-        if(nb) return -1;
-        const c=ka.localeCompare(kb,undefined,{numeric:true,sensitivity:'base'});
-        if(c!==0) return c;
-      }
-      return compareObscuraDisplayGroups(a,b);
+      const bySeat=compareSeatAssignmentRanks(seatAssignmentSortRank(ka),seatAssignmentSortRank(kb));
+      if(bySeat!==0) return bySeat;
+      return compareObscuraGroupClusterIds(a,b);
     }
     function obscuraAllSectionOrder(){
       const L=OBSCURA_ALL_SECTION_LABELS;
@@ -1327,6 +1345,14 @@
         return false;
       });
       list=[...list].sort((a,b)=>{
+        if(isObscuraTable()){
+          if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
+          const ra=seatAssignmentSortRank(isObscuraGaGuest(a)?null:a.seatAssignment);
+          const rb=seatAssignmentSortRank(isObscuraGaGuest(b)?null:b.seatAssignment);
+          const g=compareSeatAssignmentRanks(ra,rb);
+          if(g!==0) return g;
+          return (a.id||'').localeCompare(b.id||'');
+        }
         if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
         return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
       });
