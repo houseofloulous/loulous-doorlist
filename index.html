@@ -457,6 +457,7 @@
     const F_WRISTBAND=['Wristbands','Wristband'];
     /** Obscura Premiere only — single-/multi-select member type (Airtable “Members”). */
     const F_MEMBERS=['Members'];
+    const F_SEAT_ASSIGNMENT=['Seat Assignment'];
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
@@ -548,7 +549,7 @@
     function memberPillClassFromLabel(s){
       const t=String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
       if(t==='member') return 'member-pill mem-member';
-      if(t==='prospective member'||t==='prospective') return 'member-pill mem-prospective';
+      if(t==='prospective'||t==='prospective member') return 'member-pill mem-prospective';
       return 'member-pill mem-other';
     }
     function buildMembersDisplayHTML(members){
@@ -888,6 +889,14 @@
       }
       return '';
     }
+    function fieldStrSeatAssignment(f){
+      for(const n of F_SEAT_ASSIGNMENT){
+        if(!Object.prototype.hasOwnProperty.call(f,n)) continue;
+        const s=airtableValueToNameLine(f[n]);
+        if(s) return s;
+      }
+      return '';
+    }
 
     function normNameKey(s){
       return String(s||'')
@@ -1002,6 +1011,7 @@
         phoneCheckNum:fieldStr(f,F_PHONE_CHECK),
         doorNotes:nDoor,
         doorNotesExtra:fieldStr(f,F_NOTES_EXTRA),
+        seatAssignment:fieldStrSeatAssignment(f),
         partnerId:null,
         dateClusterMates:[],
         /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
@@ -1127,6 +1137,20 @@
       }
       return 'ob_other';
     }
+    /** Guests bucketed as GENERAL ADMISSION — no table/booth assignment in Airtable. */
+    function isObscuraGaGuest(g){
+      return obscuraListTabIdForGuest(g)==='ob_ga';
+    }
+    /** Obscura profile subtitle: List · Seat (no RSVP). GA guests: list label only. */
+    function obscuraDetailSubLineHtml(g){
+      if(isObscuraGaGuest(g)) return esc(g.list||'');
+      const list=String(g.list||'').trim();
+      const seat=String(g.seatAssignment||'').trim();
+      if(list && seat) return esc(list)+' · '+esc(seat);
+      if(list) return esc(list);
+      if(seat) return esc(seat);
+      return '';
+    }
     function obscuraGroupListSectionId(grp){
       const ids=grp.members.map(obscuraListTabIdForGuest);
       const first=ids[0];
@@ -1170,7 +1194,8 @@
       const em=(g.email||'').toLowerCase();
       const memHit=isObscuraTable() && Array.isArray(g.members) && g.members.some(m=>String(m).toLowerCase().includes(q));
       return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)||memHit
-        ||(isObscuraTable() && String(dateLineFromGuest(g)||'').toLowerCase().includes(q));
+        ||(isObscuraTable() && String(dateLineFromGuest(g)||'').toLowerCase().includes(q))
+        ||String(g.seatAssignment||'').toLowerCase().includes(q);
     }
 
     async function load(){
@@ -1288,7 +1313,18 @@
       const dateMini=dLine?`<div class="card-date-ob">${esc(dLine)}</div>`:'';
       const membersMini=membersCardRowHtml(g.members);
       const showListTag=!isObscuraTable()||curTab==='all';
-      const listTag=showListTag?`<div class="card-tag">${dot}${esc(g.list||'')}</div>`:'';
+      let listTag='';
+      if(showListTag){
+        if(isObscuraTable() && curTab==='all' && !isObscuraGaGuest(g)){
+          const seat=String(g.seatAssignment||'').trim();
+          const listCore=dot+esc(g.list||'');
+          listTag=seat
+            ?`<div class="card-tag">${listCore} · ${esc(seat)}</div>`
+            :`<div class="card-tag">${listCore}</div>`;
+        }else{
+          listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
+        }
+      }
       return `<div class="card ${g.checkedIn?'checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
@@ -1322,7 +1358,7 @@
           <div class="detail-nav"><button type="button" class="back-btn" onclick="closeDetail()" aria-label="Back to guest list">BACK</button></div>
           <div class="detail-avatar-wrap">${ph}</div>
           <div class="detail-name">${esc(g.name)}</div>
-          <div class="detail-sub">${esc(g.list||'')}${g.rsvp?' · RSVP: '+esc(g.rsvp):''}</div>
+          <div class="detail-sub">${obscuraDetailSubLineHtml(g)}</div>
           <div class="detail-chips">
             ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
             ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
