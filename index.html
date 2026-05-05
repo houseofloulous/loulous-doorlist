@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -64,35 +65,8 @@
     .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
     .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
     .hbtn.nda{border-color:var(--accent);color:var(--accent);}
-    /* L’Atelier: four equal text tabs. Obscura: one horizontal scroller of pill chips (no cramped grid / wrap). */
+    /* Door list tabs (four segments). */
     .tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));column-gap:6px;row-gap:4px;align-items:stretch;padding:0 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
-    .obscura-tabs-hint{
-      display:block;margin:0;padding:4px 16px 2px;
-      font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);
-    }
-    .obscura-tabs-hint[hidden]{display:none;}
-    .tabs.tabs-obscura{
-      display:flex;flex-direction:row;flex-wrap:nowrap;align-items:stretch;gap:8px;
-      padding:4px 12px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch;
-      scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.2) transparent;
-    }
-    .tabs.tabs-obscura::-webkit-scrollbar{height:4px;}
-    .tabs.tabs-obscura::-webkit-scrollbar-track{background:transparent;}
-    .tabs.tabs-obscura::-webkit-scrollbar-thumb{background:rgba(255,255,255,.2);border-radius:4px;}
-    .tabs.tabs-obscura .tab{
-      flex:0 0 auto;width:auto;min-width:0;max-width:none;
-      margin:0;padding:10px 16px;border-radius:999px;
-      border:1px solid rgba(255,255,255,.2);border-bottom:1px solid rgba(255,255,255,.2);
-      background:rgba(0,0,0,.1);
-      font-size:14px;letter-spacing:.08em;font-style:normal;font-weight:500;
-      line-height:1.2;white-space:nowrap;text-align:center;
-      text-transform:uppercase;color:rgba(255,255,255,.8);
-    }
-    .tabs.tabs-obscura .tab.active{
-      color:#fff;border-color:var(--accent);
-      background:linear-gradient(180deg,rgba(201,169,110,.18),rgba(201,169,110,.1));
-      box-shadow:0 0 0 1px rgba(201,169,110,.2);
-    }
     .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:all .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;border-bottom-color:var(--accent);}
     @media(min-width:400px){
@@ -105,7 +79,7 @@
     .stat{font-size:12px;color:var(--warm);}
     .stat-pending{color:var(--accent);}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
-    /** Guest grids (Obscura + L’Atelier): flex-wrap + centered rows so stray cards / pairs aren’t stuck left. */
+    /** Guest grid: flex-wrap + centered rows. */
     #main{width:100%;}
     .grid{
       --ggrid:10px;
@@ -123,46 +97,7 @@
       width:100%;
     }
     .grid>.card{flex:0 0 auto;width:var(--guest-card-w);}
-    .app-obscura .ob-all-wrap{background:var(--cream);min-height:0;display:flex;flex-direction:column;align-items:center;width:100%;}
-    .app-obscura .ob-sec{width:100%;max-width:1200px;font-size:16px;letter-spacing:.1em;font-weight:500;text-transform:uppercase;color:var(--warm);text-align:center;margin:18px auto 8px;padding:0 14px;box-sizing:border-box;}
-    .app-obscura .ob-all-wrap .ob-sec:first-child{margin-top:6px;}
-    /* Obscura — date clusters: intrinsic width so the flex wrapper can center each group like solo cards */
-    .app-obscura .couple-ring{
-      --ring-cols:2;
-      --gspan:2;
-      flex:0 1 auto;
-      display:grid;
-      grid-template-columns:repeat(var(--ring-cols),minmax(0,var(--guest-card-w)));
-      width:fit-content;
-      max-width:100%;
-      justify-items:stretch;
-      align-items:start;
-      gap:18px;
-      min-width:0;
-      box-sizing:border-box;
-      padding:12px 12px 14px;
-      border:1.5px solid var(--accent);
-      border-radius:12px;
-      background:linear-gradient(180deg,rgba(201,169,110,.1),rgba(201,169,110,.2));
-      box-shadow:0 2px 10px rgba(0,0,0,.08),0 0 0 1px rgba(201,169,110,.2),inset 0 1px 0 rgba(255,255,255,.4),inset 0 0 0 1px rgba(0,0,0,.04),inset 0 -4px 16px rgba(0,0,0,.04);
-    }
-    .app-obscura .couple-ring-wide{width:fit-content;max-width:100%;}
-    .app-obscura .couple-ring .card{
-      width:100%;
-      min-width:0;
-      max-width:none;
-      border:none;
-      box-shadow:0 0 0 1px rgba(0,0,0,.1),0 3px 12px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.08);
-      border-radius:10px;
-    }
-    .app-obscura .couple-ring .card.card-blacklist{
-      box-shadow:0 0 0 2px var(--red),0 6px 16px rgba(0,0,0,.55)!important;
-    }
-    @media(max-width:380px){
-      .app-obscura .couple-ring{padding:9px 9px 11px;gap:14px;}
-    }
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
-    .app-obscura .card{box-shadow:0 2px 8px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.08);transition:transform .12s,filter .15s,opacity .15s,box-shadow .15s;}
     .card:active{transform:scale(.96);}
     .card.checked{filter:grayscale(1);opacity:.62;}
     .card-photo{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#e8e2da;}
@@ -170,12 +105,7 @@
     .card-body{padding:7px 8px 8px;}
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
-    .ob-date-card{background:rgba(201,169,110,.08);}
-    .ob-date-readout{font-size:16px;color:var(--dark);line-height:1.45;padding:0 0 2px;word-wrap:break-word;}
-    .ob-date-name-line{font-size:16px;color:var(--dark);line-height:1.4;}
-    .ob-date-name-line+.ob-date-name-line{margin-top:6px;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
-    .card .card-date-ob{font-size:12px;letter-spacing:.02em;text-transform:none;color:#5a4a38;line-height:1.35;margin-top:4px;font-style:normal !important;font-weight:500;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
@@ -209,23 +139,13 @@
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
     #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
-    #memPillDisplay{display:flex;flex-flow:row wrap;gap:8px;align-items:flex-start;}
-    .member-pill{display:inline-flex;align-items:center;border-radius:8px;padding:10px 16px;font-size:14px;border:1.5px solid rgba(0,0,0,.08);font-weight:500;line-height:1.25;}
-    .member-pill.mem-member{background:#1e3d59;border-color:#2a5070;color:#fff;}
-    .member-pill.mem-prospective{background:#6b2834;border-color:#843744;color:#fff;}
-    .member-pill.mem-blacklist{background:#2a0a0a;border-color:#e74c3c;color:#ffb4a8;font-weight:600;letter-spacing:.04em;}
-    .member-pill.mem-other{background:#f0ebe4;border-color:rgba(0,0,0,.1);color:var(--dark);}
     .card.card-blacklist{background:#050505!important;box-shadow:0 0 0 2px var(--red),0 4px 14px rgba(0,0,0,.4)!important;}
-    .app-obscura .card.card-blacklist{box-shadow:0 0 0 2px var(--red),0 4px 14px rgba(0,0,0,.45)!important;}
     .card.card-blacklist .card-body{background:transparent;}
     .card.card-blacklist .card-name{color:rgba(255,255,255,.95);}
     .card.card-blacklist .card-tag{color:var(--accent);}
-    .card.card-blacklist .card-date-ob{color:rgba(255,255,255,.78);}
     .card.card-blacklist .card-tick{color:var(--accent);}
     .card.card-blacklist .card-init{background:linear-gradient(135deg,#1f1f1f,#0a0a0a);color:rgba(255,255,255,.7);}
     .card.card-blacklist.checked{filter:none!important;opacity:1!important;}
-    .card-members{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:5px;align-items:center;max-width:100%;}
-    .card-members .member-pill{padding:5px 10px;font-size:9px;letter-spacing:.03em;border-radius:6px;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
     .wb-circle.gold{background:#c9a96e;}
     .wb-circle.black{background:#fff;}
@@ -255,12 +175,6 @@
     .modal-title{font-size:22px;color:var(--dark);}
     .modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
     .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:12px;}
-    #addModalBody.add-ob .add-sec-name{order:1;}
-    #addModalBody.add-ob .add-sec-ci{order:2;}
-    #addModalBody.add-ob .add-sec-mdate{order:8;display:none !important;}
-    #addModalBody.add-ob .add-sec-wb{order:8;display:none !important;}
-    #addModalBody.add-ob .add-sec-coat{order:3;}
-    #addModalBody.add-ob .add-sec-notes{order:4;}
     #addModalBody.add-at .add-sec-name{order:1;}
     #addModalBody.add-at .add-sec-ci{order:2;}
     #addModalBody.add-at .add-sec-wb{order:3;}
@@ -283,23 +197,6 @@
     .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
     .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);}
     .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
-    .hbtn-floor{border-color:var(--accent);color:var(--accent);}
-    .floor-map-overlay{
-      position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:350;display:flex;align-items:center;justify-content:center;
-      padding:max(14px,env(safe-area-inset-top)) 14px max(14px,env(safe-area-inset-bottom));box-sizing:border-box;
-      opacity:0;pointer-events:none;transition:opacity .22s ease;
-    }
-    .floor-map-overlay.open{opacity:1;pointer-events:auto;}
-    .floor-map-sheet{
-      background:var(--cream);border-radius:16px;max-width:min(940px,calc(100vw - 28px));max-height:min(92dvh,92vh);width:100%;
-      display:flex;flex-direction:column;overflow:hidden;box-shadow:0 14px 48px rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.08);
-    }
-    .floor-map-sheet-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--blue);flex-shrink:0;}
-    .floor-map-sheet-head span{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.93);}
-    .floor-map-close{background:none;border:none;color:rgba(255,255,255,.9);font-size:26px;line-height:1;cursor:pointer;padding:2px 6px;line-height:.85;}
-    .floor-map-sheet-body{padding:10px 10px 14px;overflow:auto;-webkit-overflow-scrolling:touch;min-height:0;}
-    .floor-map-sheet-body img{display:block;width:100%;max-width:100%;height:auto;border-radius:10px;background:#fff;}
-
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
     @media(max-width:480px){
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -313,14 +210,10 @@
       .search-input,.s-icon{font-size:17px;}
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
       .tabs{padding:0 4px;column-gap:4px;}
-      .tabs:not(.tabs-obscura) .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
-      .tabs.tabs-obscura{padding:4px 10px 12px;gap:7px;}
-      .tabs.tabs-obscura .tab{padding:11px 16px;font-size:15px;letter-spacing:.07em;}
-      .app-obscura .ob-sec{font-size:19px;letter-spacing:.08em;}
+      .tabs .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
-      .card .card-date-ob{font-size:14px;margin-top:5px;}
       .card-tag{font-size:13px;letter-spacing:.04em;margin-top:3px;}
       .card-tick{font-size:20px;}
       .cstate-txt{font-size:15px;}
@@ -330,11 +223,8 @@
       .det-lbl,.wb-display-lbl{font-size:17px;}
       .det-sublbl{font-size:13px;}
       .wb-pill{font-size:16px;}
-      .member-pill{font-size:16px;}
-      .card-members .member-pill{font-size:11px;}
       .nda-text{font-size:14px;}
       .det-input,.det-input-lbl{font-size:16px;}
-      .ob-date-readout{font-size:18px;}
       .modal-title{font-size:24px;}
       .modal-toggle-lbl{font-size:16px;}
       .modal-field-lbl{font-size:12px;}
@@ -351,7 +241,7 @@
       <a class="ev-logo-link" href="https://www.houseofloulous.com/" target="_blank" rel="noopener noreferrer" title="House of LouLou's — main site">
         <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
       </a>
-      <div class="ev-sub">L'Atelier — May &amp; June</div>
+      <div class="ev-sub" id="evLandingSubtitle">Select event</div>
       <div class="ev-list" id="evList"></div>
     </div>
     <div class="ev-landing-spacer" aria-hidden="true"></div>
@@ -372,10 +262,8 @@
           <input class="search-input" id="searchInput" type="text" placeholder="Search guests…" oninput="render()">
         </div>
         <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
-        <button type="button" class="hbtn hbtn-floor" id="floorMapToolbarBtn" style="display:none" onclick="openFloorMap()" aria-label="Floor map">FLOOR MAP</button>
-        <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="window.open('https://forms.gle/asRXJtR6zHhDoGZJ8','_blank')">NDA</button>
+        <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="openNdaForm()">NDA</button>
       </div>
-      <p class="obscura-tabs-hint" id="obscuraTabHint" hidden>List filter</p>
       <div class="tabs" id="tabs" role="tablist"></div>
     </div>
     <div class="stats" id="stats"></div>
@@ -384,17 +272,6 @@
 
   <div id="detailView"><div id="detailContent"></div></div>
 
-  <div class="floor-map-overlay" id="floorMapOverlay" role="dialog" aria-modal="true" aria-labelledby="floorMapOverlayTitle" aria-hidden="true" onclick="floorMapBackdropClick(event)">
-    <div class="floor-map-sheet" onclick="event.stopPropagation()">
-      <div class="floor-map-sheet-head">
-        <span id="floorMapOverlayTitle">Seating map</span>
-        <button type="button" class="floor-map-close" onclick="closeFloorMap()" aria-label="Close floor map">×</button>
-      </div>
-      <div class="floor-map-sheet-body">
-        <img src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/obscura-seating-map-may-2.jpg" alt="Obscura seating map — May 2nd" loading="eager" decoding="async">
-      </div>
-    </div>
-  </div>
 
   <div class="modal-bg" id="addModal">
     <div class="modal">
@@ -442,7 +319,7 @@
             <label class="toggle"><input type="checkbox" id="mSTI" onchange="updateAddWbPills()"><span class="slider"></span></label>
           </div>
           <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed:</div><label class="toggle"><input type="checkbox" id="mNDA" onchange="onAddNDAChange(this)"><span class="slider"></span></label></div>
-          <div id="mNdaHint" class="modal-nda-hint"><span>🔴 If NDA is unsigned, please click here and have them sign:</span><a class="modal-nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>
+          <div id="mNdaHint" class="modal-nda-hint"><span>🔴 If NDA is unsigned, please click here and have them sign:</span><a class="modal-nda-link" href="https://forms.gle/gNPU5Etg7HSuhYYY7" target="_blank" rel="noopener noreferrer">🔗</a></div>
         </div>
         <div class="modal-card add-sec add-sec-coat">
           <div class="det-input-wrap" style="border-bottom:none">
@@ -466,10 +343,12 @@
 
   <script>
     const BASE='appY6p2HwRtDmOvAf';
+    const NDA_FORM_URL='https://forms.gle/gNPU5Etg7HSuhYYY7';
+    function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Landing: only L'Atelier May & June (no other events). */
     const EVENTS=[
-      {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.jpg"},
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
+      {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.png"},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.png"},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -477,41 +356,19 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
-    /** Tabs for Obscura — `match` = Airtable `List` option. `lbl` = short on-screen only. */
-    const OBSCURA_TABS=[
-      {id:'all',lbl:'ALL'},
-      {id:'ob_ga',match:'GA',lbl:'GA'},
-      {id:'ob_stage',match:'Intimate Stage Table Seat',lbl:'STAGE'},
-      {id:'ob_s2',match:'Salon Table for 2',lbl:'SALON | 2'},
-      {id:'ob_s4',match:'Salon Table for 4',lbl:'SALON | 4'},
-      {id:'ob_booth',match:"Madame's Booth",lbl:"MADAME'S BOOTH"},
-      {id:'ob_working',match:'Working',lbl:'WORKING'},
-    ];
-    /** Full-width section titles on the Obscura ALL list only (filter chips keep short `lbl` above). */
-    const OBSCURA_ALL_SECTION_LABELS={
-      ob_ga:'GENERAL ADMISSION',
-      ob_stage:'INTIMATE STAGE TABLE',
-      ob_s2:'SALON TABLE OF 2',
-      ob_s4:'SALON TABLE OF 4',
-      ob_booth:"MADAME'S BOOTH",
-      ob_working:'WORKING',
-      ob_mixed:'MIXED',
-      ob_other:'OTHER',
-    };
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
     const F_STI=['STI Verified','STI Tests'];
     const F_COAT=['Coat Check #'];
     const F_PHONE_CHECK=['Phone Check #','Phone check #','Phone Check','Pouch #','Phone pouch'];
-    /** Obscura: operational copy only — not for +1 (use Date field for that). */
     const F_NOTES=['Notes','Door Notes'];
-    /** +1 / date name — text column(s) only. Obscura uses a **Date** field (not Relationship). */
+    /** +1 / date name — text column(s) only. */
     const F_GUEST_DATE=['Date','Date name','Guest date','Plus one','+1','Date (guest)'];
     /** Optional second notes column (only shown in UI if the field exists in the table). */
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
     const F_WRISTBAND=['Wristbands','Wristband'];
-    /** Obscura Premiere only — single-/multi-select member type (Airtable “Members”). */
+    /** Member-type labels (Airtable “Members”). */
     const F_MEMBERS=['Members'];
     const F_SEAT_ASSIGNMENT=['Seat Assignment'];
 
@@ -602,35 +459,15 @@
       }
       return [];
     }
-    function memberPillClassFromLabel(s){
-      const t=String(s||'').trim().toLowerCase().replace(/\s+/g,' ');
-      const nk=normListKey(s);
-      if(nk.indexOf('blacklist')!==-1) return 'member-pill mem-blacklist';
-      if(t==='member') return 'member-pill mem-member';
-      if(t==='prospective'||t==='prospective member') return 'member-pill mem-prospective';
-      return 'member-pill mem-other';
-    }
     function guestMembersHasBlacklist(members){
       if(!Array.isArray(members)) return false;
       return members.some(m=>normListKey(m).indexOf('blacklist')!==-1);
-    }
-    function buildMembersDisplayHTML(members){
-      const arr=Array.isArray(members)?members.filter(Boolean):[];
-      if(!arr.length) return '<div class="member-pill mem-other" style="opacity:.75">No member status</div>';
-      return arr.map(m=>`<div class="${memberPillClassFromLabel(m)}">${esc(m)}</div>`).join('');
-    }
-    function membersCardRowHtml(members){
-      if(!isObscuraTable()) return '';
-      const arr=Array.isArray(members)?members.filter(Boolean):[];
-      if(!arr.length) return '';
-      return `<div class="card-members">${arr.map(m=>`<span class="${memberPillClassFromLabel(m)}">${esc(m)}</span>`).join('')}</div>`;
     }
 
     /** Add-guest modal: same wristband pills as guest profile (Black = STI, Gold = patron). */
     function updateAddWbPills(){
       const el=document.getElementById('addWbPillDisplay');
       if(!el) return;
-      if(isObscuraTable()){ el.innerHTML=''; return; }
       const mSTI=document.getElementById('mSTI');
       const mPat=document.getElementById('mPat');
       const sti=!!(mSTI&&mSTI.checked);
@@ -638,36 +475,10 @@
       el.innerHTML=buildWBDisplayHTML(pat,sti);
     }
 
-    function isObscuraTable(){
-      return curTable==='Obscura Premiere';
-    }
-    function syncAppObscuraClass(){
-      const app=document.getElementById('app');
-      if(!app) return;
-      const ob=isObscuraTable();
-      app.classList.toggle('app-obscura',ob);
-      const nda=document.getElementById('ndaToolbarBtn');
-      if(nda) nda.style.display=ob?'none':'';
-      const fm=document.getElementById('floorMapToolbarBtn');
-      if(fm) fm.style.display=ob?'':'none';
-    }
-    function openFloorMap(){
-      const el=document.getElementById('floorMapOverlay');
-      if(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-    }
-    function closeFloorMap(){
-      const el=document.getElementById('floorMapOverlay');
-      if(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
-    }
-    function floorMapBackdropClick(ev){
-      if(ev.target===ev.currentTarget) closeFloorMap();
-    }
     function getTabsForCurrentTable(){
-      if(isObscuraTable()) return OBSCURA_TABS;
       return BASE_TABS;
     }
     function defaultTabForCurrentTable(){
-      if(isObscuraTable()) return 'all';
       return 'guest';
     }
     function hasNotesExtraField(){
@@ -692,6 +503,11 @@
       return listSegmentsLower(g).some(seg=>normListKey(seg)===want);
     }
 
+    function ensureLandingSubtitle(){
+      const el=document.getElementById('evLandingSubtitle');
+      if(el) el.textContent='Select event';
+    }
+
     function buildEvList(){
       document.getElementById('evList').innerHTML=EVENTS.map((e,i)=>
         `<button type="button" class="ev-item ev-item-art" onclick="pickEv(${i})" aria-label="${esc(e.label)}">` +
@@ -701,7 +517,6 @@
     }
 
     function pickEv(i){
-      closeFloorMap();
       const e=EVENTS[i];
       if(!e) return;
       curTable=e.table;
@@ -713,7 +528,6 @@
     }
 
     function showEvScreen(){
-      closeFloorMap();
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
       document.getElementById('detailView').style.display='none';
@@ -980,66 +794,6 @@
       return '';
     }
 
-    function normNameKey(s){
-      return String(s||'')
-        .trim()
-        .toLowerCase()
-        .replace(/['\u2019\u2018]/g,'')
-        .replace(/\s+/g,' ')
-        .replace(/[.]+$/,'')
-        .trim();
-    }
-    /**
-     * Split a Date cell into separate names: internal "Date: …" phrases, commas, and "and".
-     */
-    function splitGuestDateNames(raw){
-      if(raw==null) return [];
-      let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
-      if(!s) return [];
-      s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
-      const chunks=s.split(/\s*Date\s*:\s*/i).map(x=>x.trim()).filter(Boolean);
-      const out=[];
-      for(const c of chunks){
-        for(const p of c.split(/[,;]|\s+and\s+/i)){
-          const t=p.trim();
-          if(t) out.push(t);
-        }
-      }
-      if(out.length) return out;
-      return s?[s]:[];
-    }
-    /** Strip a single segment’s leading "Date: " and markdown (Airtable / legacy). */
-    function guestDateDisplayText(raw){
-      if(raw==null) return '';
-      let s=String(raw).replace(/\*+/g,' ').replace(/\s+/g,' ').trim();
-      if(!s) return '';
-      s=s.replace(/^\*?\s*Date\s*:\s*/i,'').trim();
-      return s;
-    }
-    function guestDateDisplayLine(raw){
-      const parts=splitGuestDateNames(raw);
-      if(!parts.length) return '';
-      return parts.map(p=>guestDateDisplayText(p)).filter(Boolean).join(' · ');
-    }
-    /** First listable +1 name (for gold-frame pairing). */
-    function firstPartnerNameFromField(raw){
-      if(raw==null) return '';
-      const names=splitGuestDateNames(raw);
-      for(const t of names){
-        const x=String(t).trim();
-        if(!x) continue;
-        if(/^solo\b/i.test(x)) continue;
-        if(isPlaceholderDateName(x)) continue;
-        return x;
-      }
-      return '';
-    }
-    function guestDateReadoutHtmlFromRaw(rawD){
-      const parts=splitGuestDateNames(rawD).map(p=>guestDateDisplayText(p)).filter(Boolean);
-      if(!parts.length) return '—';
-      if(parts.length===1) return esc(parts[0]);
-      return parts.map(n=>`<div class="ob-date-name-line">${esc(n)}</div>`).join('');
-    }
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
     function parseDateNameFromNotes(notes){
       if(notes==null) return '';
@@ -1056,13 +810,6 @@
       return parseDateNameFromNotes(g.doorNotes);
     }
 
-    function isPlaceholderDateName(name){
-      const n=normNameKey(String(name||''));
-      if(!n) return true;
-      if(n==='tbd'||n==='n/a'||n==='na'||n==='none'||n==='—'||n==='-') return true;
-      if(/^(tbd|to be determined|n\/?a|none)\b/.test(n)) return true;
-      return false;
-    }
     function toG(r){
       const f=r.fields;
       const nDoor=fieldStr(f,F_NOTES)||fieldStr(f,['Note']);
@@ -1101,253 +848,18 @@
       };
     }
 
-    function getGuestByMentionedName(mentioned, guestPool, byNormKey){
-      if(!mentioned) return null;
-      const nk=normNameKey(mentioned);
-      if(!nk) return null;
-      if(byNormKey.has(nk)) return byNormKey.get(nk);
-      const all=guestPool.map(g=>({g,gk:normNameKey(g.name||'')}));
-      const ex=all.filter(x=>x.gk===nk);
-      if(ex.length===1) return ex[0].g;
-      if(nk.indexOf(' ')===-1){
-        const st=all.filter(x=>x.gk.startsWith(nk+' '));
-        if(st.length===1) return st[0].g;
-      }
-      return null;
-    }
-
-    /** Edges: each name in a guest’s Date line → link to that row (pairs, trios, …). */
-    function buildDateEdgesForPool(guestPool){
-      const byNormKey=new Map();
-      guestPool.forEach(g=>{
-        const nk=normNameKey(g.name||'');
-        if(nk && !byNormKey.has(nk)) byNormKey.set(nk,g);
-      });
-      const adj=new Map();
-      function addEdge(a,b){
-        if(!a||!b||a===b) return;
-        if(!adj.has(a)) adj.set(a,new Set());
-        if(!adj.has(b)) adj.set(b,new Set());
-        adj.get(a).add(b);
-        adj.get(b).add(a);
-      }
-      guestPool.forEach(g=>{
-        for(const n of splitGuestDateNames(dateLineFromGuest(g))){
-          const p=getGuestByMentionedName(n, guestPool, byNormKey);
-          if(p && p.id!==g.id) addEdge(g.id,p.id);
-        }
-      });
-      return adj;
-    }
-
     function resolveDatePartnersFromGuests(guests){
       guests.forEach(g=>{ g.partnerId=null; g.dateClusterMates=[]; });
-      if(!isObscuraTable()) return;
-      const adj=buildDateEdgesForPool(guests);
-      const byId=Object.fromEntries(guests.map(x=>[x.id,x]));
-      const seen=new Set();
-      for(const g of guests){
-        if(seen.has(g.id)) continue;
-        const compIds=[];
-        (function visit(id){
-          if(seen.has(id)) return;
-          seen.add(id);
-          compIds.push(id);
-          const nbrs=adj.get(id);
-          if(nbrs) nbrs.forEach(nb=>visit(nb));
-        })(g.id);
-        if(compIds.length<2) continue;
-        for(const id of compIds){
-          const oth=compIds.filter(x=>x!==id);
-          const guest=byId[id];
-          if(guest){
-            guest.dateClusterMates=oth;
-            guest.partnerId=oth[0]||null;
-          }
-        }
-      }
-    }
-
-    /** One visual group per connected cluster (2+) in the current filtered list. */
-    function buildObscuraCoupleGroups(list){
-      if(!list.length) return [];
-      const adj=buildDateEdgesForPool(list);
-      const byId=Object.fromEntries(list.map(x=>[x.id,x]));
-      const seen=new Set();
-      const out=[];
-      for(const g of list){
-        if(seen.has(g.id)) continue;
-        const comp=[];
-        (function visit(id){
-          if(seen.has(id)) return;
-          seen.add(id);
-          const ug=byId[id];
-          if(ug) comp.push(ug);
-          const nbrs=adj.get(id);
-          if(nbrs) nbrs.forEach(nb=>visit(nb));
-        })(g.id);
-        if(comp.length>1){
-          comp.sort((a,b)=>{
-            const ra=seatAssignmentSortRank(isObscuraGaGuest(a)?null:a.seatAssignment);
-            const rb=seatAssignmentSortRank(isObscuraGaGuest(b)?null:b.seatAssignment);
-            const rk=compareSeatAssignmentRanks(ra,rb);
-            if(rk!==0) return rk;
-            return (a.id||'').localeCompare(b.id||'');
-          });
-          out.push({pair:true,members:comp});
-        }else if(comp.length===1){
-          out.push({pair:false,members:[comp[0]]});
-        }else{
-          out.push({pair:false,members:[g]});
-        }
-      }
-      return out;
-    }
-
-    function obscuraGroupIsDone(grp){
-      if(grp.pair) return grp.members.length>0 && grp.members.every(m=>m.checkedIn);
-      return !!grp.members[0]?.checkedIn;
-    }
-    /** Parsed rank from Seat Assignment: 1 &lt; 2 &lt; 10 (numeric sequence), then string tail if needed — not guest name order. */
-    function seatAssignmentSortRank(raw){
-      const t=String(raw==null?'':raw).trim();
-      if(!t) return {empty:true,nums:[],norm:''};
-      const nums=[];
-      const re=/\d+/g;
-      let m;
-      while((m=re.exec(t))) nums.push(parseInt(m[0],10));
-      const norm=t.toLowerCase().replace(/\s+/g,' ').trim();
-      return {empty:false,nums,norm};
-    }
-    /** Lower rank = earlier in floor plan order (table 1 before table 2, etc.). */
-    function compareSeatAssignmentRanks(ra,rb){
-      if(ra.empty!==rb.empty) return ra.empty?1:-1;
-      if(ra.empty&&rb.empty) return 0;
-      const len=Math.max(ra.nums.length,rb.nums.length);
-      for(let i=0;i<len;i++){
-        const av=ra.nums[i], bv=rb.nums[i];
-        if(av==null&&bv==null) break;
-        if(av==null) return -1;
-        if(bv==null) return 1;
-        if(av!==bv) return av-bv;
-      }
-      return ra.norm.localeCompare(rb.norm,undefined,{numeric:true,sensitivity:'base'});
-    }
-    /** Deterministic tiebreak — Airtable record ids, never guest name alphabetical order. */
-    function compareObscuraGroupClusterIds(a,b){
-      const ia=(a.members||[]).map(m=>m.id||'').filter(Boolean).sort();
-      const ib=(b.members||[]).map(m=>m.id||'').filter(Boolean).sort();
-      return ia.join('\0').localeCompare(ib.join('\0'));
-    }
-    function obscuraListTabIdForGuest(g){
-      for(const t of OBSCURA_TABS){
-        if(t.id==='all'||!t.match) continue;
-        if(listFieldMatches(g,t.match)) return t.id;
-      }
-      return 'ob_other';
-    }
-    /** True when List is GA / general admission only — no table, booth, stage, or working assignment. */
-    function listFieldMatchesGeneralAdmission(g){
-      return listSegmentsLower(g).some(seg=>{
-        const nk=normListKey(seg);
-        return nk==='ga'||nk==='generaladmission';
-      });
-    }
-    function obscuraGuestHasAssignedSeatListType(g){
-      for(const t of OBSCURA_TABS){
-        if(t.id==='all'||t.id==='ob_ga'||!t.match) continue;
-        if(listFieldMatches(g,t.match)) return true;
-      }
-      return false;
-    }
-    function isObscuraGaGuest(g){
-      if(obscuraGuestHasAssignedSeatListType(g)) return false;
-      return listFieldMatchesGeneralAdmission(g);
-    }
-    /** Obscura profile subtitle: List · Seat (no RSVP). GA-only guests: list label only. */
-    function obscuraDetailSubLineHtml(g){
-      if(isObscuraGaGuest(g)) return esc(g.list||'');
-      const list=String(g.list||'').trim();
-      const seat=String(g.seatAssignment||'').trim();
-      if(list && seat) return esc(list)+' · '+esc(seat);
-      if(list) return esc(list);
-      if(seat) return esc(seat);
-      return '';
-    }
-    function obscuraGroupListSectionId(grp){
-      const ids=grp.members.map(obscuraListTabIdForGuest);
-      const first=ids[0];
-      if(ids.every(id=>id===first)) return first;
-      return 'ob_mixed';
-    }
-    /**
-     * Representative seat string for sorting a cluster: lowest numeric table/seat rank among non–GA-only members.
-     */
-    function obscuraGroupSeatSortToken(grp){
-      const vals=(grp.members||[])
-        .filter(m=>m && !isObscuraGaGuest(m))
-        .map(m=>String(m.seatAssignment||'').trim())
-        .filter(Boolean);
-      if(!vals.length) return null;
-      vals.sort((x,y)=>compareSeatAssignmentRanks(seatAssignmentSortRank(x),seatAssignmentSortRank(y)));
-      return vals[0];
-    }
-    /**
-     * Every tab & ALL section: pending check-in first; then table/seat number order (1,2,3…); never ABC by guest name.
-     */
-    function compareObscuraGroupsForBucket(a,b,_bucketId){
-      const dA=obscuraGroupIsDone(a);
-      const dB=obscuraGroupIsDone(b);
-      if(dA!==dB) return dA?1:-1;
-      const ka=obscuraGroupSeatSortToken(a);
-      const kb=obscuraGroupSeatSortToken(b);
-      const bySeat=compareSeatAssignmentRanks(seatAssignmentSortRank(ka),seatAssignmentSortRank(kb));
-      if(bySeat!==0) return bySeat;
-      return compareObscuraGroupClusterIds(a,b);
-    }
-    function obscuraAllSectionOrder(){
-      const L=OBSCURA_ALL_SECTION_LABELS;
-      return OBSCURA_TABS.filter(t=>t.id!=='all'&&t.match)
-        .map(t=>({id:t.id,lbl:L[t.id]||t.lbl})).concat([{id:'ob_mixed',lbl:L.ob_mixed},{id:'ob_other',lbl:L.ob_other}]);
-    }
-    function renderObscuraGroupHtml(grp){
-      if(grp.pair){
-        const n=grp.members.length, wide=n>3;
-        return wide
-          ?`<div class="couple-ring couple-ring-wide" style="--ring-cols:${Math.min(n,3)}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`
-          :`<div class="couple-ring" style="--ring-cols:${n};--gspan:${n}" role="group" aria-label="Date group (${n})">${grp.members.map(m=>gCard(m)).join('')}</div>`;
-      }
-      return gCard(grp.members[0]);
-    }
-    function buildObscuraAllGroupedMainHtml(list){
-      const groups=buildObscuraCoupleGroups(list);
-      const buckets=Object.create(null);
-      for(const grp of groups){
-        const sid=obscuraGroupListSectionId(grp);
-        if(!buckets[sid]) buckets[sid]=[];
-        buckets[sid].push(grp);
-      }
-      const parts=[];
-      for(const {id, lbl} of obscuraAllSectionOrder()){
-        const arr=buckets[id];
-        if(!arr||!arr.length) continue;
-        arr.sort((a,b)=>compareObscuraGroupsForBucket(a,b,id));
-        const body=arr.map(renderObscuraGroupHtml).join('');
-        parts.push(`<h2 class="ob-sec" id="ob-sec-${esc(id)}">${esc(lbl)}</h2><div class="grid">${body}</div>`);
-      }
-      return `<div class="ob-all-wrap">${parts.join('')}</div>`;
     }
 
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
-      const memHit=isObscuraTable() && Array.isArray(g.members) && g.members.some(m=>String(m).toLowerCase().includes(q));
-      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)||memHit
-        ||(isObscuraTable() && String(dateLineFromGuest(g)||'').toLowerCase().includes(q))
+      return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
+        ||String(dateLineFromGuest(g)||'').toLowerCase().includes(q)
         ||String(g.seatAssignment||'').toLowerCase().includes(q);
     }
 
     async function load(){
-      syncAppObscuraClass();
       document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Opening the doors…</div></div>';
       buildTabs();
       try{
@@ -1365,11 +877,6 @@
         guests=sortGuestsByName(recs.map(toG));
         resolveDatePartnersFromGuests(guests);
         render();
-        if(isObscuraTable()){
-          requestAnimationFrame(()=>{
-            document.querySelector('#tabs .tab.active')?.scrollIntoView?.({inline:'center',block:'nearest'});
-          });
-        }
         flushPendingQueue().catch(()=>{});
       }catch(e){
         document.getElementById('main').innerHTML=`<div class="cstate"><div class="cstate-txt" style="color:var(--red)">Error: ${esc(e.message)}</div><br><button onclick="resetKey()" style="margin-top:10px;padding:8px 14px;background:var(--blue);color:#fff;border:none;border-radius:8px;cursor:pointer;">Reset Door Password</button></div>`;
@@ -1379,11 +886,9 @@
     function buildTabs(){
       const tabs=getTabsForCurrentTable();
       if(!tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
-      const hint=document.getElementById('obscuraTabHint');
-      if(hint) hint.hidden=!isObscuraTable();
       const wrap=document.getElementById('tabs');
-      wrap.className='tabs'+(isObscuraTable()?' tabs-obscura':'');
-      wrap.setAttribute('aria-label', isObscuraTable()?'Filter by list assignment':'Guest segments');
+      wrap.className='tabs';
+      wrap.setAttribute('aria-label','Guest segments');
       wrap.innerHTML=tabs.map(t=>
         `<button type="button" role="tab" class="tab ${t.id===curTab?'active':''}" aria-selected="${t.id===curTab?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`
       ).join('');
@@ -1391,24 +896,13 @@
     function setTab(id){
       curTab=id;
       buildTabs();
-      if(isObscuraTable()){
-        requestAnimationFrame(()=>{
-          const a=document.querySelector('#tabs .tab.active');
-          a?.scrollIntoView?.({inline:'center',block:'nearest',behavior:'smooth'});
-        });
-      }
       render();
     }
 
     function render(){
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
-      if(isObscuraTable()){
-        if(curTab!=='all'){
-          const t=OBSCURA_TABS.find(x=>x.id===curTab);
-          if(t&&t.match) list=list.filter(g=>listFieldMatches(g,t.match));
-        }
-      }else if(curTab==='tables') list=list.filter(g=>g.patron||listFieldMatches(g,'table'));
+      if(curTab==='tables') list=list.filter(g=>g.patron||listFieldMatches(g,'table'));
       else if(curTab==='guest') list=list.filter(g=>{
         const segs=listSegmentsLower(g);
         if(!segs.length) return true;
@@ -1425,14 +919,6 @@
         return false;
       });
       list=[...list].sort((a,b)=>{
-        if(isObscuraTable()){
-          if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
-          const ra=seatAssignmentSortRank(isObscuraGaGuest(a)?null:a.seatAssignment);
-          const rb=seatAssignmentSortRank(isObscuraGaGuest(b)?null:b.seatAssignment);
-          const g=compareSeatAssignmentRanks(ra,rb);
-          if(g!==0) return g;
-          return (a.id||'').localeCompare(b.id||'');
-        }
         if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
         return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
       });
@@ -1444,49 +930,20 @@
         document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
         return;
       }
-      if(isObscuraTable()){
-        if(curTab==='all'){
-          document.getElementById('main').innerHTML=buildObscuraAllGroupedMainHtml(list);
-        }else{
-          const gr=buildObscuraCoupleGroups(list).sort((a,b)=>compareObscuraGroupsForBucket(a,b,curTab));
-          const body=gr.map(renderObscuraGroupHtml).join('');
-          document.getElementById('main').innerHTML=`<div class="grid">${body}</div>`;
-        }
-      }else{
-        document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
-      }
+      document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
     }
 
     function gCard(g){
       const ph=g.photo
-        ?`<img class="card-photo" src="${esc(g.photo)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
+        ?`<img class="card-photo" src="${esc(g.photo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
-      const dot=isObscuraTable()?'':((g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:''));
-      const rawD=isObscuraTable()?dateLineFromGuest(g):'';
-      const dLine=rawD?guestDateDisplayLine(rawD):'';
-      const dateMini=dLine?`<div class="card-date-ob">${esc(dLine)}</div>`:'';
-      const membersMini=membersCardRowHtml(g.members);
-      let listTag='';
-      if(isObscuraTable()){
-        if(isObscuraGaGuest(g)){
-          listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
-        }else{
-          const seat=String(g.seatAssignment||'').trim();
-          const listCore=dot+esc(g.list||'');
-          listTag=seat
-            ?`<div class="card-tag">${listCore} · ${esc(seat)}</div>`
-            :`<div class="card-tag">${listCore}</div>`;
-        }
-      }else{
-        listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
-      }
+      const dot=(g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
+      const listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
       const blk=guestMembersHasBlacklist(g.members);
       return `<div class="card${g.checkedIn?' checked':''}${blk?' card-blacklist':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
-          ${dateMini}
-          ${membersMini}
           ${listTag}
         </div>
       </div>`;
@@ -1498,68 +955,11 @@
       const loc=local[id]||{};
       const coatVal=loc.coat!=null?loc.coat:(g.coatCheck||'');
       const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
-      const notes2Val=loc.notes2!=null?loc.notes2:(g.doorNotesExtra||'');
-      const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
-      if(isObscuraTable()){
-        const showExtra=hasNotesExtraField();
-        const n2=showExtra?`
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📝 Internal / table notes</div>
-              <textarea class="det-input" id="dNotes2" rows="3" placeholder="" onblur="saveLocal()">${esc(notes2Val)}</textarea>
-            </div>`:'';
-        const gdv=dateLineFromGuest(g);
-        const gdvBody=guestDateReadoutHtmlFromRaw(gdv);
-        document.getElementById('detailContent').innerHTML=`
-        <div class="detail-head">
-          <div class="detail-nav"><button type="button" class="back-btn" onclick="closeDetail()" aria-label="Back to guest list">BACK</button></div>
-          <div class="detail-avatar-wrap">${ph}</div>
-          <div class="detail-name">${esc(g.name)}</div>
-          <div class="detail-sub">${obscuraDetailSubLineHtml(g)}</div>
-          <div class="detail-chips">
-            ${g.phone?`<a class="det-chip" href="tel:${esc(g.phone)}">📞 ${esc(g.phone)}</a>`:''}
-            ${g.email?`<a class="det-chip" href="mailto:${esc(g.email)}">✉️ ${esc(g.email)}</a>`:''}
-          </div>
-        </div>
-        <div class="det-cards">
-          <div class="det-card ob-date-card">
-            <div class="det-input-wrap" style="border-bottom:none">
-              <div class="det-input-lbl">💞 The Date</div>
-              <div class="ob-date-readout">${gdvBody}</div>
-            </div>
-          </div>
-          <div class="det-card">
-            <div class="det-row">
-              <div class="det-lbl">✓ Checked In</div>
-              <label class="toggle"><input type="checkbox" id="dCI" ${g.checkedIn?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
-            </div>
-            <div class="wb-display" style="border-top:1px solid rgba(0,0,0,.05);">
-              <div class="wb-display-lbl">Members</div>
-              <div id="memPillDisplay">${buildMembersDisplayHTML(g.members)}</div>
-            </div>
-          </div>
-          <div class="det-card">
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" onblur="saveLocal()">
-            </div>
-          </div>
-          <div class="det-card">
-            <div class="det-input-wrap">
-              <div class="det-input-lbl">📝 Notes</div>
-              <textarea class="det-input" id="dNotes" rows="3" placeholder="Issues at the Door" onblur="saveLocal()">${esc(notesVal)}</textarea>
-            </div>
-            ${n2}
-          </div>
-        </div>`;
-        document.getElementById('app').style.display='none';
-        document.getElementById('detailView').style.display='block';
-        document.getElementById('detailView').scrollTop=0;
-        return;
-      }
+      const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}" alt="${esc(g.name)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
       const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
       const ndaRow=!ndaSig
-        ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`
+        ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="${NDA_FORM_URL}" target="_blank" rel="noopener noreferrer">🔗</a></div>`
         :'';
 
       document.getElementById('detailContent').innerHTML=`
@@ -1643,7 +1043,7 @@
     }
 
     function onNDA(cb){
-      document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="https://forms.gle/asRXJtR6zHhDoGZJ8" target="_blank">🔗</a></div>`;
+      document.getElementById('ndaBox').innerHTML=cb.checked?'':`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="${NDA_FORM_URL}" target="_blank" rel="noopener noreferrer">🔗</a></div>`;
       autoSave();
     }
 
@@ -1685,11 +1085,6 @@
           guests[i]=gNext;
           if(curG && curG.id===guests[i].id) curG=guests[i];
         }
-        if(isObscuraTable()){
-          resolveDatePartnersFromGuests(guests);
-          /* Refresh list only — do not openDetail() here: it re-builds the form and killed focus / interrupted typing. */
-          try{ render(); }catch(_){}
-        }
         showToast('Saved ✓');
       }catch(e){
         console.error('Coat/notes save failed',e);
@@ -1705,37 +1100,6 @@
       const myGen=++saveGen;
       saveTimer=setTimeout(async()=>{
         if(!curG)return;
-        if(isObscuraTable()){
-          const dCI=document.getElementById('dCI');
-          if(!dCI) return;
-          const cI=dCI.checked;
-          const cKey=pickField(F_CHECKED_IN);
-          if(!cKey){
-            showToast('Could not find “Checked In” in this table — check Airtable.');
-            return;
-          }
-          try{
-            await patchGuestResilient(curG.id, {[cKey]:cI});
-            const i=guests.findIndex(g=>g.id===curG.id);
-            if(i>-1) guests[i]={...guests[i], checkedIn:cI};
-            if(myGen!==saveGen) return;
-            showToast('Saved ✓');
-            try{ render(); }catch(_){}
-            flushPendingQueue().catch(()=>{});
-          }catch(e){
-            console.error('Obscura check-in save failed',e);
-            enqueuePending(curG.id, curTable, {[cKey]:cI});
-            if(myGen!==saveGen) return;
-            const i=guests.findIndex(g=>g.id===curG.id);
-            if(i>-1) guests[i]={...guests[i], checkedIn:cI};
-            const msg=isTransientErr(e)
-              ?'Network hiccup — queued on device. Will retry.'
-              :('Could not save: '+fmtErr(e)+' — queued to retry');
-            showToast(msg, 8000);
-            try{ render(); }catch(_){}
-          }
-          return;
-        }
         const dCI=document.getElementById('dCI');
         const dNDA=document.getElementById('dNDA');
         const dPat=document.getElementById('dPat');
@@ -1815,16 +1179,16 @@
     function openAdd(){
       document.getElementById('addModal').classList.add('open');
       const mb=document.getElementById('addModalBody');
-      if(mb) mb.className='modal-body '+(isObscuraTable()?'add-ob':'add-at');
+      if(mb) mb.className='modal-body add-at';
       document.getElementById('aN').focus();
       const wr=document.getElementById('addWristNdaBlock');
-      if(wr) wr.style.display=isObscuraTable()?'none':'';
+      if(wr) wr.style.display='';
       const mgb=document.getElementById('mGuestDateBlock');
       if(mgb) mgb.style.display='none';
       const mnl=document.getElementById('mNotesLbl');
-      if(mnl) mnl.innerHTML=isObscuraTable()?'📝 Notes':'📝 Door Notes: <span style="color:var(--red)">Required</span>';
+      if(mnl) mnl.innerHTML='📝 Door Notes: <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
-      if(mn) mn.placeholder=isObscuraTable()?'Issues at the Door':'Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
+      if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const mCoatEl=document.getElementById('mCoat');
       if(mCoatEl) mCoatEl.placeholder='e.g. 69';
       const nda=document.getElementById('mNDA');
@@ -1864,45 +1228,6 @@
       if(!name){alert('Guest name required');return;}
       const btn=document.getElementById('addBtn');
       btn.textContent='Adding…';
-
-      if(isObscuraTable()){
-        const fields={'Full Name':name};
-        if(document.getElementById('mCI').checked){
-          const cIn=pickField(F_CHECKED_IN);
-          if(cIn) fields[cIn]=true;
-        }
-        const coat=document.getElementById('mCoat').value.trim();
-        const notes=document.getElementById('mNotes').value.trim();
-        try{
-          const d=await req('',{method:'POST',body:JSON.stringify({fields})});
-          if(d.id){
-            if(coat||notes){
-              try{
-                const follow={};
-                const kC=pickField(F_COAT);
-                if(kC) follow[kC]=coat;
-                const kN=pickField(F_NOTES);
-                if(kN) follow[kN]=notes;
-                if(Object.keys(follow).length) await patchGuestResilient(d.id,follow);
-              }catch(e2){
-                alert('Guest created but coat/notes did not save: '+fmtErr(e2));
-              }
-            }
-            let rec=d;
-            try{ rec=await req('/'+d.id); }catch(_){}
-            local[d.id]={coat,notes};
-            guests.push(toG(rec));
-            closeAdd();
-            resolveDatePartnersFromGuests(guests);
-            render();
-            showToast('Guest added ✓');
-          }
-        }catch(e){
-          alert('Airtable: '+fmtErr(e));
-        }
-        btn.textContent='Add Guest';
-        return;
-      }
 
       const mSTI=document.getElementById('mSTI');
       const mPat=document.getElementById('mPat');
@@ -1952,6 +1277,7 @@
       btn.textContent='Add Guest';
     }
 
+    ensureLandingSubtitle();
     buildEvList();
     document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
