@@ -53,7 +53,8 @@
     .list-header{background:var(--blue);position:sticky;top:0;z-index:100;}
     .list-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 8px;gap:12px;}
     .logo-link{display:inline-flex;align-items:center;-webkit-tap-highlight-color:transparent;background:none;border:none;padding:0;cursor:pointer;font:inherit;color:inherit;}
-    .logo-img{height:28px;display:block;}
+    .logo-img{height:28px;width:auto;display:block;}
+    .logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .event-title-row{padding:0 16px 8px;text-align:center;}
     .event-title{font-size:18px;font-style:normal;color:rgba(255,255,255,.92);letter-spacing:.02em;line-height:1.25;}
     .toolbar{display:flex;gap:8px;padding:0 14px 12px;}
@@ -350,7 +351,7 @@
       <a class="ev-logo-link" href="https://www.houseofloulous.com/" target="_blank" rel="noopener noreferrer" title="House of LouLou's — main site">
         <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
       </a>
-      <div class="ev-sub">Select Event</div>
+      <div class="ev-sub">L'Atelier — May &amp; June</div>
       <div class="ev-list" id="evList"></div>
     </div>
     <div class="ev-landing-spacer" aria-hidden="true"></div>
@@ -360,7 +361,7 @@
   <div id="app">
     <div class="list-header">
       <div class="list-top">
-        <button type="button" class="logo-link" onclick="showEvScreen()" title="Back to Select Event" aria-label="Back to Select Event">
+        <button type="button" class="logo-link" onclick="showEvScreen()" title="Back to event selection" aria-label="Back to event selection">
           <img class="logo-img" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
         </button>
       </div>
@@ -465,6 +466,7 @@
 
   <script>
     const BASE='appY6p2HwRtDmOvAf';
+    /** Landing: only L'Atelier May & June (no other events). */
     const EVENTS=[
       {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.jpg"},
       {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
@@ -700,7 +702,9 @@
 
     function pickEv(i){
       closeFloorMap();
-      const e=EVENTS[i]; curTable=e.table;
+      const e=EVENTS[i];
+      if(!e) return;
+      curTable=e.table;
       curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.label;
       document.getElementById('evScreen').style.display='none';
