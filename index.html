@@ -903,11 +903,12 @@
     function render(){
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
-      if(curTab==='tables') list=list.filter(g=>g.patron||listFieldMatches(g,'table'));
+      if(curTab==='tables') list=list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
       else if(curTab==='guest') list=list.filter(g=>{
+        if(listFieldMatches(g,'working')) return false;
         const segs=listSegmentsLower(g);
         if(!segs.length) return true;
-        return !listFieldMatches(g,'working');
+        return listFieldMatches(g,'guest');
       });
       else if(curTab==='working') list=list.filter(g=>listFieldMatches(g,'working'));
       const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
