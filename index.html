@@ -180,7 +180,8 @@
     #addModalBody.add-at .add-sec-wb{order:3;}
     #addModalBody.add-at .add-sec-mdate{order:9;display:none !important;}
     #addModalBody.add-at .add-sec-coat{order:4;}
-    #addModalBody.add-at .add-sec-notes{order:5;}
+    #addModalBody.add-at .add-sec-phone{order:5;}
+    #addModalBody.add-at .add-sec-notes{order:6;}
     .modal-card{background:#fff;border-radius:14px;overflow:hidden;}
     .modal-row{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:10px;}
     .modal-row:last-child{border-bottom:none;}
@@ -325,6 +326,12 @@
           <div class="det-input-wrap" style="border-bottom:none">
             <div class="det-input-lbl">🧥 Coat Check #</div>
             <input class="det-input" id="mCoat" placeholder="e.g. 69">
+          </div>
+        </div>
+        <div class="modal-card add-sec add-sec-phone">
+          <div class="det-input-wrap" style="border-bottom:none">
+            <div class="det-input-lbl">📱 Phone Check #</div>
+            <input class="det-input" id="mPhoneCheck" placeholder="e.g. 69">
           </div>
         </div>
         <div class="modal-card add-sec add-sec-notes">
@@ -856,6 +863,7 @@
     function guestMatchesSearch(g,q){
       const em=(g.email||'').toLowerCase();
       return (g.name||'').toLowerCase().includes(q)||(g.phone||'').includes(q)||em.includes(q)
+        ||String(g.phoneCheckNum||'').toLowerCase().includes(q)
         ||String(dateLineFromGuest(g)||'').toLowerCase().includes(q)
         ||String(g.seatAssignment||'').toLowerCase().includes(q);
     }
@@ -905,10 +913,9 @@
       let list=guests;
       if(curTab==='tables') list=list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
       else if(curTab==='guest') list=list.filter(g=>{
-        if(listFieldMatches(g,'working')) return false;
         const segs=listSegmentsLower(g);
         if(!segs.length) return true;
-        return listFieldMatches(g,'guest');
+        return !listFieldMatches(g,'working');
       });
       else if(curTab==='working') list=list.filter(g=>listFieldMatches(g,'working'));
       const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
@@ -956,6 +963,7 @@
       curG=g;
       const loc=local[id]||{};
       const coatVal=loc.coat!=null?loc.coat:(g.coatCheck||'');
+      const phoneCheckVal=loc.phoneCheck!=null?loc.phoneCheck:(g.phoneCheckNum||'');
       const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}" alt="${esc(g.name)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
       const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
@@ -1013,6 +1021,12 @@
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
+              <div class="det-input-lbl">📱 Phone Check #</div>
+              <input class="det-input" id="dPhoneCheck" value="${esc(phoneCheckVal)}" placeholder="e.g. 69" onblur="saveLocal()">
+            </div>
+          </div>
+          <div class="det-card">
+            <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Door Notes:</div>
               <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
@@ -1058,14 +1072,18 @@
     async function saveLocal(){
       if(!curG)return;
       const coat=document.getElementById('dCoat');
+      const phoneCheck=document.getElementById('dPhoneCheck');
       const notes=document.getElementById('dNotes');
       if(!coat||!notes)return;
       const vCoat=coat.value.trim();
+      const vPhone=phoneCheck?phoneCheck.value.trim():'';
       const vNotes=notes.value.trim();
       const n2el=document.getElementById('dNotes2');
       const fields={};
       const kC=pickField(F_COAT);
       if(kC) fields[kC]=vCoat;
+      const kP=pickField(F_PHONE_CHECK);
+      if(kP) fields[kP]=vPhone;
       const kN=pickField(F_NOTES);
       if(kN) fields[kN]=vNotes;
       let v2='';
@@ -1077,19 +1095,19 @@
       try{
         if(Object.keys(fields).length===0) throw new Error('No known Airtable fields to save (refresh the list or check your base).');
         await patchGuestResilient(curG.id, fields);
-        const locNext={...local[curG.id],coat:vCoat,notes:vNotes};
+        const locNext={...local[curG.id],coat:vCoat,phoneCheck:vPhone,notes:vNotes};
         if(n2el && hasNotesExtraField()) locNext.notes2=v2;
         local[curG.id]=locNext;
         const i=guests.findIndex(x=>x.id===curG.id);
         if(i>-1){
-          const gNext={...guests[i],coatCheck:vCoat,doorNotes:vNotes};
+          const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhone,doorNotes:vNotes};
           if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
           guests[i]=gNext;
           if(curG && curG.id===guests[i].id) curG=guests[i];
         }
         showToast('Saved ✓');
       }catch(e){
-        console.error('Coat/notes save failed',e);
+        console.error('Door fields save failed',e);
         enqueuePending(curG.id, curTable, fields);
         showToast('Could not save: '+fmtErr(e)+' — queued to retry',8000);
         try{ render(); }catch(_){}
@@ -1191,8 +1209,6 @@
       if(mnl) mnl.innerHTML='📝 Door Notes: <span style="color:var(--red)">Required</span>';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
-      const mCoatEl=document.getElementById('mCoat');
-      if(mCoatEl) mCoatEl.placeholder='e.g. 69';
       const nda=document.getElementById('mNDA');
       if(nda) onAddNDAChange(nda);
       const pr=document.getElementById('mPatRow');
@@ -1206,7 +1222,7 @@
       if(mbReset) mbReset.className='modal-body add-at';
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
-      ['aN','mCoat','mNotes'].forEach(id=>document.getElementById(id).value='');
+      ['aN','mCoat','mPhoneCheck','mNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
       ['mCI','mNDA','mSTI','mPat'].forEach(id=>{
         const n=document.getElementById(id);
         if(n) n.checked=false;
@@ -1220,8 +1236,6 @@
       if(mgbC) mgbC.style.display='none';
       const mn=document.getElementById('mNotes');
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
-      const mCoatEl=document.getElementById('mCoat');
-      if(mCoatEl) mCoatEl.placeholder='e.g. 69';
       updateAddWbPills();
     }
 
@@ -1248,26 +1262,29 @@
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
 
       const coat=document.getElementById('mCoat').value.trim();
+      const phoneChk=document.getElementById('mPhoneCheck')?document.getElementById('mPhoneCheck').value.trim():'';
       const notes=document.getElementById('mNotes').value.trim();
 
       try{
         const d=await req('',{method:'POST',body:JSON.stringify({fields})});
         if(d.id){
-          if(coat||notes){
+          if(coat||notes||phoneChk){
             try{
               const addPatch={};
               const kC=pickField(F_COAT);
               if(kC) addPatch[kC]=coat;
+              const kP=pickField(F_PHONE_CHECK);
+              if(kP) addPatch[kP]=phoneChk;
               const kN=pickField(F_NOTES);
               if(kN) addPatch[kN]=notes;
               if(Object.keys(addPatch).length) await patchGuestResilient(d.id,addPatch);
             }catch(e2){
-              alert('Guest created but coat/notes did not save: '+fmtErr(e2));
+              alert('Guest created but coat / phone check / notes did not save: '+fmtErr(e2));
             }
           }
           let rec=d;
           try{ rec=await req('/'+d.id); }catch(_){}
-          local[d.id]={coat,notes};
+          local[d.id]={coat,notes,phoneCheck:phoneChk};
           guests.push(toG(rec));
           closeAdd();
           render();
