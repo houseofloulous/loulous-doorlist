@@ -82,19 +82,23 @@
     /** Guest grid: flex-wrap + centered rows. */
     #main{width:100%;}
     .grid{
-      --ggrid:10px;
-      --guest-card-w:clamp(138px,min(206px,(100vw - 48px)/3),216px);
+      --ggrid:12px;
+      /** Fill row width: 3 tiles on tablet+, 2 on narrow phones — photos stay 1:1 via .card-photo */
+      --guest-card-w:calc((100% - 2 * var(--ggrid)) / 3);
       display:flex;
       flex-wrap:wrap;
-      justify-content:center;
+      justify-content:flex-start;
       align-items:stretch;
       align-content:flex-start;
       gap:var(--ggrid);
-      padding:14px;
+      padding:12px max(8px, env(safe-area-inset-left, 0px)) 12px max(8px, env(safe-area-inset-right, 0px));
       max-width:1200px;
       margin:0 auto;
       box-sizing:border-box;
       width:100%;
+    }
+    @media(max-width:560px){
+      .grid{ --guest-card-w:calc((100% - var(--ggrid)) / 2); }
     }
     .grid>.card{flex:0 0 auto;width:var(--guest-card-w);}
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
