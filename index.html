@@ -82,23 +82,19 @@
     /** Guest grid: flex-wrap + centered rows. */
     #main{width:100%;}
     .grid{
-      --ggrid:12px;
-      /** Fill row width: 3 tiles on tablet+, 2 on narrow phones — photos stay 1:1 via .card-photo */
-      --guest-card-w:calc((100% - 2 * var(--ggrid)) / 3);
+      --ggrid:10px;
+      --guest-card-w:clamp(138px,min(206px,(100vw - 48px)/3),216px);
       display:flex;
       flex-wrap:wrap;
-      justify-content:flex-start;
+      justify-content:center;
       align-items:stretch;
       align-content:flex-start;
       gap:var(--ggrid);
-      padding:12px max(8px, env(safe-area-inset-left, 0px)) 12px max(8px, env(safe-area-inset-right, 0px));
+      padding:14px;
       max-width:1200px;
       margin:0 auto;
       box-sizing:border-box;
       width:100%;
-    }
-    @media(max-width:560px){
-      .grid{ --guest-card-w:calc((100% - var(--ggrid)) / 2); }
     }
     .grid>.card{flex:0 0 auto;width:var(--guest-card-w);}
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
@@ -360,7 +356,7 @@
     const EVENTS=[
       {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.jpg"},
       {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
-      {name:"L'Atelier Out East",date:"July 12th",label:"L'ATELIER OUT EAST | July 12th",table:"L'Atelier Out East",art:"/landing-events/latelier-july-12.jpg"},
+      {name:"L'Atelier Out East",date:"July 11th",label:"L'ATELIER OUT EAST | July 11th",table:"L'Atelier Out East",art:"/landing-events/latelier-july-11.jpg"},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
