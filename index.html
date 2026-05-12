@@ -305,13 +305,6 @@
             <div class="wb-display-lbl">Wristbands</div>
             <div id="addWbPillDisplay" style="display:flex;flex-direction:column;gap:10px;align-items:flex-start;"></div>
           </div>
-          <div id="mPatRow" class="modal-toggle-row" style="display:none;align-items:flex-start;">
-            <div style="flex:1;min-width:0">
-              <div class="modal-toggle-lbl" style="margin-bottom:4px">👑 Patron</div>
-              <div class="det-sublbl">💛 Patrons receive GOLD WRISTBANDS</div>
-            </div>
-            <label class="toggle"><input type="checkbox" id="mPat" onchange="updateAddWbPills()"><span class="slider"></span></label>
-          </div>
           <div class="modal-toggle-row" style="align-items:flex-start;">
             <div style="flex:1;min-width:0">
               <div class="modal-toggle-lbl" style="margin-bottom:4px">💉 STI Tests Verified</div>
@@ -472,15 +465,13 @@
       return members.some(m=>normListKey(m).indexOf('blacklist')!==-1);
     }
 
-    /** Add-guest modal: same wristband pills as guest profile (Black = STI, Gold = patron). */
+    /** Add-guest modal: wristband pills (Black = STI; Gold only when List is set to Table in Airtable after add). */
     function updateAddWbPills(){
       const el=document.getElementById('addWbPillDisplay');
       if(!el) return;
       const mSTI=document.getElementById('mSTI');
-      const mPat=document.getElementById('mPat');
       const sti=!!(mSTI&&mSTI.checked);
-      const pat=!!(mPat&&mPat.checked);
-      el.innerHTML=buildWBDisplayHTML(pat,sti);
+      el.innerHTML=buildWBDisplayHTML(false,sti);
     }
 
     function getTabsForCurrentTable(){
@@ -509,6 +500,17 @@
     function listFieldMatches(g, tokenOrLabel){
       const want=normListKey(tokenOrLabel);
       return listSegmentsLower(g).some(seg=>normListKey(seg)===want);
+    }
+    /** Gold wristbands: List must include Table (or Tables), not the legacy Patron field. */
+    function guestIsTableFromFields(f){
+      if(!f||typeof f!=='object') return false;
+      const list=Array.isArray(f.List)?f.List.filter(Boolean).join(', '):(f.List==null||f.List===''?'':String(f.List));
+      const stub={list};
+      return listFieldMatches(stub,'table')||listFieldMatches(stub,'tables');
+    }
+    function guestIsTableGuest(g){
+      if(!g) return false;
+      return listFieldMatches(g,'table')||listFieldMatches(g,'tables');
     }
 
     function ensureLandingSubtitle(){
@@ -824,7 +826,7 @@
       const gDate=fieldStrGuestDate(f);
       const wbArr=parseWristbandsFromFields(f);
       const hasGold=wbArr.includes('Gold');
-      const patron=!!f.Patron||hasGold;
+      const tableGuest=guestIsTableFromFields(f);
       const stiVerified=stiVerifiedFromFields(f,wbArr);
       const ndaRaw=f.NDA==null||f.NDA===''?'No':String(f.NDA);
       const phoneRaw=f.Phone==null||f.Phone===''?'':String(f.Phone);
@@ -837,7 +839,7 @@
         nda:ndaRaw,
         ndaSigned:ndaIsSigned(ndaRaw),
         phone:phoneRaw,
-        patron,
+        tableGuest,
         stiVerified,
         wristbands:wbArr,
         wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
@@ -946,7 +948,8 @@
       const ph=g.photo
         ?`<img class="card-photo" src="${esc(g.photo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
-      const dot=(g.patron?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
+      const showGoldDot=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
+      const dot=(showGoldDot?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
       const listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
       const blk=guestMembersHasBlacklist(g.members);
       return `<div class="card${g.checkedIn?' checked':''}${blk?' card-blacklist':''}" onclick="openDetail('${g.id}')">
@@ -966,7 +969,8 @@
       const phoneCheckVal=loc.phoneCheck!=null?loc.phoneCheck:(g.phoneCheckNum||'');
       const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}" alt="${esc(g.name)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
-      const wbPill=buildWBDisplayHTML(!!g.patron,!!g.stiVerified);
+      const hasGoldPill=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
+      const wbPill=buildWBDisplayHTML(hasGoldPill,!!g.stiVerified);
       const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
       const ndaRow=!ndaSig
         ?`<div class="nda-row"><div class="nda-text">🔴 If NDA is unsigned, please click here and have them sign:</div><a class="nda-link" href="${NDA_FORM_URL}" target="_blank" rel="noopener noreferrer">🔗</a></div>`
@@ -995,10 +999,10 @@
             </div>
             <div class="det-row">
               <div class="det-row-left">
-                <div class="det-lbl">👑 Patron</div>
-                <div class="det-sublbl">💛 Patrons receive GOLD WRISTBANDS</div>
+                <div class="det-lbl">⭐️Tables</div>
+                <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
               </div>
-              <label class="toggle"><input type="checkbox" id="dPat" ${g.patron?'checked':''} onchange="onPatron(this)"><span class="slider"></span></label>
+              <label class="toggle" title="From Airtable List — assign Table there"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} disabled aria-readonly="true"><span class="slider"></span></label>
             </div>
             <div class="det-row">
               <div class="det-row-left">
@@ -1039,21 +1043,16 @@
 
     function updateWBDisplay(){
       const box=document.getElementById('wbPillDisplay');
-      const dPat=document.getElementById('dPat');
       const sti=document.getElementById('dSTI');
-      if(!box)return;
-      const hasGoldFromBands=!!(curG&&Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
-      const cP=(dPat&&dPat.checked)||(!dPat&&hasGoldFromBands);
+      if(!box||!curG)return;
+      const hasGoldFromBands=!!(Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
+      const tableGuest=guestIsTableGuest(curG);
+      const hasGold=tableGuest||hasGoldFromBands;
       const cS=sti && sti.checked;
-      box.innerHTML=buildWBDisplayHTML(cP,cS);
+      box.innerHTML=buildWBDisplayHTML(hasGold,cS);
     }
 
     function onSTI(cb){
-      updateWBDisplay();
-      autoSave();
-    }
-
-    function onPatron(cb){
       updateWBDisplay();
       autoSave();
     }
@@ -1122,22 +1121,18 @@
         if(!curG)return;
         const dCI=document.getElementById('dCI');
         const dNDA=document.getElementById('dNDA');
-        const dPat=document.getElementById('dPat');
         const stiEl=document.getElementById('dSTI');
         if(!dCI||!dNDA)return;
         const cI=dCI.checked;
         const cN=dNDA.checked;
         const cS=stiEl && stiEl.checked;
         const wb=[];
-        let cP;
-        const hasExistingGold=!!(curG&&Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
-        cP=dPat?dPat.checked:hasExistingGold;
-        if(cP) wb.push('Gold');
+        const tableGuest=guestIsTableGuest(curG);
+        if(tableGuest) wb.push('Gold');
         if(cS) wb.push('Black');
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
         const wristFields={ [pickField(F_WRISTBAND)]:wb };
         wristFields[pickField(F_STI)]=cS;
-        wristFields.Patron=cP;
         const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
           if(i>-1){
@@ -1146,7 +1141,6 @@
               checkedIn:cI,
               nda:cN?'Signed':'No',
               ndaSigned:!!cN,
-              patron:cP,
               stiVerified:cS,
               wristbands:wb,
               wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
@@ -1211,8 +1205,6 @@
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const nda=document.getElementById('mNDA');
       if(nda) onAddNDAChange(nda);
-      const pr=document.getElementById('mPatRow');
-      if(pr) pr.style.display='flex';
       updateAddWbPills();
     }
 
@@ -1223,7 +1215,7 @@
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
       ['aN','mCoat','mPhoneCheck','mNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-      ['mCI','mNDA','mSTI','mPat'].forEach(id=>{
+      ['mCI','mNDA','mSTI'].forEach(id=>{
         const n=document.getElementById(id);
         if(n) n.checked=false;
       });
@@ -1246,19 +1238,15 @@
       btn.textContent='Adding…';
 
       const mSTI=document.getElementById('mSTI');
-      const mPat=document.getElementById('mPat');
       const stiOn=!!(mSTI&&mSTI.checked);
-      const patOn=!!(mPat&&mPat.checked);
 
       const fields={'Full Name':name};
       if(document.getElementById('mCI').checked)fields[pickField(F_CHECKED_IN)]=true;
       if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
 
       const wb=[];
-      if(patOn) wb.push('Gold');
       if(stiOn) wb.push('Black');
       fields[pickField(F_STI)]=stiOn;
-      fields.Patron=patOn;
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
 
       const coat=document.getElementById('mCoat').value.trim();
