@@ -307,7 +307,7 @@
           </div>
           <div class="modal-toggle-row" style="align-items:flex-start;">
             <div style="flex:1;min-width:0">
-              <div class="modal-toggle-lbl" style="margin-bottom:4px">💉 STI Tests Verified</div>
+              <div class="modal-toggle-lbl" style="margin-bottom:4px">STI Tests Verified</div>
               <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
             </div>
             <label class="toggle"><input type="checkbox" id="mSTI" onchange="updateAddWbPills()"><span class="slider"></span></label>
@@ -345,11 +345,9 @@
     const BASE='appY6p2HwRtDmOvAf';
     const NDA_FORM_URL='https://forms.gle/gNPU5Etg7HSuhYYY7';
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
-    /** Landing: L'Atelier series events. */
+    /** Single active door list (Airtable table name must match). */
     const EVENTS=[
-      {name:"May L'Atelier",date:"May 16th",label:"L'ATELIER | May 16th",table:"5/16 Door List",art:"/landing-events/latelier-may-16.jpg"},
       {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
-      {name:"L'Atelier Out East",date:"July 11th",label:"L'ATELIER OUT EAST | July 11th",table:"L'Atelier Out East",art:"/landing-events/latelier-july-11.jpg"},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -538,6 +536,7 @@
     }
 
     function showEvScreen(){
+      if(EVENTS.length===1){ pickEv(0); return; }
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
       document.getElementById('detailView').style.display='none';
@@ -999,14 +998,14 @@
             </div>
             <div class="det-row">
               <div class="det-row-left">
-                <div class="det-lbl">⭐️Tables</div>
+                <div class="det-lbl">Tables</div>
                 <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
               </div>
               <label class="toggle" title="From Airtable List — assign Table there"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} disabled aria-readonly="true"><span class="slider"></span></label>
             </div>
             <div class="det-row">
               <div class="det-row-left">
-                <div class="det-lbl">💉 STI Tests Verified</div>
+                <div class="det-lbl">STI Tests Verified</div>
                 <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
               </div>
               <label class="toggle"><input type="checkbox" id="dSTI" ${g.stiVerified?'checked':''} onchange="onSTI(this)"><span class="slider"></span></label>
@@ -1284,8 +1283,8 @@
       btn.textContent='Add Guest';
     }
 
-    ensureLandingSubtitle();
-    buildEvList();
+    if(EVENTS.length===1) pickEv(0);
+    else{ ensureLandingSubtitle(); buildEvList(); }
     document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
     });
