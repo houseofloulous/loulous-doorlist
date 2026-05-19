@@ -139,13 +139,6 @@
     .wb-pill.gold{background:#fffdf0;border-color:#c9a96e;color:#8a6820;}
     .wb-pill.black{background:#1a1a1a;border-color:#1a1a1a;color:#fff;}
     #wbPillDisplay{display:flex;flex-direction:column;gap:10px;align-items:flex-start;}
-    .card.card-blacklist{background:#050505!important;box-shadow:0 0 0 2px var(--red),0 4px 14px rgba(0,0,0,.4)!important;}
-    .card.card-blacklist .card-body{background:transparent;}
-    .card.card-blacklist .card-name{color:rgba(255,255,255,.95);}
-    .card.card-blacklist .card-tag{color:var(--accent);}
-    .card.card-blacklist .card-tick{color:var(--accent);}
-    .card.card-blacklist .card-init{background:linear-gradient(135deg,#1f1f1f,#0a0a0a);color:rgba(255,255,255,.7);}
-    .card.card-blacklist.checked{filter:none!important;opacity:1!important;}
     .wb-circle{width:12px;height:12px;border-radius:50%;}
     .wb-circle.gold{background:#c9a96e;}
     .wb-circle.black{background:#fff;}
@@ -367,8 +360,7 @@
     const F_NOTES_EXTRA=['Internal Notes','Ops Notes','Table Notes','Seating Notes'];
     /** Some tables use "Wristbands" (plural), others "Wristband". */
     const F_WRISTBAND=['Wristbands','Wristband'];
-    /** Member-type labels (Airtable “Members”). */
-    const F_MEMBERS=['Members'];
+    const F_LIST=['List'];
     const F_SEAT_ASSIGNMENT=['Seat Assignment'];
 
     const PENDING_KEY='ll_door_pending_v1';
@@ -447,22 +439,6 @@
       if(!hasGold && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
       return html;
     }
-    function parseMembersFromFields(f){
-      if(!f||typeof f!=='object') return [];
-      for(const n of F_MEMBERS){
-        if(!Object.prototype.hasOwnProperty.call(f,n)) continue;
-        const v=f[n];
-        if(Array.isArray(v)) return v.filter(x=>x!=null&&String(x).trim()!=='').map(x=>String(x).trim());
-        if(v==null||v==='') return [];
-        return [String(v).trim()];
-      }
-      return [];
-    }
-    function guestMembersHasBlacklist(members){
-      if(!Array.isArray(members)) return false;
-      return members.some(m=>normListKey(m).indexOf('blacklist')!==-1);
-    }
-
     /** Add-guest modal: wristband pills (Black = STI; Gold only when List is set to Table in Airtable after add). */
     function updateAddWbPills(){
       const el=document.getElementById('addWbPillDisplay');
@@ -509,6 +485,23 @@
     function guestIsTableGuest(g){
       if(!g) return false;
       return listFieldMatches(g,'table')||listFieldMatches(g,'tables');
+    }
+    /** Update guest list label when table toggle changes (keeps Guest/Working, adds or removes Table). */
+    function setGuestListWithTable(g, isTable){
+      let segs=listSegmentsLower(g);
+      segs=segs.filter(seg=>{
+        const k=normListKey(seg);
+        return k!=='table' && k!=='tables';
+      });
+      if(isTable) segs.push('Table');
+      else if(!segs.length) segs.push('Guest');
+      return segs.join(', ');
+    }
+    function listValueForAirtable(listStr){
+      const segs=listSegmentsLower({list:listStr});
+      if(!segs.length) return null;
+      if(segs.length===1) return segs[0];
+      return segs;
     }
 
     function ensureLandingSubtitle(){
@@ -638,6 +631,7 @@
     async function patchGuestResilient(recordId,fields,tableName){
       let f={...fields};
       const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristbands')||Object.prototype.hasOwnProperty.call(f,'Wristband');
+      const hasList=Object.prototype.hasOwnProperty.call(f,'List');
       for(let attempt=0; attempt<12; attempt++){
         try{
           await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
@@ -709,6 +703,20 @@
             delete next['STI Tests'];
             f=next;
             continue;
+          }
+          if(hasList && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /list|choice|select|option|cell/i.test(low)){
+            const lv=f.List;
+            if(Array.isArray(lv)){
+              if(lv.length===0){ f={...f,List:null}; continue; }
+              if(lv.length===1){ f={...f,List:lv[0]}; continue; }
+              f={...f,List:lv[0]};
+              continue;
+            }
+            if(lv===null){ f={...f,List:[]}; continue; }
+            if(typeof lv==='string' && (low.includes('array')||low.includes('multiple'))){
+              f={...f,List:lv.split(/[,;]+/).map(x=>x.trim()).filter(Boolean)};
+              continue;
+            }
           }
           if(!hasWB) throw e;
           const wk=wristKeyInFields(f);
@@ -842,7 +850,6 @@
         stiVerified,
         wristbands:wbArr,
         wristband:wbArr.includes('Gold')?'Gold':(wbArr.includes('Black')?'Black':''),
-        members:parseMembersFromFields(f),
         email:emailRaw,
         sti:stiVerified,
         coatCheck:fieldStr(f,F_COAT),
@@ -950,8 +957,7 @@
       const showGoldDot=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
       const dot=(showGoldDot?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
       const listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
-      const blk=guestMembersHasBlacklist(g.members);
-      return `<div class="card${g.checkedIn?' checked':''}${blk?' card-blacklist':''}" onclick="openDetail('${g.id}')">
+      return `<div class="card${g.checkedIn?' checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
           <div class="card-name">${g.checkedIn?'<span class="card-tick">✓</span>':''}${esc(g.name)}</div>
@@ -1001,7 +1007,7 @@
                 <div class="det-lbl">Tables</div>
                 <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
               </div>
-              <label class="toggle" title="From Airtable List — assign Table there"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} disabled aria-readonly="true"><span class="slider"></span></label>
+              <label class="toggle"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} onchange="onTable(this)"><span class="slider"></span></label>
             </div>
             <div class="det-row">
               <div class="det-row-left">
@@ -1042,13 +1048,17 @@
 
     function updateWBDisplay(){
       const box=document.getElementById('wbPillDisplay');
+      const dTbl=document.getElementById('dTbl');
       const sti=document.getElementById('dSTI');
       if(!box||!curG)return;
-      const hasGoldFromBands=!!(Array.isArray(curG.wristbands)&&curG.wristbands.includes('Gold'));
-      const tableGuest=guestIsTableGuest(curG);
-      const hasGold=tableGuest||hasGoldFromBands;
+      const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
       const cS=sti && sti.checked;
-      box.innerHTML=buildWBDisplayHTML(hasGold,cS);
+      box.innerHTML=buildWBDisplayHTML(cTbl,cS);
+    }
+
+    function onTable(cb){
+      updateWBDisplay();
+      autoSave();
     }
 
     function onSTI(cb){
@@ -1120,18 +1130,22 @@
         if(!curG)return;
         const dCI=document.getElementById('dCI');
         const dNDA=document.getElementById('dNDA');
+        const dTbl=document.getElementById('dTbl');
         const stiEl=document.getElementById('dSTI');
         if(!dCI||!dNDA)return;
         const cI=dCI.checked;
         const cN=dNDA.checked;
+        const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
         const cS=stiEl && stiEl.checked;
         const wb=[];
-        const tableGuest=guestIsTableGuest(curG);
-        if(tableGuest) wb.push('Gold');
+        if(cTbl) wb.push('Gold');
         if(cS) wb.push('Black');
+        const newList=setGuestListWithTable(curG, cTbl);
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
         const wristFields={ [pickField(F_WRISTBAND)]:wb };
         wristFields[pickField(F_STI)]=cS;
+        const kList=pickField(F_LIST);
+        if(kList) wristFields[kList]=listValueForAirtable(newList);
         const applyLocal=()=>{
           const i=guests.findIndex(g=>g.id===curG.id);
           if(i>-1){
@@ -1140,6 +1154,8 @@
               checkedIn:cI,
               nda:cN?'Signed':'No',
               ndaSigned:!!cN,
+              tableGuest:cTbl,
+              list:newList,
               stiVerified:cS,
               wristbands:wb,
               wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
@@ -1291,5 +1307,6 @@
     window.addEventListener('online', ()=>flushPendingQueue().catch(()=>{}));
     setInterval(()=>flushPendingQueue().catch(()=>{}), 30000);
   </script>
+
 </body>
 </html>
