@@ -300,6 +300,13 @@
           </div>
           <div class="modal-toggle-row" style="align-items:flex-start;">
             <div style="flex:1;min-width:0">
+              <div class="modal-toggle-lbl" style="margin-bottom:4px">Tables</div>
+              <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="mTbl" onchange="updateAddWbPills()"><span class="slider"></span></label>
+          </div>
+          <div class="modal-toggle-row" style="align-items:flex-start;">
+            <div style="flex:1;min-width:0">
               <div class="modal-toggle-lbl" style="margin-bottom:4px">STI Tests Verified</div>
               <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
             </div>
@@ -439,13 +446,15 @@
       if(!hasGold && !stiVerified) html+='<div class="wb-pill none">No wristbands assigned</div>';
       return html;
     }
-    /** Add-guest modal: wristband pills (Black = STI; Gold only when List is set to Table in Airtable after add). */
+    /** Add-guest modal: wristband pills (Gold = Tables toggle; Black = STI). */
     function updateAddWbPills(){
       const el=document.getElementById('addWbPillDisplay');
       if(!el) return;
+      const mTbl=document.getElementById('mTbl');
       const mSTI=document.getElementById('mSTI');
+      const tableOn=!!(mTbl&&mTbl.checked);
       const sti=!!(mSTI&&mSTI.checked);
-      el.innerHTML=buildWBDisplayHTML(false,sti);
+      el.innerHTML=buildWBDisplayHTML(tableOn,sti);
     }
 
     function getTabsForCurrentTable(){
@@ -1230,7 +1239,7 @@
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
       ['aN','mCoat','mPhoneCheck','mNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-      ['mCI','mNDA','mSTI'].forEach(id=>{
+      ['mCI','mNDA','mSTI','mTbl'].forEach(id=>{
         const n=document.getElementById(id);
         if(n) n.checked=false;
       });
@@ -1252,6 +1261,8 @@
       const btn=document.getElementById('addBtn');
       btn.textContent='Adding…';
 
+      const mTbl=document.getElementById('mTbl');
+      const tableOn=!!(mTbl&&mTbl.checked);
       const mSTI=document.getElementById('mSTI');
       const stiOn=!!(mSTI&&mSTI.checked);
 
@@ -1260,9 +1271,12 @@
       if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
 
       const wb=[];
+      if(tableOn) wb.push('Gold');
       if(stiOn) wb.push('Black');
       fields[pickField(F_STI)]=stiOn;
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
+      const kList=pickField(F_LIST);
+      if(kList) fields[kList]=listValueForAirtable(tableOn?'Table':'Guest');
 
       const coat=document.getElementById('mCoat').value.trim();
       const phoneChk=document.getElementById('mPhoneCheck')?document.getElementById('mPhoneCheck').value.trim():'';
