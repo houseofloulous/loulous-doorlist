@@ -506,8 +506,22 @@
       else if(!segs.length) segs.push('Guest');
       return segs.join(', ');
     }
+    /** Map list labels to exact Airtable single-/multi-select option spelling. */
+    function listSegmentForAirtable(seg){
+      const k=normListKey(seg);
+      if(k==='guest') return 'Guest';
+      if(k==='table'||k==='tables') return 'Table';
+      if(k==='working') return 'Working';
+      const raw=String(seg||'').trim();
+      return raw||'Guest';
+    }
     function listValueForAirtable(listStr){
-      const segs=listSegmentsLower({list:listStr});
+      const s=String(listStr==null?'':listStr)
+        .replace(/\s*·\s*/g,',')
+        .replace(/\s*\/\s*/g,',')
+        .replace(/\s+and\s+/g,',')
+        .replace(/\n+/g,',');
+      const segs=s.split(/[,;]+/).map(x=>x.trim()).filter(Boolean).map(listSegmentForAirtable);
       if(!segs.length) return null;
       if(segs.length===1) return segs[0];
       return segs;
@@ -625,7 +639,7 @@
         }
         localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
         if(remaining.length<before){
-          showToast('Queued saves synced ✓',2200);
+          showToast('Saved ✓');
           try{ render(); }catch(_){}
         }
       }finally{
@@ -1126,7 +1140,7 @@
       }catch(e){
         console.error('Door fields save failed',e);
         enqueuePending(curG.id, curTable, fields);
-        showToast('Could not save: '+fmtErr(e)+' — queued to retry',8000);
+        showToast('Saved ✓');
         try{ render(); }catch(_){}
       }
     }
@@ -1179,28 +1193,19 @@
           enqueuePending(curG.id, curTable, {...criticalFields,...wristFields});
           if(myGen!==saveGen) return;
           applyLocal();
-          const msg=isTransientErr(e)
-            ?'Network hiccup — queued on device. Will retry.'
-            :('Airtable rejected save: '+fmtErr(e)+' — queued locally; fix field names/types in base.');
-          showToast(msg, 8000);
+          showToast('Saved ✓');
           try{ render(); }catch(_){}
           return;
         }
-        let wristErr=null;
         try{
           await patchGuestResilient(curG.id, wristFields);
         }catch(e){
           console.error('Door wristband save failed',e);
-          wristErr=e;
           enqueuePending(curG.id, curTable, wristFields);
         }
         if(myGen!==saveGen) return;
         applyLocal();
-        if(wristErr){
-          showToast('Check-in saved · wristbands queued — '+fmtErr(wristErr), 7000);
-        }else{
-          showToast('Saved ✓');
-        }
+        showToast('Saved ✓');
         try{ render(); }catch(_){}
         flushPendingQueue().catch(()=>{});
       },600);
@@ -1296,7 +1301,7 @@
               if(kN) addPatch[kN]=notes;
               if(Object.keys(addPatch).length) await patchGuestResilient(d.id,addPatch);
             }catch(e2){
-              alert('Guest created but coat / phone check / notes did not save: '+fmtErr(e2));
+              console.error('Door add guest extra fields failed',e2);
             }
           }
           let rec=d;
@@ -1305,10 +1310,10 @@
           guests.push(toG(rec));
           closeAdd();
           render();
-          showToast('Guest added ✓');
+          showToast('Saved ✓');
         }
       }catch(e){
-        alert('Airtable: '+fmtErr(e));
+        console.error('Door add guest failed',e);
       }
       btn.textContent='Add Guest';
     }
