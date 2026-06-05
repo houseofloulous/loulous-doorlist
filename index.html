@@ -1060,19 +1060,19 @@
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">🧥 Coat Check #</div>
-              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" onblur="saveLocal()">
+              <input class="det-input" id="dCoat" value="${esc(coatVal)}" placeholder="e.g. 69" oninput="scheduleTextSave()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📱 Phone Check #</div>
-              <input class="det-input" id="dPhoneCheck" value="${esc(phoneCheckVal)}" placeholder="e.g. 69" onblur="saveLocal()">
+              <input class="det-input" id="dPhoneCheck" value="${esc(phoneCheckVal)}" placeholder="e.g. 69" oninput="scheduleTextSave()" onblur="saveLocal()">
             </div>
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
               <div class="det-input-lbl">📝 Door Notes:</div>
-              <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" onblur="saveLocal()">${esc(notesVal)}</textarea>
+              <textarea class="det-input" id="dNotes" placeholder="Issues at the Door" oninput="scheduleTextSave()" onblur="saveLocal()">${esc(notesVal)}</textarea>
             </div>
           </div>
         </div>`;
@@ -1112,16 +1112,15 @@
       hint.style.display=cb.checked?'none':'flex';
     }
 
-    async function saveLocal(){
-      if(!curG)return;
+    function readDoorTextFromDOM(){
       const coat=document.getElementById('dCoat');
       const phoneCheck=document.getElementById('dPhoneCheck');
       const notes=document.getElementById('dNotes');
-      if(!coat||!notes)return;
+      const n2el=document.getElementById('dNotes2');
+      if(!coat||!notes) return {vCoat:'',vPhone:'',vNotes:'',v2:'',fields:{}};
       const vCoat=coat.value.trim();
       const vPhone=phoneCheck?phoneCheck.value.trim():'';
       const vNotes=notes.value.trim();
-      const n2el=document.getElementById('dNotes2');
       const fields={};
       const kC=pickField(F_COAT);
       if(kC) fields[kC]=vCoat;
@@ -1135,26 +1134,45 @@
         const k2=pickField(F_NOTES_EXTRA);
         if(k2) fields[k2]=v2;
       }
+      return {vCoat,vPhone,vNotes,v2,fields};
+    }
+
+    function applyDoorTextToGuest(vCoat,vPhone,vNotes,v2){
+      if(!curG) return;
+      const locNext={...local[curG.id],coat:vCoat,phoneCheck:vPhone,notes:vNotes};
+      if(hasNotesExtraField()) locNext.notes2=v2;
+      local[curG.id]=locNext;
+      const i=guests.findIndex(x=>x.id===curG.id);
+      if(i>-1){
+        const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhone,doorNotes:vNotes};
+        if(hasNotesExtraField()) gNext.doorNotesExtra=v2;
+        guests[i]=gNext;
+        if(curG && curG.id===guests[i].id) curG=guests[i];
+      }
+    }
+
+    async function saveLocal(){
+      if(!curG)return;
+      const {vCoat,vPhone,vNotes,v2,fields}=readDoorTextFromDOM();
+      if(!document.getElementById('dCoat')||!document.getElementById('dNotes')) return;
       try{
         if(Object.keys(fields).length===0) throw new Error('No known Airtable fields to save (refresh the list or check your base).');
         await patchGuestResilient(curG.id, fields);
-        const locNext={...local[curG.id],coat:vCoat,phoneCheck:vPhone,notes:vNotes};
-        if(n2el && hasNotesExtraField()) locNext.notes2=v2;
-        local[curG.id]=locNext;
-        const i=guests.findIndex(x=>x.id===curG.id);
-        if(i>-1){
-          const gNext={...guests[i],coatCheck:vCoat,phoneCheckNum:vPhone,doorNotes:vNotes};
-          if(n2el && hasNotesExtraField()) gNext.doorNotesExtra=v2;
-          guests[i]=gNext;
-          if(curG && curG.id===guests[i].id) curG=guests[i];
-        }
+        applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
         showToast('Saved ✓');
       }catch(e){
         console.error('Door fields save failed',e);
         enqueuePending(curG.id, curTable, fields);
+        applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
         showToast('Saved ✓');
         try{ render(); }catch(_){}
       }
+    }
+
+    let textSaveTimer=null;
+    function scheduleTextSave(){
+      clearTimeout(textSaveTimer);
+      textSaveTimer=setTimeout(()=>{ saveLocal(); },600);
     }
 
     let saveTimer=null;
@@ -1220,16 +1238,29 @@
           console.error('Door wristband save failed',e);
           enqueuePending(curG.id, curTable, wristFields);
         }
+        const text=readDoorTextFromDOM();
+        if(Object.keys(text.fields).length){
+          try{
+            await patchGuestResilient(curG.id, text.fields);
+          }catch(e){
+            console.error('Door text save failed',e);
+            enqueuePending(curG.id, curTable, text.fields);
+          }
+        }
         if(myGen!==saveGen) return;
         applyLocal();
+        applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
         showToast('Saved ✓');
         try{ render(); }catch(_){}
         flushPendingQueue().catch(()=>{});
       },600);
     }
 
-    function closeDetail(){
+    async function closeDetail(){
+      clearTimeout(saveTimer);
+      clearTimeout(textSaveTimer);
       saveGen++;
+      try{ await saveLocal(); }catch(_){}
       document.getElementById('detailView').style.display='none';
       document.getElementById('app').style.display='block';
       curG=null;
