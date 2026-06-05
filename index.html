@@ -106,6 +106,7 @@
     .card-name{font-size:11px;color:var(--dark);line-height:1.3;}
     .card-tick{color:var(--blue);font-size:16px;margin-right:4px;font-weight:700;line-height:1;}
     .card-tag{font-size:9px;letter-spacing:.07em;text-transform:uppercase;color:var(--warm);margin-top:2px;display:flex;align-items:center;gap:3px;}
+    .card-cabaret{font-size:11px;line-height:1;flex-shrink:0;}
     .wb-dot{width:6px;height:6px;border-radius:50%;display:inline-block;}
     .wb-gold{background:#c9a96e;}
     .wb-black{background:#1a1a1a;border:1px solid #bbb;}
@@ -314,6 +315,7 @@
           </div>
           <div class="modal-toggle-row"><div class="modal-toggle-lbl">🤫 NDA Signed:</div><label class="toggle"><input type="checkbox" id="mNDA" onchange="onAddNDAChange(this)"><span class="slider"></span></label></div>
           <div id="mNdaHint" class="modal-nda-hint"><span>🔴 If NDA is unsigned, please click here and have them sign:</span><a class="modal-nda-link" href="https://forms.gle/gNPU5Etg7HSuhYYY7" target="_blank" rel="noopener noreferrer">🔗</a></div>
+          <div class="modal-toggle-row" id="mCabaretRow" style="display:none"><div class="modal-toggle-lbl">🎭 Cabaret:</div><label class="toggle"><input type="checkbox" id="mCabaret"><span class="slider"></span></label></div>
         </div>
         <div class="modal-card add-sec add-sec-coat">
           <div class="det-input-wrap" style="border-bottom:none">
@@ -369,6 +371,7 @@
     const F_WRISTBAND=['Wristbands','Wristband'];
     const F_LIST=['List'];
     const F_SEAT_ASSIGNMENT=['Seat Assignment'];
+    const F_CABARET=['Cabaret'];
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
@@ -465,6 +468,9 @@
     }
     function hasNotesExtraField(){
       try{ return F_NOTES_EXTRA.some(n=>tableFields.has(n)); }catch(_){ return false; }
+    }
+    function hasCabaretField(){
+      try{ return F_CABARET.some(n=>tableFields.has(n)); }catch(_){ return false; }
     }
 
     /** Airtable List is often multi-select; normalize to lowercase segments. */
@@ -883,7 +889,8 @@
         partnerId:null,
         dateClusterMates:[],
         /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
-        guestDate:gDate
+        guestDate:gDate,
+        cabaret:!!fieldAny(f,F_CABARET)
       };
     }
 
@@ -979,7 +986,8 @@
         :`<div class="card-init">${ini(g.name)}</div>`;
       const showGoldDot=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
       const dot=(showGoldDot?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
-      const listTag=`<div class="card-tag">${dot}${esc(g.list||'')}</div>`;
+      const cabTag=g.cabaret?'<span class="card-cabaret" title="Cabaret">🎭</span>':'';
+      const listTag=`<div class="card-tag">${cabTag}${dot}${esc(g.list||'')}</div>`;
       return `<div class="card${g.checkedIn?' checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
@@ -1044,6 +1052,10 @@
               <label class="toggle"><input type="checkbox" id="dNDA" ${ndaSig?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
             </div>
             <div id="ndaBox">${ndaRow}</div>
+            ${hasCabaretField()?`<div class="det-row">
+              <div class="det-lbl">🎭 Cabaret:</div>
+              <label class="toggle"><input type="checkbox" id="dCabaret" ${g.cabaret?'checked':''} onchange="autoSave()"><span class="slider"></span></label>
+            </div>`:''}
           </div>
           <div class="det-card">
             <div class="det-input-wrap">
@@ -1155,16 +1167,20 @@
         const dNDA=document.getElementById('dNDA');
         const dTbl=document.getElementById('dTbl');
         const stiEl=document.getElementById('dSTI');
+        const dCabaret=document.getElementById('dCabaret');
         if(!dCI||!dNDA)return;
         const cI=dCI.checked;
         const cN=dNDA.checked;
         const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
         const cS=stiEl && stiEl.checked;
+        const cCab=dCabaret?dCabaret.checked:!!curG.cabaret;
         const wb=[];
         if(cTbl) wb.push('Gold');
         if(cS) wb.push('Black');
         const newList=setGuestListWithTable(curG, cTbl);
         const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
+        const kCab=pickField(F_CABARET);
+        if(kCab) criticalFields[kCab]=cCab;
         const wristFields={ [pickField(F_WRISTBAND)]:wb };
         wristFields[pickField(F_STI)]=cS;
         const kList=pickField(F_LIST);
@@ -1182,7 +1198,8 @@
               stiVerified:cS,
               wristbands:wb,
               wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
-              sti:cS
+              sti:cS,
+              cabaret:cCab
             };
           }
         };
@@ -1234,6 +1251,8 @@
       if(mn) mn.placeholder='Any additional info including who approved them (Sam, Daniel & LouLou are the only ones who can)';
       const nda=document.getElementById('mNDA');
       if(nda) onAddNDAChange(nda);
+      const cabRow=document.getElementById('mCabaretRow');
+      if(cabRow) cabRow.style.display=hasCabaretField()?'flex':'none';
       updateAddWbPills();
     }
 
@@ -1244,7 +1263,7 @@
       const mgd=document.getElementById('mGuestDate');
       if(mgd) mgd.value='';
       ['aN','mCoat','mPhoneCheck','mNotes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-      ['mCI','mNDA','mSTI','mTbl'].forEach(id=>{
+      ['mCI','mNDA','mSTI','mTbl','mCabaret'].forEach(id=>{
         const n=document.getElementById(id);
         if(n) n.checked=false;
       });
@@ -1274,6 +1293,9 @@
       const fields={'Full Name':name};
       if(document.getElementById('mCI').checked)fields[pickField(F_CHECKED_IN)]=true;
       if(document.getElementById('mNDA').checked)fields['NDA']='Signed';
+      const mCab=document.getElementById('mCabaret');
+      const kCabAdd=pickField(F_CABARET);
+      if(kCabAdd && mCab && mCab.checked) fields[kCabAdd]=true;
 
       const wb=[];
       if(tableOn) wb.push('Gold');
