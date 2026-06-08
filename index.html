@@ -351,7 +351,7 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Single active door list (Airtable table name must match). */
     const EVENTS=[
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg"},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -478,8 +478,18 @@
     function hasNotesExtraField(){
       try{ return F_NOTES_EXTRA.some(n=>tableFields.has(n)); }catch(_){ return false; }
     }
+    function eventHasCabaretFlag(){
+      const ev=EVENTS.find(e=>e.table===curTable);
+      return !!(ev&&ev.cabaret);
+    }
+    function seedCabaretTableFields(){
+      if(eventHasCabaretFlag()) F_CABARET.forEach(n=>tableFields.add(n));
+    }
     function hasCabaretField(){
-      try{ return F_CABARET.some(n=>tableFields.has(n)); }catch(_){ return false; }
+      try{
+        if(F_CABARET.some(n=>tableFields.has(n))) return true;
+        return eventHasCabaretFlag();
+      }catch(_){ return false; }
     }
 
     /** Airtable List is often multi-select; normalize to lowercase segments. */
@@ -930,6 +940,7 @@
           const f=r&&r.fields?r.fields:{};
           for(const k of Object.keys(f)) tableFields.add(k);
         }
+        seedCabaretTableFields();
         guests=sortGuestsByName(recs.map(toG));
         resolveDatePartnersFromGuests(guests);
         render();
