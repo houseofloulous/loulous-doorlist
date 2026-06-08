@@ -69,13 +69,18 @@
     .tabs{display:grid;column-gap:6px;row-gap:4px;align-items:stretch;padding:0 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
-    .tab{background:none;border:none;border-bottom:2px solid transparent;padding:9px 2px;font-size:10px;letter-spacing:.02em;text-transform:uppercase;color:rgba(255,255,255,.38);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:all .18s;-webkit-hyphens:manual;hyphens:manual;}
-    .tab.active{color:#fff;border-bottom-color:var(--accent);}
+    .tab{background:none;border:none;border-bottom:3px solid transparent;border-radius:8px 8px 0 0;padding:10px 2px 8px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.42);cursor:pointer;white-space:normal;line-height:1.2;text-align:center;min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
+    .tab-ico{display:block;font-size:15px;line-height:1;filter:grayscale(1) brightness(12) contrast(.85);opacity:.72;}
+    .tab-lbl{display:block;letter-spacing:.05em;}
+    .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.12);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.08);}
+    .tab.active .tab-ico{opacity:1;filter:grayscale(1) brightness(14) contrast(.9);}
     @media(min-width:400px){
-      .tab{padding:10px 4px;font-size:11px;letter-spacing:.05em;}
+      .tab{padding:11px 4px 9px;font-size:12px;}
+      .tab-ico{font-size:16px;}
     }
     @media(min-width:520px){
-      .tab{padding:11px 8px;font-size:12px;letter-spacing:.08em;}
+      .tab{padding:12px 6px 10px;font-size:13px;}
+      .tab-ico{font-size:17px;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
     .stat{font-size:12px;color:var(--warm);}
@@ -207,7 +212,8 @@
       .search-input,.s-icon{font-size:17px;}
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
       .tabs{padding:0 4px;column-gap:4px;}
-      .tabs .tab{padding:11px 1px;font-size:13px;letter-spacing:0;line-height:1.15;}
+      .tabs .tab{padding:11px 1px 9px;font-size:12px;}
+      .tabs .tab-ico{font-size:15px;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -360,11 +366,11 @@
       {id:'all',lbl:'Full List'},
     ];
     const CABARET_TABS=[
-      {id:'all',lbl:'Full Guests'},
-      {id:'lust',lbl:'Lust Caution'},
-      {id:'garden',lbl:'Garden Nocturne'},
-      {id:'tables',lbl:'Tables'},
-      {id:'working',lbl:'Working'},
+      {id:'all',ico:'📋',lbl:'Full List'},
+      {id:'lust',ico:'🎭',lbl:'Lust Caution'},
+      {id:'garden',ico:'🪴',lbl:'Garden Nocturne'},
+      {id:'tables',ico:'🍾',lbl:'Tables'},
+      {id:'working',ico:'❤️‍🔥',lbl:'Working'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -956,9 +962,11 @@
       const wrap=document.getElementById('tabs');
       wrap.className='tabs tabs-'+tabs.length;
       wrap.setAttribute('aria-label','Guest segments');
-      wrap.innerHTML=tabs.map(t=>
-        `<button type="button" role="tab" class="tab ${t.id===curTab?'active':''}" aria-selected="${t.id===curTab?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`
-      ).join('');
+      wrap.innerHTML=tabs.map(t=>{
+        const active=t.id===curTab;
+        const ico=t.ico?`<span class="tab-ico" aria-hidden="true">${t.ico}</span>`:'';
+        return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${ico}<span class="tab-lbl">${esc(t.lbl)}</span></button>`;
+      }).join('');
     }
     function setTab(id){
       curTab=id;
