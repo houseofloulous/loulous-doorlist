@@ -70,16 +70,17 @@
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
     .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:8px 3px 7px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.2;text-align:center;min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
-    .tab-ico{display:block;font-size:15px;line-height:1;margin-bottom:6px;flex-shrink:0;}
+    .tab-ico{display:block;font-size:13px;line-height:1;margin-bottom:5px;filter:grayscale(1) brightness(12) contrast(.85);opacity:.72;flex-shrink:0;}
     .tab-lbl{display:block;letter-spacing:.05em;margin-top:1px;}
     .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.1);}
+    .tab.active .tab-ico{opacity:1;}
     @media(min-width:400px){
       .tab{padding:9px 4px 8px;font-size:12px;}
-      .tab-ico{font-size:16px;margin-bottom:7px;}
+      .tab-ico{font-size:14px;margin-bottom:6px;}
     }
     @media(min-width:520px){
       .tab{padding:10px 5px 9px;font-size:13px;}
-      .tab-ico{font-size:17px;margin-bottom:8px;}
+      .tab-ico{font-size:15px;margin-bottom:7px;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
     .stat{font-size:12px;color:var(--warm);}
@@ -212,7 +213,7 @@
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
       .tabs{padding:8px 5px 6px;column-gap:6px;}
       .tabs .tab{padding:8px 2px 7px;font-size:11px;}
-      .tabs .tab-ico{font-size:14px;margin-bottom:5px;}
+      .tabs .tab-ico{font-size:12px;margin-bottom:4px;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -364,20 +365,12 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
-    const TAB_ICONS={
-      all:'👥',
-      guest:'🔥',
-      lust:'🔥',
-      garden:'🌿',
-      tables:'🍷',
-      working:'🎭',
-    };
     const CABARET_TABS=[
-      {id:'all',lbl:'Full List'},
-      {id:'lust',lbl:'Lust Caution'},
-      {id:'garden',lbl:'Garden Nocturne'},
-      {id:'tables',lbl:'Tables'},
-      {id:'working',lbl:'Working'},
+      {id:'all',ico:'📋',lbl:'Full List'},
+      {id:'lust',ico:'🎭',lbl:'Lust Caution'},
+      {id:'garden',ico:'🪴',lbl:'Garden Nocturne'},
+      {id:'tables',ico:'🍾',lbl:'Tables'},
+      {id:'working',ico:'❤️‍🔥',lbl:'Working'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -971,7 +964,7 @@
       wrap.setAttribute('aria-label','Guest segments');
       wrap.innerHTML=tabs.map(t=>{
         const active=t.id===curTab;
-        const ico=TAB_ICONS[t.id]?`<span class="tab-ico" aria-hidden="true">${TAB_ICONS[t.id]}</span>`:'';
+        const ico=t.ico?`<span class="tab-ico" aria-hidden="true">${t.ico}</span>`:'';
         return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${ico}<span class="tab-lbl">${esc(t.lbl)}</span></button>`;
       }).join('');
     }
