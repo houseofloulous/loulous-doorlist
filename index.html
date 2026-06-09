@@ -69,19 +69,13 @@
     .tabs{display:grid;column-gap:8px;row-gap:6px;align-items:stretch;padding:8px 8px 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
-    .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:8px 3px 7px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.2;text-align:center;min-width:0;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
-    .tab-ico{display:flex;align-items:center;justify-content:center;width:18px;height:18px;margin-bottom:6px;color:rgba(255,255,255,.55);flex-shrink:0;}
-    .tab-ico svg{width:100%;height:100%;display:block;}
-    .tab-lbl{display:block;letter-spacing:.05em;margin-top:1px;}
+    .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:10px 4px 9px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.1);}
-    .tab.active .tab-ico{color:#fff;}
     @media(min-width:400px){
-      .tab{padding:9px 4px 8px;font-size:12px;}
-      .tab-ico{width:19px;height:19px;margin-bottom:7px;}
+      .tab{padding:11px 5px 10px;font-size:13px;letter-spacing:.04em;}
     }
     @media(min-width:520px){
-      .tab{padding:10px 5px 9px;font-size:13px;}
-      .tab-ico{width:20px;height:20px;margin-bottom:8px;}
+      .tab{padding:12px 6px 11px;font-size:14px;letter-spacing:.05em;}
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
     .stat{font-size:12px;color:var(--warm);}
@@ -213,8 +207,7 @@
       .search-input,.s-icon{font-size:17px;}
       .hbtn{flex:1 1 calc(50% - 4px);min-width:0;font-size:13px;padding:9px 5px;letter-spacing:.03em;white-space:normal;text-align:center;line-height:1.2;}
       .tabs{padding:8px 5px 6px;column-gap:6px;}
-      .tabs .tab{padding:8px 2px 7px;font-size:11px;}
-      .tabs .tab-ico{width:16px;height:16px;margin-bottom:5px;}
+      .tabs .tab{padding:10px 2px 9px;font-size:13px;line-height:1.2;}
       .stat{font-size:15px;}
       .card-body{padding:9px 8px 10px;}
       .card-name{font-size:16px;line-height:1.35;}
@@ -366,14 +359,6 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
-    /** Outline stroke icons — white via currentColor (no emoji fill/filter). */
-    const TAB_ICON_SVGS={
-      all:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><path d="M9 8h6"/><path d="M9 12h6"/><path d="M9 16h6"/></svg>',
-      lust:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4c-4 0-6 2-6 5v3c0 3 2.5 6 6 8 3.5-2 6-5 6-8V9c0-3-2-5-6-5z"/><circle cx="9.5" cy="11" r="1"/><circle cx="14.5" cy="11" r="1"/><path d="M10 14.5c.8.6 1.8.9 2.5.9s1.7-.3 2.5-.9"/></svg>',
-      garden:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V11"/><path d="M12 11C12 7 7 5 6 8c1.5 1.5 2 3 2 3"/><path d="M12 11c0-4 5-6 6-3-1.5 1.5-2 3-2 3"/><path d="M8 22h8"/><path d="M9 22l1-2h4l1 2"/></svg>',
-      tables:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8"/><path d="M7 10h10"/><path d="M12 15v7"/><path d="M12 2v3"/><path d="M8 5h8l-1 5a4 4 0 0 1-6 0z"/></svg>',
-      working:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-6-4.35-6-9.5a3.5 3.5 0 0 1 6-2.4 3.5 3.5 0 0 1 6 2.4C18 16.65 12 21 12 21z"/><path d="M17.5 4.5c.5 1.2.5 2.3-.2 3.2"/><path d="M19 3c.3 1 .3 1.8-.1 2.6"/></svg>',
-    };
     const CABARET_TABS=[
       {id:'all',lbl:'Full List'},
       {id:'lust',lbl:'Lust Caution'},
@@ -973,9 +958,7 @@
       wrap.setAttribute('aria-label','Guest segments');
       wrap.innerHTML=tabs.map(t=>{
         const active=t.id===curTab;
-        const svg=TAB_ICON_SVGS[t.id];
-        const ico=svg?`<span class="tab-ico" aria-hidden="true">${svg}</span>`:'';
-        return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${ico}<span class="tab-lbl">${esc(t.lbl)}</span></button>`;
+        return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`;
       }).join('');
     }
     function setTab(id){
