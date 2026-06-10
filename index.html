@@ -79,7 +79,7 @@
     }
     .stats{padding:9px 16px;display:flex;gap:14px;background:var(--cream);border-bottom:1px solid var(--border);}
     .stat{font-size:12px;color:var(--warm);}
-    .stat-pending{color:var(--accent);}
+    .stat-pending{color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent;}
     .stat b{color:var(--dark);font-style:normal;font-weight:400;}
     /** Guest grid: flex-wrap + centered rows. */
     #main{width:100%;}
@@ -387,7 +387,7 @@
     let tableFields=new Set();
     let saveGen=0;
     let TOKEN='';
-    const PASS='loulousdoor';
+    const PASS='house';
     function ensureToken(){
       if(!TOKEN){
         const p=(localStorage.getItem('ll_pass')||'').trim();
@@ -643,6 +643,11 @@
       }catch(_){ return 0; }
     }
 
+    function isPermanentPendingErr(e){
+      const st=e&&e.status!=null?e.status:0;
+      return st===400||st===401||st===403||st===404||st===422;
+    }
+
     let flushBusy=false;
     async function flushPendingQueue(){
       if(flushBusy) return;
@@ -655,21 +660,37 @@
       try{
         const before=arr.length;
         const remaining=[];
+        let dropped=0;
+        const maxAge=7*24*60*60*1000;
         for(const item of arr){
           try{
             await patchGuestResilient(item.recordId, item.fields, item.tableId);
-          }catch(_){
-            remaining.push(item);
+          }catch(e){
+            const fails=(item.failCount||0)+1;
+            const age=Date.now()-(item.ts||0);
+            if(isPermanentPendingErr(e)||age>maxAge||fails>=6){
+              dropped++;
+              console.warn('Dropped pending door sync', item.recordId, e&&e.message);
+              continue;
+            }
+            remaining.push({...item, failCount:fails, ts:item.ts||Date.now()});
           }
         }
         localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
-        if(remaining.length<before){
-          showToast('Saved ✓');
-          try{ render(); }catch(_){}
-        }
+        if(dropped) showToast(dropped===1?'1 old change cleared — re-save that guest if needed':'Old unsynced changes cleared — re-save if needed', 3200);
+        else if(remaining.length<before) showToast('Saved ✓');
+        if(remaining.length!==before||dropped) try{ render(); }catch(_){}
       }finally{
         flushBusy=false;
       }
+    }
+
+    async function retryPendingSync(){
+      await flushPendingQueue();
+      const pend=pendingCountForTable(curTable);
+      if(pend) showToast(`${pend} still queued — re-save that guest on their profile`, 3200);
+      else showToast('Synced ✓');
+      try{ render(); }catch(_){}
     }
 
     /**
@@ -995,7 +1016,7 @@
       });
       const chk=list.filter(g=>g.checkedIn).length;
       const pend=pendingCountForTable(curTable);
-      const pendHtml=pend?`<div class="stat stat-pending" title="Saved on this device — will sync automatically"><b>${pend}</b> queued</div>`:'';
+      const pendHtml=pend?`<div class="stat stat-pending" role="button" tabindex="0" title="Tap to retry sync to Airtable" onclick="retryPendingSync()"><b>${pend}</b> queued</div>`:'';
       document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>${pendHtml}`;
       if(!list.length){
         document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
