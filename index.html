@@ -65,11 +65,14 @@
     .s-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,.3);font-size:13px;pointer-events:none;}
     .hbtn{background:none;border:1px solid rgba(255,255,255,.2);border-radius:8px;padding:8px 12px;font-size:11px;letter-spacing:.06em;color:#fff;cursor:pointer;white-space:nowrap;}
     .hbtn.nda{border-color:var(--accent);color:var(--accent);}
+    .hbtn.ratios-btn{padding:8px 10px;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0;}
+    .hbtn.ratios-btn svg{width:17px;height:17px;flex-shrink:0;display:block;}
+    .hbtn.ratios-btn.active{background:rgba(255,255,255,.14);border-color:var(--accent);color:var(--accent);}
+    .ratios-btn-lbl{font-size:11px;letter-spacing:.06em;}
     /* Door list tabs — 4 or 5 columns when Cabaret tabs are active. */
     .tabs{display:grid;column-gap:8px;row-gap:6px;align-items:stretch;padding:8px 8px 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
-    .tabs.tabs-6{grid-template-columns:repeat(3,minmax(0,1fr));}
     .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:10px 4px 9px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.1);}
     @media(min-width:400px){
@@ -117,21 +120,21 @@
     .spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
     .cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;}
-    .ratios-wrap{max-width:720px;margin:0 auto;padding:14px 14px 24px;}
-    .ratios-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+    .ratios-wrap{max-width:820px;margin:0 auto;padding:16px 14px 28px;}
+    .ratios-grid{display:grid;grid-template-columns:1fr;gap:14px;}
     @media(min-width:560px){.ratios-grid{grid-template-columns:1fr 1fr;}}
-    .ratio-card{background:#fff;border-radius:12px;padding:16px 14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
-    .ratio-title{font-size:15px;color:var(--dark);margin-bottom:12px;letter-spacing:.02em;}
-    .ratio-body{display:flex;align-items:center;gap:14px;}
-    .ratio-pie{flex:0 0 auto;width:108px;height:108px;position:relative;}
-    .ratio-pie svg{display:block;width:108px;height:108px;}
-    .ratio-pie-empty{width:108px;height:108px;border-radius:50%;background:#ebe5dd;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--warm);text-align:center;padding:8px;line-height:1.3;}
-    .ratio-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
-    .ratio-leg-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dark);line-height:1.25;}
-    .ratio-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+    .ratio-card{background:#fff;border:1px solid rgba(0,0,0,.07);border-radius:14px;padding:18px 16px 16px;box-shadow:0 1px 5px rgba(0,0,0,.05);}
+    .ratio-title{font-size:16px;color:var(--dark);margin-bottom:14px;letter-spacing:.02em;text-align:center;}
+    .ratio-body{display:flex;align-items:center;justify-content:center;gap:16px;}
+    .ratio-pie{flex:0 0 auto;width:132px;height:132px;position:relative;filter:drop-shadow(0 2px 8px rgba(0,0,0,.07));}
+    .ratio-pie svg{display:block;width:132px;height:132px;}
+    .ratio-pie-empty{width:132px;height:132px;border-radius:50%;background:conic-gradient(from -90deg,#ebe5dd 0 33%,#e3ddd5 33% 66%,#ebe5dd 66% 100%);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--warm);text-align:center;padding:10px;line-height:1.35;box-shadow:inset 0 0 0 1px rgba(0,0,0,.05);}
+    .ratio-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;}
+    .ratio-leg-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--dark);line-height:1.25;}
+    .ratio-swatch{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);}
     .ratio-leg-lbl{flex:1;}
-    .ratio-leg-pct{color:var(--warm);font-size:11px;white-space:nowrap;}
-    .ratio-note{font-size:11px;color:var(--warm);margin-top:14px;text-align:center;line-height:1.4;}
+    .ratio-leg-pct{color:var(--warm);font-size:12px;white-space:nowrap;}
+    .ratio-note{font-size:11px;color:var(--warm);margin-top:16px;text-align:center;line-height:1.45;}
     #detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
     .detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
     .detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
@@ -274,6 +277,10 @@
           <span class="s-icon">⌕</span>
           <input class="search-input" id="searchInput" type="text" placeholder="Search guests…" oninput="render()">
         </div>
+        <button type="button" class="hbtn ratios-btn" id="ratiosToolbarBtn" onclick="toggleRatios()" title="Guest ratios" aria-label="Guest ratios" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 2 A10 10 0 0 1 22 12 L12 12 Z" fill="currentColor" opacity=".9"/><path d="M22 12 A10 10 0 0 1 12 22 L12 12 Z" fill="currentColor" opacity=".55"/></svg>
+          <span class="ratios-btn-lbl">Ratios</span>
+        </button>
         <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
         <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="openNdaForm()">NDA</button>
       </div>
@@ -374,7 +381,6 @@
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
-      {id:'ratios',lbl:'Ratios'},
     ];
     const CABARET_TABS=[
       {id:'all',lbl:'Full List'},
@@ -382,7 +388,6 @@
       {id:'garden',lbl:'Garden Nocturne'},
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
-      {id:'ratios',lbl:'Ratios'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -402,12 +407,27 @@
     const F_GENDER=['Gender'];
     const F_PARTNER_GENDER=["Partner's Gender",'Partner Gender'];
     const F_EVENTS=['Events','Event History','Past Events'];
-    const F_APP_TYPE=['Application Type','Guest Type','Individual or Couple','Attending as','Type'];
+    const F_APP_TYPE=['Application Type','Individual or Couple','Individual/Couple','Attending as','Apply Type','Guest Application Type'];
+    const F_DESIRE=['Desire'];
 
-    const RATIO_COLORS={female:'#162B3B',male:'#c9a96e',other:'#8c7b6b',single:'#162B3B',partnered:'#c9a96e',newGuest:'#162B3B',returning:'#c9a96e'};
+    const RATIO_COLORS={
+      lavender:'#c4b5d4',
+      peach:'#e9c4a0',
+      mint:'#a8ccc4',
+      female:'#c4b5d4',
+      male:'#e9c4a0',
+      other:'#a8ccc4',
+      single:'#c4b5d4',
+      partnered:'#e9c4a0',
+      newGuest:'#c4b5d4',
+      returning:'#e9c4a0',
+      exhibitionist:'#e9c4a0',
+      unknown:'#a8ccc4',
+      voyeur:'#c4b5d4'
+    };
 
     const PENDING_KEY='ll_door_pending_v1';
-    let guests=[],curTab='guest',curTable='',curG=null,local={};
+    let guests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
     let tableFields=new Set();
     let saveGen=0;
     let TOKEN='';
@@ -953,9 +973,23 @@
     function normRelationshipLabel(raw){
       const k=String(raw||'').trim().toLowerCase();
       if(!k) return '';
-      if(/couple|partner|pair|duo/.test(k)) return 'Partnered';
-      if(/individual|single|solo|alone/.test(k)) return 'Single';
+      if(/couple|partner|pair|duo|two/.test(k)) return 'Partnered';
+      if(/individual|single|solo|alone|one/.test(k)) return 'Single';
       return '';
+    }
+
+    function guestIsPartnered(g){
+      const rel=normRelationshipLabel(g.appType);
+      if(rel) return rel==='Partnered';
+      return !!(String(g.partnerName||'').trim()||String(g.partnerGender||'').trim());
+    }
+
+    function normDesireLabel(raw){
+      const k=String(raw||'').trim().toLowerCase();
+      if(!k) return 'Unknown';
+      if(/exhibition/.test(k)) return 'Exhibitionist';
+      if(/voyeur/.test(k)) return 'Voyeur';
+      return 'Unknown';
     }
 
     function guestIsWorking(g){
@@ -971,11 +1005,11 @@
       for(const g of pool){
         const g1=normGenderLabel(g.gender);
         if(g1) counts[g1]=(counts[g1]||0)+1;
-        const rel=normRelationshipLabel(g.appType);
-        const isCouple=rel==='Partnered';
-        if(isCouple){
+        else if(!guestIsPartnered(g)) counts.Other=(counts.Other||0)+1;
+        if(guestIsPartnered(g)){
           const g2=normGenderLabel(g.partnerGender);
           if(g2) counts[g2]=(counts[g2]||0)+1;
+          else counts.Other=(counts.Other||0)+1;
         }
       }
       return counts;
@@ -984,13 +1018,7 @@
     function countRelationshipBuckets(pool){
       const counts={Single:0,Partnered:0};
       for(const g of pool){
-        let rel=normRelationshipLabel(g.appType);
-        if(!rel){
-          const pg=String(g.partnerGender||'').trim();
-          const pn=String(g.partnerName||'').trim();
-          rel=(pg||pn)?'Partnered':'Single';
-        }
-        counts[rel]=(counts[rel]||0)+1;
+        counts[guestIsPartnered(g)?'Partnered':'Single']=(counts[guestIsPartnered(g)?'Partnered':'Single']||0)+1;
       }
       return counts;
     }
@@ -1004,44 +1032,70 @@
       return counts;
     }
 
+    function countDesireBuckets(pool){
+      const counts={Exhibitionist:0,Unknown:0,Voyeur:0};
+      for(const g of pool){
+        const d=normDesireLabel(g.desire);
+        counts[d]=(counts[d]||0)+1;
+      }
+      return counts;
+    }
+
+    function pctNum(n,total){
+      if(!total) return 0;
+      return Math.round((n/total)*1000)/10;
+    }
+
     function pct(n,total){
       if(!total) return '0%';
-      return (Math.round((n/total)*1000)/10).toFixed(1).replace(/\.0$/,'')+'%';
+      return pctNum(n,total).toFixed(1).replace(/\.0$/,'')+'%';
+    }
+
+    function pieLabelColor(hex){
+      const h=String(hex||'').replace('#','');
+      if(h.length!==6) return '#2a2a2a';
+      const r=parseInt(h.slice(0,2),16),g=parseInt(h.slice(2,4),16),b=parseInt(h.slice(4,6),16);
+      return (0.299*r+0.587*g+0.114*b)>170?'#2a2a2a':'#fff';
     }
 
     function pieChartSvg(segments,size){
-      const total=segments.reduce((s,x)=>s+x.value,0);
+      const active=segments.filter(s=>s.value>0);
+      const total=active.reduce((s,x)=>s+x.value,0);
       if(!total) return '';
-      const cx=size/2,cy=size/2,r=size/2-2;
+      const cx=size/2,cy=size/2,r=size/2-5;
       let angle=-Math.PI/2;
-      const parts=[];
-      for(const seg of segments){
-        if(!seg.value) continue;
+      const slices=[];
+      const dividers=[];
+      const labels=[];
+      for(const seg of active){
         const frac=seg.value/total;
+        const a0=angle;
         const a1=angle+frac*2*Math.PI;
         if(frac>=0.999){
-          parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${seg.color}"/>`);
+          slices.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${seg.color}"/>`);
         } else {
-          const x0=cx+r*Math.cos(angle),y0=cy+r*Math.sin(angle);
+          const x0=cx+r*Math.cos(a0),y0=cy+r*Math.sin(a0);
           const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
           const large=frac>0.5?1:0;
-          parts.push(`<path d="M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z" fill="${seg.color}"/>`);
+          slices.push(`<path d="M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z" fill="${seg.color}"/>`);
+          dividers.push(`<line x1="${cx}" y1="${cy}" x2="${x0}" y2="${y0}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`);
         }
-        if(frac>=0.08){
-          const mid=angle+frac*Math.PI;
-          const lx=cx+(r*0.55)*Math.cos(mid),ly=cy+(r*0.55)*Math.sin(mid);
-          parts.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="11" font-family="'Instrument Serif',serif" font-weight="600">${pct(seg.value,total)}</text>`);
+        dividers.push(`<line x1="${cx}" y1="${cy}" x2="${cx+r*Math.cos(a1)}" y2="${cy+r*Math.sin(a1)}" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/>`);
+        if(frac>=0.06){
+          const mid=a0+frac*Math.PI;
+          const lx=cx+(r*0.58)*Math.cos(mid),ly=cy+(r*0.58)*Math.sin(mid);
+          labels.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="${pieLabelColor(seg.color)}" font-size="13" font-family="'Instrument Serif',serif" font-weight="700">${pct(seg.value,total)}</text>`);
         }
         angle=a1;
       }
-      return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${parts.join('')}</svg>`;
+      return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true"><circle cx="${cx}" cy="${cy}" r="${r+1}" fill="none" stroke="rgba(0,0,0,.06)" stroke-width="1"/>${slices.join('')}${dividers.join('')}${labels.join('')}</svg>`;
     }
 
     function ratioCardHtml(title,segments,order){
       const total=segments.reduce((s,x)=>s+x.value,0);
       const pie=total
-        ?`<div class="ratio-pie">${pieChartSvg(segments,108)}</div>`
-        :`<div class="ratio-pie-empty">No data</div>`;
+        ?`<div class="ratio-pie">${pieChartSvg(segments,132)}</div>`
+        :`<div class="ratio-pie ratio-pie-empty">No data yet</div>`;
       const legend=order.map(key=>{
         const seg=segments.find(s=>s.label===key)||{label:key,value:0,color:'#ddd'};
         return `<div class="ratio-leg-row"><span class="ratio-swatch" style="background:${seg.color}"></span><span class="ratio-leg-lbl">${esc(seg.label)}</span><span class="ratio-leg-pct">${pct(seg.value,total)}</span></div>`;
@@ -1067,10 +1121,17 @@
         {label:'New Guest',value:typeCounts['New Guest']||0,color:RATIO_COLORS.newGuest},
         {label:'Returning',value:typeCounts.Returning||0,color:RATIO_COLORS.returning}
       ];
+      const desireCounts=countDesireBuckets(pool);
+      const desireSegs=[
+        {label:'Exhibitionist',value:desireCounts.Exhibitionist||0,color:RATIO_COLORS.exhibitionist},
+        {label:'Unknown',value:desireCounts.Unknown||0,color:RATIO_COLORS.unknown},
+        {label:'Voyeur',value:desireCounts.Voyeur||0,color:RATIO_COLORS.voyeur}
+      ];
       document.getElementById('main').innerHTML=`<div class="ratios-wrap"><div class="ratios-grid">${
         ratioCardHtml('Gender',genderSegs,['Female','Male','Other'])
       }${ratioCardHtml('Guest Type',typeSegs,['New Guest','Returning'])
       }${ratioCardHtml('Relationship Status',relSegs,['Single','Partnered'])
+      }${ratioCardHtml('Desire',desireSegs,['Exhibitionist','Unknown','Voyeur'])
       }</div><div class="ratio-note">Working guests excluded · New = Events is L'Atelier III (or L'Atelier III &amp; Obscura only)</div></div>`;
     }
 
@@ -1129,7 +1190,8 @@
         partnerGender:fieldStr(f,F_PARTNER_GENDER),
         partnerName:fieldStr(f,["Partner's Name",'Partner Name','Partner Full Name']),
         events:fieldEventsValue(f),
-        appType:fieldStr(f,F_APP_TYPE)
+        appType:fieldStr(f,F_APP_TYPE),
+        desire:fieldStr(f,F_DESIRE)
       };
     }
 
@@ -1188,22 +1250,45 @@
       }
     }
 
+    function updateRatiosBtn(){
+      const btn=document.getElementById('ratiosToolbarBtn');
+      if(!btn) return;
+      const on=curTab==='ratios';
+      btn.classList.toggle('active',on);
+      btn.setAttribute('aria-pressed',on?'true':'false');
+    }
+
     function buildTabs(){
       const tabs=getTabsForCurrentTable();
-      if(!tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
+      if(curTab!=='ratios' && !tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
       const wrap=document.getElementById('tabs');
       wrap.className='tabs tabs-'+tabs.length;
       wrap.setAttribute('aria-label','Guest segments');
       wrap.innerHTML=tabs.map(t=>{
-        const active=t.id===curTab;
+        const active=curTab!=='ratios'&&t.id===curTab;
         return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`;
       }).join('');
+      updateRatiosBtn();
     }
+
+    function toggleRatios(){
+      if(curTab==='ratios'){
+        curTab=lastGuestTab||defaultTabForCurrentTable();
+        buildTabs();
+        render();
+        return;
+      }
+      lastGuestTab=curTab;
+      curTab='ratios';
+      buildTabs();
+      refreshGuestsQuiet().then(()=>render());
+    }
+
     function setTab(id){
+      if(curTab!=='ratios') lastGuestTab=id;
       curTab=id;
       buildTabs();
-      if(id==='ratios') refreshGuestsQuiet().then(()=>render());
-      else render();
+      render();
     }
 
     function render(){
