@@ -69,6 +69,7 @@
     .tabs{display:grid;column-gap:8px;row-gap:6px;align-items:stretch;padding:8px 8px 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .tabs.tabs-6{grid-template-columns:repeat(3,minmax(0,1fr));}
     .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:10px 4px 9px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.1);}
     @media(min-width:400px){
@@ -116,6 +117,21 @@
     .spinner{width:26px;height:26px;border:2px solid rgba(0,0,0,.1);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;}
     @keyframes spin{to{transform:rotate(360deg);}}
     .cstate-txt{font-size:13px;color:var(--warm);letter-spacing:.1em;}
+    .ratios-wrap{max-width:720px;margin:0 auto;padding:14px 14px 24px;}
+    .ratios-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+    @media(min-width:560px){.ratios-grid{grid-template-columns:1fr 1fr;}}
+    .ratio-card{background:#fff;border-radius:12px;padding:16px 14px;box-shadow:0 1px 4px rgba(0,0,0,.07);}
+    .ratio-title{font-size:15px;color:var(--dark);margin-bottom:12px;letter-spacing:.02em;}
+    .ratio-body{display:flex;align-items:center;gap:14px;}
+    .ratio-pie{flex:0 0 auto;width:108px;height:108px;position:relative;}
+    .ratio-pie svg{display:block;width:108px;height:108px;}
+    .ratio-pie-empty{width:108px;height:108px;border-radius:50%;background:#ebe5dd;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--warm);text-align:center;padding:8px;line-height:1.3;}
+    .ratio-legend{flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;}
+    .ratio-leg-row{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dark);line-height:1.25;}
+    .ratio-swatch{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
+    .ratio-leg-lbl{flex:1;}
+    .ratio-leg-pct{color:var(--warm);font-size:11px;white-space:nowrap;}
+    .ratio-note{font-size:11px;color:var(--warm);margin-top:14px;text-align:center;line-height:1.4;}
     #detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
     .detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
     .detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
@@ -358,6 +374,7 @@
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
+      {id:'ratios',lbl:'Ratios'},
     ];
     const CABARET_TABS=[
       {id:'all',lbl:'Full List'},
@@ -365,6 +382,7 @@
       {id:'garden',lbl:'Garden Nocturne'},
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
+      {id:'ratios',lbl:'Ratios'},
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -381,6 +399,12 @@
     const F_LIST=['List'];
     const F_SEAT_ASSIGNMENT=['Seat Assignment'];
     const F_CABARET=['Cabaret'];
+    const F_GENDER=['Gender'];
+    const F_PARTNER_GENDER=["Partner's Gender",'Partner Gender'];
+    const F_EVENTS=['Events','Event History','Past Events'];
+    const F_APP_TYPE=['Application Type','Guest Type','Individual or Couple','Attending as','Type'];
+
+    const RATIO_COLORS={female:'#162B3B',male:'#c9a96e',other:'#8c7b6b',single:'#162B3B',partnered:'#c9a96e',newGuest:'#162B3B',returning:'#c9a96e'};
 
     const PENDING_KEY='ll_door_pending_v1';
     let guests=[],curTab='guest',curTable='',curG=null,local={};
@@ -880,6 +904,176 @@
       return '';
     }
 
+    function fieldEventsValue(f){
+      const v=fieldAny(f,F_EVENTS);
+      if(v==null||v==='') return '';
+      if(Array.isArray(v)) return v.filter(Boolean).map(x=>String(x).trim()).filter(Boolean);
+      return String(v).trim();
+    }
+
+    function normEventsKey(s){
+      return String(s||'').toLowerCase()
+        .replace(/[\u2018\u2019`´]/g,"'")
+        .replace(/\s+/g,' ')
+        .replace(/\s*&\s*/g,' & ')
+        .replace(/\s+and\s+/g,' & ')
+        .trim();
+    }
+
+    function isNewPrivateEditionGuest(eventsVal){
+      let key='';
+      if(Array.isArray(eventsVal)){
+        if(!eventsVal.length) return false;
+        if(eventsVal.length===1) key=normEventsKey(eventsVal[0]);
+        else key=normEventsKey(eventsVal.slice().sort((a,b)=>a.localeCompare(b)).join(' & '));
+      } else {
+        key=normEventsKey(eventsVal);
+      }
+      if(!key) return false;
+      const newKeys=new Set([
+        "l'atelier iii",
+        "l'aterlier iii",
+        "l'atelier iii & obscura",
+        "l'aterlier iii & obscura"
+      ]);
+      return newKeys.has(key);
+    }
+
+    function normGenderLabel(raw){
+      const k=String(raw||'').trim().toLowerCase();
+      if(!k) return '';
+      if(/^f(emale)?$/.test(k)||k==='woman'||k==='w') return 'Female';
+      if(/^m(ale)?$/.test(k)||k==='man') return 'Male';
+      if(/non[- ]?binary|nb|other|enby|x/.test(k)) return 'Other';
+      if(k.includes('female')||k.includes('woman')) return 'Female';
+      if(k.includes('male')||k.includes('man')) return 'Male';
+      return 'Other';
+    }
+
+    function normRelationshipLabel(raw){
+      const k=String(raw||'').trim().toLowerCase();
+      if(!k) return '';
+      if(/couple|partner|pair|duo/.test(k)) return 'Partnered';
+      if(/individual|single|solo|alone/.test(k)) return 'Single';
+      return '';
+    }
+
+    function guestIsWorking(g){
+      return listFieldMatches(g,'working');
+    }
+
+    function guestsForRatios(){
+      return guests.filter(g=>!guestIsWorking(g));
+    }
+
+    function countGenderBuckets(pool){
+      const counts={Female:0,Male:0,Other:0};
+      for(const g of pool){
+        const g1=normGenderLabel(g.gender);
+        if(g1) counts[g1]=(counts[g1]||0)+1;
+        const rel=normRelationshipLabel(g.appType);
+        const isCouple=rel==='Partnered';
+        if(isCouple){
+          const g2=normGenderLabel(g.partnerGender);
+          if(g2) counts[g2]=(counts[g2]||0)+1;
+        }
+      }
+      return counts;
+    }
+
+    function countRelationshipBuckets(pool){
+      const counts={Single:0,Partnered:0};
+      for(const g of pool){
+        let rel=normRelationshipLabel(g.appType);
+        if(!rel){
+          const pg=String(g.partnerGender||'').trim();
+          const pn=String(g.partnerName||'').trim();
+          rel=(pg||pn)?'Partnered':'Single';
+        }
+        counts[rel]=(counts[rel]||0)+1;
+      }
+      return counts;
+    }
+
+    function countGuestTypeBuckets(pool){
+      const counts={'New Guest':0,'Returning':0};
+      for(const g of pool){
+        const bucket=isNewPrivateEditionGuest(g.events)?'New Guest':'Returning';
+        counts[bucket]=(counts[bucket]||0)+1;
+      }
+      return counts;
+    }
+
+    function pct(n,total){
+      if(!total) return '0%';
+      return (Math.round((n/total)*1000)/10).toFixed(1).replace(/\.0$/,'')+'%';
+    }
+
+    function pieChartSvg(segments,size){
+      const total=segments.reduce((s,x)=>s+x.value,0);
+      if(!total) return '';
+      const cx=size/2,cy=size/2,r=size/2-2;
+      let angle=-Math.PI/2;
+      const parts=[];
+      for(const seg of segments){
+        if(!seg.value) continue;
+        const frac=seg.value/total;
+        const a1=angle+frac*2*Math.PI;
+        if(frac>=0.999){
+          parts.push(`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${seg.color}"/>`);
+        } else {
+          const x0=cx+r*Math.cos(angle),y0=cy+r*Math.sin(angle);
+          const x1=cx+r*Math.cos(a1),y1=cy+r*Math.sin(a1);
+          const large=frac>0.5?1:0;
+          parts.push(`<path d="M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z" fill="${seg.color}"/>`);
+        }
+        if(frac>=0.08){
+          const mid=angle+frac*Math.PI;
+          const lx=cx+(r*0.55)*Math.cos(mid),ly=cy+(r*0.55)*Math.sin(mid);
+          parts.push(`<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" fill="#fff" font-size="11" font-family="'Instrument Serif',serif" font-weight="600">${pct(seg.value,total)}</text>`);
+        }
+        angle=a1;
+      }
+      return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" aria-hidden="true">${parts.join('')}</svg>`;
+    }
+
+    function ratioCardHtml(title,segments,order){
+      const total=segments.reduce((s,x)=>s+x.value,0);
+      const pie=total
+        ?`<div class="ratio-pie">${pieChartSvg(segments,108)}</div>`
+        :`<div class="ratio-pie-empty">No data</div>`;
+      const legend=order.map(key=>{
+        const seg=segments.find(s=>s.label===key)||{label:key,value:0,color:'#ddd'};
+        return `<div class="ratio-leg-row"><span class="ratio-swatch" style="background:${seg.color}"></span><span class="ratio-leg-lbl">${esc(seg.label)}</span><span class="ratio-leg-pct">${pct(seg.value,total)}</span></div>`;
+      }).join('');
+      return `<div class="ratio-card"><div class="ratio-title">${esc(title)}</div><div class="ratio-body">${pie}<div class="ratio-legend">${legend}</div></div></div>`;
+    }
+
+    function renderRatios(){
+      const pool=guestsForRatios();
+      const genderCounts=countGenderBuckets(pool);
+      const genderSegs=[
+        {label:'Female',value:genderCounts.Female||0,color:RATIO_COLORS.female},
+        {label:'Male',value:genderCounts.Male||0,color:RATIO_COLORS.male},
+        {label:'Other',value:genderCounts.Other||0,color:RATIO_COLORS.other}
+      ];
+      const relCounts=countRelationshipBuckets(pool);
+      const relSegs=[
+        {label:'Single',value:relCounts.Single||0,color:RATIO_COLORS.single},
+        {label:'Partnered',value:relCounts.Partnered||0,color:RATIO_COLORS.partnered}
+      ];
+      const typeCounts=countGuestTypeBuckets(pool);
+      const typeSegs=[
+        {label:'New Guest',value:typeCounts['New Guest']||0,color:RATIO_COLORS.newGuest},
+        {label:'Returning',value:typeCounts.Returning||0,color:RATIO_COLORS.returning}
+      ];
+      document.getElementById('main').innerHTML=`<div class="ratios-wrap"><div class="ratios-grid">${
+        ratioCardHtml('Gender',genderSegs,['Female','Male','Other'])
+      }${ratioCardHtml('Guest Type',typeSegs,['New Guest','Returning'])
+      }${ratioCardHtml('Relationship Status',relSegs,['Single','Partnered'])
+      }</div><div class="ratio-note">Working guests excluded · New = Events is L'Atelier III (or L'Atelier III &amp; Obscura only)</div></div>`;
+    }
+
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
     function parseDateNameFromNotes(notes){
       if(notes==null) return '';
@@ -930,7 +1124,12 @@
         dateClusterMates:[],
         /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
         guestDate:gDate,
-        cabaret:!!fieldAny(f,F_CABARET)
+        cabaret:!!fieldAny(f,F_CABARET),
+        gender:fieldStr(f,F_GENDER),
+        partnerGender:fieldStr(f,F_PARTNER_GENDER),
+        partnerName:fieldStr(f,["Partner's Name",'Partner Name','Partner Full Name']),
+        events:fieldEventsValue(f),
+        appType:fieldStr(f,F_APP_TYPE)
       };
     }
 
@@ -944,6 +1143,24 @@
         ||String(g.phoneCheckNum||'').toLowerCase().includes(q)
         ||String(dateLineFromGuest(g)||'').toLowerCase().includes(q)
         ||String(g.seatAssignment||'').toLowerCase().includes(q);
+    }
+
+    async function refreshGuestsQuiet(){
+      if(!curTable) return;
+      try{
+        let recs=[],offset=null;
+        do{
+          const d=await req(offset?'?offset='+offset:'');
+          if(d.records)recs=recs.concat(d.records);
+          offset=d.offset;
+        }while(offset);
+        for(const r of recs){
+          const f=r&&r.fields?r.fields:{};
+          for(const k of Object.keys(f)) tableFields.add(k);
+        }
+        guests=sortGuestsByName(recs.map(toG));
+        resolveDatePartnersFromGuests(guests);
+      }catch(_){}
     }
 
     async function load(){
@@ -985,10 +1202,20 @@
     function setTab(id){
       curTab=id;
       buildTabs();
-      render();
+      if(id==='ratios') refreshGuestsQuiet().then(()=>render());
+      else render();
     }
 
     function render(){
+      if(curTab==='ratios'){
+        const pool=guestsForRatios();
+        const chk=pool.filter(g=>g.checkedIn).length;
+        const pend=pendingCountForTable(curTable);
+        const pendHtml=pend?`<div class="stat stat-pending" role="button" tabindex="0" title="Tap to retry sync to Airtable" onclick="retryPendingSync()"><b>${pend}</b> queued</div>`:'';
+        document.getElementById('stats').innerHTML=`<div class="stat"><b>${pool.length}</b> in ratios</div><div class="stat"><b>${chk}</b> checked in</div>${pendHtml}`;
+        renderRatios();
+        return;
+      }
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
       let list=guests;
       if(curTab==='tables') list=list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
