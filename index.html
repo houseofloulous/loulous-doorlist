@@ -1100,7 +1100,7 @@
     function normGuestTypeDirect(raw){
       const k=String(raw||'').trim().toLowerCase();
       if(!k) return '';
-      if(/new/.test(k)) return 'New Guest';
+      if(k.includes('new')) return 'New Guest';
       if(/return/.test(k)) return 'Returning';
       return '';
     }
