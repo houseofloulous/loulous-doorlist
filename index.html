@@ -374,7 +374,7 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Single active door list (Airtable table name must match). */
     const EVENTS=[
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",ratiosTable:'tblVfUOrsJrnQEJAn',ratiosView:'viwfUA7ZjzlVEEnFg',ratiosViewName:'Grid view',art:"/landing-events/latelier-june-13.jpg",cabaret:true},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -404,11 +404,13 @@
     const F_LIST=['List'];
     const F_SEAT_ASSIGNMENT=['Seat Assignment'];
     const F_CABARET=['Cabaret'];
-    const F_GENDER=['Gender'];
-    const F_PARTNER_GENDER=["Partner's Gender",'Partner Gender'];
-    const F_EVENTS=['Events','Event History','Past Events'];
-    const F_APP_TYPE=['Application Type','Individual or Couple','Individual/Couple','Attending as','Apply Type','Guest Application Type'];
+    const F_GENDER=['Gender (from Rolodex)','Gender','Guest Gender','Primary Gender','Gender (Guest)'];
+    const F_PARTNER_GENDER=["Partner's Gender",'Partner Gender','Gender (Partner)'];
+    const F_EVENTS=['Events','Event History','Past Events','Private Editions','Past Private Editions','Event Attendance'];
+    const F_APP_TYPE=['Application Type','Individual or Couple','Individual/Couple','Attending as','Apply Type','Guest Application Type','Please select one to continue','Type (Application)','Couple or Individual'];
     const F_DESIRE=['Desire'];
+    const F_GUEST_TYPE_DIRECT=['Guest Type','Guest type','New vs Returning','New/Returning'];
+    const F_RELATIONSHIP_DIRECT=['Relationship Status','Relationship status','Singles vs Partnered','Single vs Partnered'];
 
     const RATIO_COLORS={
       lavender:'#c4b5d4',
@@ -427,8 +429,10 @@
     };
 
     const PENDING_KEY='ll_door_pending_v1';
-    let guests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
+    let guests=[],ratioGuests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
     let tableFields=new Set();
+    let ratiosViewNameCache=null;
+    let ratiosRefreshTimer=null;
     let saveGen=0;
     let TOKEN='';
     const PASS='house';
@@ -613,6 +617,9 @@
       const e=EVENTS[i];
       if(!e) return;
       curTable=e.table;
+      ratiosViewNameCache=null;
+      ratioGuests=[];
+      stopRatiosRefresh();
       curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.label;
       document.getElementById('evScreen').style.display='none';
@@ -621,6 +628,7 @@
     }
 
     function showEvScreen(){
+      stopRatiosRefresh();
       if(EVENTS.length===1){ pickEv(0); return; }
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
@@ -892,14 +900,106 @@
       }
       return undefined;
     }
+    function fieldKeyMatch(f,candidates){
+      for(const n of candidates){
+        if(Object.prototype.hasOwnProperty.call(f,n)) return n;
+      }
+      const lower=new Map();
+      for(const k of Object.keys(f||{})) lower.set(k.toLowerCase(),k);
+      for(const n of candidates){
+        const k=lower.get(String(n).toLowerCase());
+        if(k) return k;
+      }
+      return null;
+    }
+    function fieldKeyByPattern(f,patterns,skipPartner){
+      for(const k of Object.keys(f||{})){
+        const kl=k.toLowerCase();
+        if(skipPartner && /partner/.test(kl)) continue;
+        if(patterns.some(p=>kl.includes(p))) return k;
+      }
+      return null;
+    }
+    function fieldValueLine(f,candidates){
+      const key=fieldKeyMatch(f,candidates);
+      if(!key) return '';
+      return airtableValueToNameLine(f[key]);
+    }
     function fieldStr(f,candidates){
-      const v=fieldAny(f,candidates);
-      return v==null||v===''?'':String(v);
+      return fieldValueLine(f,candidates);
+    }
+    function fieldGenderFromRecord(f){
+      let v=fieldValueLine(f,F_GENDER);
+      if(v) return v;
+      for(const k of Object.keys(f||{})){
+        const kl=k.toLowerCase();
+        if(!kl.includes('gender')||kl.includes('partner')) continue;
+        v=airtableValueToNameLine(f[k]);
+        if(v) return v;
+      }
+      return '';
+    }
+    function fieldPartnerGenderFromRecord(f){
+      let v=fieldValueLine(f,F_PARTNER_GENDER);
+      if(v) return v;
+      const k=fieldKeyByPattern(f,['partner','gender'],false);
+      if(k && /partner/.test(k.toLowerCase())) return airtableValueToNameLine(f[k]);
+      return '';
+    }
+    function fieldAppTypeFromRecord(f){
+      let v=fieldValueLine(f,F_APP_TYPE);
+      if(v) return v;
+      const k=fieldKeyByPattern(f,['individual','couple','application type','attending as','select one'],false);
+      return k?airtableValueToNameLine(f[k]):'';
+    }
+    function fieldPartnerNameFromRecord(f){
+      let v=fieldValueLine(f,["Partner's Name",'Partner Name','Partner Full Name']);
+      if(v) return v;
+      const k=fieldKeyByPattern(f,["partner's name",'partner name'],false);
+      return k?airtableValueToNameLine(f[k]):'';
+    }
+    function fieldGuestTypeDirectFromRecord(f){
+      let v=fieldValueLine(f,F_GUEST_TYPE_DIRECT);
+      if(v) return v;
+      const k=fieldKeyByPattern(f,['guest type','new vs','new/return','returning guest'],false);
+      return k?airtableValueToNameLine(f[k]):'';
+    }
+    function fieldRelationshipDirectFromRecord(f){
+      let v=fieldValueLine(f,F_RELATIONSHIP_DIRECT);
+      if(v) return v;
+      for(const k of Object.keys(f||{})){
+        const kl=k.toLowerCase();
+        if(kl==='relationship') continue;
+        if(!kl.includes('relationship')&&!kl.includes('single vs')&&!kl.includes('partnered')&&!kl.includes('singles vs')) continue;
+        v=airtableValueToNameLine(f[k]);
+        if(v) return v;
+      }
+      return '';
+    }
+    function recordHasRelationshipLink(f){
+      const key=fieldKeyMatch(f,['Relationship']);
+      if(!key) return false;
+      const v=f[key];
+      if(v==null||v==='') return false;
+      if(Array.isArray(v)) return v.length>0;
+      return true;
+    }
+    function recordHasCoupleFlag(f){
+      for(const k of Object.keys(f||{})){
+        const kl=k.toLowerCase();
+        if((kl==='couple'||kl.includes('couple')) && f[k]===true) return true;
+        if(kl.includes('couple') && typeof f[k]==='string' && /couple/i.test(String(f[k]))) return true;
+      }
+      return false;
     }
     /** Use for +1 / date name: text, or skip unresolved linked-record ID arrays (use a Lookup in Airtable for those). */
     function airtableValueToNameLine(v){
       if(v==null||v==='') return '';
       if(typeof v==='string' || typeof v==='number' || typeof v==='boolean') return String(v).trim();
+      if(typeof v==='object' && !Array.isArray(v)){
+        if(v.name!=null && String(v.name).trim()) return String(v.name).trim();
+        if(v.value!=null && String(v.value).trim()) return String(v.value).trim();
+      }
       if(Array.isArray(v)){
         if(!v.length) return '';
         if(v.every(x=>typeof x==='string' && /^rec[a-zA-Z0-9]{10,}/.test(x))) return '';
@@ -925,10 +1025,19 @@
     }
 
     function fieldEventsValue(f){
-      const v=fieldAny(f,F_EVENTS);
+      let v=fieldAny(f,F_EVENTS);
+      if(v==null||v===''){
+        const k=fieldKeyByPattern(f,['event','private edition','attendance'],false);
+        if(k) v=f[k];
+      }
       if(v==null||v==='') return '';
-      if(Array.isArray(v)) return v.filter(Boolean).map(x=>String(x).trim()).filter(Boolean);
-      return String(v).trim();
+      if(Array.isArray(v)){
+        const lines=v.map(x=>airtableValueToNameLine(x)).filter(Boolean);
+        if(lines.length) return lines;
+        return v.filter(Boolean).map(x=>String(x).trim()).filter(Boolean);
+      }
+      const line=airtableValueToNameLine(v);
+      return line||String(v).trim();
     }
 
     function normEventsKey(s){
@@ -940,23 +1049,33 @@
         .trim();
     }
 
-    function isNewPrivateEditionGuest(eventsVal){
-      let key='';
-      if(Array.isArray(eventsVal)){
-        if(!eventsVal.length) return false;
-        if(eventsVal.length===1) key=normEventsKey(eventsVal[0]);
-        else key=normEventsKey(eventsVal.slice().sort((a,b)=>a.localeCompare(b)).join(' & '));
-      } else {
-        key=normEventsKey(eventsVal);
+    function parseEventTokens(eventsVal){
+      let raw=[];
+      if(Array.isArray(eventsVal)) raw=eventsVal;
+      else if(eventsVal!=null&&eventsVal!=='') raw=[eventsVal];
+      const tokens=[];
+      for(const item of raw){
+        String(item).split(/[,;&
+]+/).forEach(part=>{
+          const t=normEventsKey(part);
+          if(t) tokens.push(t);
+        });
       }
-      if(!key) return false;
-      const newKeys=new Set([
-        "l'atelier iii",
-        "l'aterlier iii",
-        "l'atelier iii & obscura",
-        "l'aterlier iii & obscura"
-      ]);
-      return newKeys.has(key);
+      return tokens;
+    }
+    function isAtelierIiiToken(t){
+      return /^l'?ater?lier iii$/.test(String(t||'').replace(/\s+/g,' '));
+    }
+    function isNewPrivateEditionGuest(eventsVal){
+      const tokens=parseEventTokens(eventsVal);
+      if(!tokens.length) return false;
+      if(!tokens.some(isAtelierIiiToken)) return false;
+      for(const t of tokens){
+        if(isAtelierIiiToken(t)) continue;
+        if(t==='obscura') continue;
+        return false;
+      }
+      return true;
     }
 
     function normGenderLabel(raw){
@@ -978,10 +1097,38 @@
       return '';
     }
 
+    function normGuestTypeDirect(raw){
+      const k=String(raw||'').trim().toLowerCase();
+      if(!k) return '';
+      if(/new/.test(k)) return 'New Guest';
+      if(/return/.test(k)) return 'Returning';
+      return '';
+    }
+    function normRelationshipDirect(raw){
+      const k=String(raw||'').trim().toLowerCase();
+      if(!k) return '';
+      if(/partner|couple|duo|pair/.test(k)) return 'Partnered';
+      if(/single|solo|individual|alone/.test(k)) return 'Single';
+      return '';
+    }
     function guestIsPartnered(g){
+      if(g.hasRelationshipLink) return true;
+      const direct=normRelationshipDirect(g.relationshipDirect);
+      if(direct) return direct==='Partnered';
       const rel=normRelationshipLabel(g.appType);
       if(rel) return rel==='Partnered';
+      if(g.coupleFlag) return true;
       return !!(String(g.partnerName||'').trim()||String(g.partnerGender||'').trim());
+    }
+    function guestTypeBucketForGuest(g){
+      const direct=normGuestTypeDirect(g.guestTypeDirect);
+      if(direct) return direct;
+      return isNewPrivateEditionGuest(g.events)?'New Guest':'Returning';
+    }
+    function relationshipBucketForGuest(g){
+      const direct=normRelationshipDirect(g.relationshipDirect);
+      if(direct) return direct;
+      return guestIsPartnered(g)?'Partnered':'Single';
     }
 
     function normDesireLabel(raw){
@@ -996,20 +1143,77 @@
       return listFieldMatches(g,'working');
     }
 
+    function getRatiosConfig(){
+      const ev=EVENTS.find(e=>e.table===curTable);
+      return {
+        table:ev?.ratiosTable||'tblVfUOrsJrnQEJAn',
+        view:ev?.ratiosView||'viwfUA7ZjzlVEEnFg'
+      };
+    }
+
+    async function resolveRatiosViewName(tableId,viewId){
+      const ev=EVENTS.find(e=>e.table===curTable);
+      if(ev?.ratiosViewName){
+        ratiosViewNameCache=ev.ratiosViewName;
+        return ev.ratiosViewName;
+      }
+      if(!viewId) return null;
+      if(ratiosViewNameCache) return ratiosViewNameCache;
+      if(!/^viw[a-zA-Z0-9]{10,}$/.test(viewId)){
+        ratiosViewNameCache=viewId;
+        return viewId;
+      }
+      try{
+        const token=ensureToken();
+        const r=await fetch(`https://api.airtable.com/v0/meta/bases/${BASE}/tables`,{
+          headers:{Authorization:'Bearer '+token}
+        });
+        const d=await r.json();
+        if(!r.ok) throw new Error(d?.error?.message||String(r.status));
+        for(const t of d.tables||[]){
+          if(t.id!==tableId) continue;
+          for(const v of t.views||[]){
+            if(v.id===viewId){
+              ratiosViewNameCache=v.name;
+              return v.name;
+            }
+          }
+        }
+      }catch(e){
+        console.warn('Could not resolve ratios view name',e);
+      }
+      return null;
+    }
+
     function guestsForRatios(){
-      return guests.filter(g=>!guestIsWorking(g));
+      const pool=ratioGuests.length?ratioGuests:guests;
+      return pool.filter(g=>!guestIsWorking(g));
+    }
+
+    function stopRatiosRefresh(){
+      if(ratiosRefreshTimer){
+        clearInterval(ratiosRefreshTimer);
+        ratiosRefreshTimer=null;
+      }
+    }
+
+    function startRatiosRefresh(){
+      stopRatiosRefresh();
+      ratiosRefreshTimer=setInterval(()=>{
+        if(curTab==='ratios') refreshRatiosQuiet().then(()=>render());
+      },30000);
     }
 
     function countGenderBuckets(pool){
       const counts={Female:0,Male:0,Other:0};
       for(const g of pool){
-        const g1=normGenderLabel(g.gender);
-        if(g1) counts[g1]=(counts[g1]||0)+1;
-        else if(!guestIsPartnered(g)) counts.Other=(counts.Other||0)+1;
-        if(guestIsPartnered(g)){
-          const g2=normGenderLabel(g.partnerGender);
-          if(g2) counts[g2]=(counts[g2]||0)+1;
-          else counts.Other=(counts.Other||0)+1;
+        const people=[];
+        if(g.gender) people.push(g.gender);
+        if(g.partnerGender) people.push(g.partnerGender);
+        if(!people.length) continue;
+        for(const raw of people){
+          const label=normGenderLabel(raw);
+          if(label) counts[label]=(counts[label]||0)+1;
         }
       }
       return counts;
@@ -1018,7 +1222,8 @@
     function countRelationshipBuckets(pool){
       const counts={Single:0,Partnered:0};
       for(const g of pool){
-        counts[guestIsPartnered(g)?'Partnered':'Single']=(counts[guestIsPartnered(g)?'Partnered':'Single']||0)+1;
+        const bucket=relationshipBucketForGuest(g);
+        counts[bucket]=(counts[bucket]||0)+1;
       }
       return counts;
     }
@@ -1026,7 +1231,7 @@
     function countGuestTypeBuckets(pool){
       const counts={'New Guest':0,'Returning':0};
       for(const g of pool){
-        const bucket=isNewPrivateEditionGuest(g.events)?'New Guest':'Returning';
+        const bucket=guestTypeBucketForGuest(g);
         counts[bucket]=(counts[bucket]||0)+1;
       }
       return counts;
@@ -1132,7 +1337,7 @@
       }${ratioCardHtml('Guest Type',typeSegs,['New Guest','Returning'])
       }${ratioCardHtml('Relationship Status',relSegs,['Single','Partnered'])
       }${ratioCardHtml('Desire',desireSegs,['Exhibitionist','Unknown','Voyeur'])
-      }</div><div class="ratio-note">Working guests excluded · New = Events is L'Atelier III (or L'Atelier III &amp; Obscura only)</div></div>`;
+      }</div><div class="ratio-note">Live from your Airtable ratios view · refreshes every 30s · Working excluded · New = L'Atelier III (or L'Atelier III &amp; Obscura only)</div></div>`;
     }
 
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
@@ -1186,13 +1391,21 @@
         /** +1 name(s) from the **Date** field (or fallbacks); legacy `Date: …` in Notes if empty. */
         guestDate:gDate,
         cabaret:!!fieldAny(f,F_CABARET),
-        gender:fieldStr(f,F_GENDER),
-        partnerGender:fieldStr(f,F_PARTNER_GENDER),
-        partnerName:fieldStr(f,["Partner's Name",'Partner Name','Partner Full Name']),
+        gender:fieldGenderFromRecord(f),
+        partnerGender:fieldPartnerGenderFromRecord(f),
+        partnerName:fieldPartnerNameFromRecord(f),
         events:fieldEventsValue(f),
-        appType:fieldStr(f,F_APP_TYPE),
-        desire:fieldStr(f,F_DESIRE)
+        appType:fieldAppTypeFromRecord(f),
+        desire:fieldValueLine(f,F_DESIRE),
+        guestTypeDirect:fieldGuestTypeDirectFromRecord(f),
+        relationshipDirect:fieldRelationshipDirectFromRecord(f),
+        coupleFlag:recordHasCoupleFlag(f),
+        hasRelationshipLink:recordHasRelationshipLink(f)
       };
+    }
+
+    function toRatioG(r){
+      return toG(r);
     }
 
     function resolveDatePartnersFromGuests(guests){
@@ -1223,6 +1436,27 @@
         guests=sortGuestsByName(recs.map(toG));
         resolveDatePartnersFromGuests(guests);
       }catch(_){}
+    }
+
+    async function refreshRatiosQuiet(){
+      const {table,view}=getRatiosConfig();
+      if(!table) return;
+      try{
+        const viewName=await resolveRatiosViewName(table,view);
+        let recs=[],offset=null;
+        do{
+          const qs=new URLSearchParams();
+          if(viewName) qs.set('view',viewName);
+          if(offset) qs.set('offset',offset);
+          const q=qs.toString();
+          const d=await req(q?'?'+q:'',{},table);
+          if(d.records) recs=recs.concat(d.records);
+          offset=d.offset;
+        }while(offset);
+        ratioGuests=recs.map(toRatioG);
+      }catch(e){
+        console.error('Ratios refresh failed',e);
+      }
     }
 
     async function load(){
@@ -1273,6 +1507,7 @@
 
     function toggleRatios(){
       if(curTab==='ratios'){
+        stopRatiosRefresh();
         curTab=lastGuestTab||defaultTabForCurrentTable();
         buildTabs();
         render();
@@ -1281,10 +1516,15 @@
       lastGuestTab=curTab;
       curTab='ratios';
       buildTabs();
-      refreshGuestsQuiet().then(()=>render());
+      document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Loading ratios…</div></div>';
+      refreshRatiosQuiet().then(()=>{
+        render();
+        startRatiosRefresh();
+      });
     }
 
     function setTab(id){
+      if(curTab==='ratios') stopRatiosRefresh();
       if(curTab!=='ratios') lastGuestTab=id;
       curTab=id;
       buildTabs();
