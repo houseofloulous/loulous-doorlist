@@ -1055,8 +1055,7 @@
       else if(eventsVal!=null&&eventsVal!=='') raw=[eventsVal];
       const tokens=[];
       for(const item of raw){
-        String(item).split(/[,;&
-]+/).forEach(part=>{
+        String(item).split(/[,;&\n]+/).forEach(part=>{
           const t=normEventsKey(part);
           if(t) tokens.push(t);
         });
@@ -1101,7 +1100,7 @@
       const k=String(raw||'').trim().toLowerCase();
       if(!k) return '';
       if(k.includes('new')) return 'New Guest';
-      if(/return/.test(k)) return 'Returning';
+      if(k.includes('return')) return 'Returning';
       return '';
     }
     function normRelationshipDirect(raw){
