@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=on-demand -->
+<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=guest-type-field -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -373,7 +373,7 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Single active door list (Airtable table name must match). */
     const EVENTS=[
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",ratiosTable:'tblVfUOrsJrnQEJAn',ratiosView:'viwfUA7ZjzlVEEnFg',ratiosViewName:'Grid view',art:"/landing-events/latelier-june-13.jpg",cabaret:true},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -405,7 +405,6 @@
     const F_CABARET=['Cabaret'];
     const F_GENDER=['Gender (from Rolodex)','Gender','Guest Gender','Primary Gender','Gender (Guest)'];
     const F_PARTNER_GENDER=["Partner's Gender",'Partner Gender','Gender (Partner)'];
-    const F_EVENTS=['Events','Event History','Past Events','Private Editions','Past Private Editions','Event Attendance'];
     const F_APP_TYPE=['Application Type','Individual or Couple','Individual/Couple','Attending as','Apply Type','Guest Application Type','Please select one to continue','Type (Application)','Couple or Individual'];
     const F_DESIRE=['Desire'];
     const F_GUEST_TYPE_DIRECT=['Guest Type','Guest type','New vs Returning','New/Returning'];
@@ -428,11 +427,8 @@
     };
 
     const PENDING_KEY='ll_door_pending_v1';
-    let guests=[],ratioGuests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
+    let guests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
     let tableFields=new Set();
-    let ratiosViewNameCache=null;
-    const eventNameById={};
-    let eventsLinkedTableId=null;
     let saveGen=0;
     let TOKEN='';
     const PASS='house';
@@ -617,9 +613,6 @@
       const e=EVENTS[i];
       if(!e) return;
       curTable=e.table;
-      ratiosViewNameCache=null;
-      ratioGuests=[];
-      eventsLinkedTableId=null;
       curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.label;
       document.getElementById('evScreen').style.display='none';
@@ -1023,137 +1016,6 @@
       return '';
     }
 
-    function isAirtableRecId(s){
-      return typeof s==='string' && /^rec[a-zA-Z0-9]{10,}$/.test(s);
-    }
-    function rawEventsLinks(f){
-      let v=fieldAny(f,F_EVENTS);
-      if(v==null||v===''){
-        const k=fieldKeyByPattern(f,['event','private edition','attendance'],false);
-        if(k) v=f[k];
-      }
-      if(!Array.isArray(v)) return [];
-      return v.filter(isAirtableRecId);
-    }
-    function eventNameFromRecordFields(f){
-      if(!f||typeof f!=='object') return '';
-      for(const k of ['Name','Event Name','Event','Title','Label']){
-        if(f[k]!=null&&String(f[k]).trim()) return String(f[k]).trim();
-      }
-      return '';
-    }
-    async function ensureEventsLinkedTableId(performersTableId){
-      if(eventsLinkedTableId) return eventsLinkedTableId;
-      const ev=EVENTS.find(e=>e.table===curTable);
-      if(ev&&ev.eventsTable){ eventsLinkedTableId=ev.eventsTable; return eventsLinkedTableId; }
-      try{
-        const token=ensureToken();
-        const r=await fetch(`https://api.airtable.com/v0/meta/bases/${BASE}/tables`,{
-          headers:{Authorization:'Bearer '+token}
-        });
-        const d=await r.json();
-        if(!r.ok) return null;
-        const perf=(d.tables||[]).find(t=>t.id===performersTableId);
-        const evField=(perf?.fields||[]).find(x=>x.name==='Events'&&x.type==='multipleRecordLinks');
-        if(evField?.options?.linkedTableId) eventsLinkedTableId=evField.options.linkedTableId;
-      }catch(e){
-        console.warn('Could not resolve Events linked table',e);
-      }
-      return eventsLinkedTableId;
-    }
-    async function hydrateEventNameCache(recs,performersTableId){
-      const need=new Set();
-      for(const r of recs){
-        for(const id of rawEventsLinks(r.fields||{})){
-          if(!eventNameById[id]) need.add(id);
-        }
-      }
-      if(!need.size) return;
-      const evTable=await ensureEventsLinkedTableId(performersTableId);
-      if(!evTable) return;
-      const ids=[...need];
-      for(let i=0;i<ids.length;i+=8){
-        const chunk=ids.slice(i,i+8);
-        const formula='OR('+chunk.map(id=>`RECORD_ID()='${id}'`).join(',')+')';
-        try{
-          const d=await req('?filterByFormula='+encodeURIComponent(formula)+'&pageSize=100',{},evTable);
-          for(const rec of (d.records||[])){
-            const nm=eventNameFromRecordFields(rec.fields);
-            if(nm) eventNameById[rec.id]=nm;
-          }
-        }catch(e){
-          console.warn('Event name lookup failed',e);
-        }
-      }
-    }
-    function fieldEventsValue(f){
-      let v=fieldAny(f,F_EVENTS);
-      if(v==null||v===''){
-        const k=fieldKeyByPattern(f,['event','private edition','attendance'],false);
-        if(k) v=f[k];
-      }
-      if(v==null||v==='') return '';
-      if(Array.isArray(v)){
-        const lines=[];
-        for(const item of v){
-          if(isAirtableRecId(item)){
-            const cached=eventNameById[item];
-            if(cached) lines.push(cached);
-            continue;
-          }
-          const line=airtableValueToNameLine(item);
-          if(line&&!isAirtableRecId(line)) lines.push(line);
-        }
-        if(lines.length) return lines;
-        return v.filter(Boolean).map(x=>String(x).trim()).filter(x=>!isAirtableRecId(x));
-      }
-      const line=airtableValueToNameLine(v);
-      return line||String(v).trim();
-    }
-
-    function normEventsKey(s){
-      return String(s||'').toLowerCase()
-        .replace(/[\u2018\u2019`´]/g,"'")
-        .replace(/\s+/g,' ')
-        .replace(/\s*&\s*/g,' & ')
-        .replace(/\s+and\s+/g,' & ')
-        .trim();
-    }
-
-    function parseEventTokens(eventsVal){
-      let raw=[];
-      if(Array.isArray(eventsVal)) raw=eventsVal;
-      else if(eventsVal!=null&&eventsVal!=='') raw=[eventsVal];
-      const tokens=[];
-      for(const item of raw){
-        String(item).split(/[,;&\n]+/).forEach(part=>{
-          const t=normEventsKey(part);
-          if(t) tokens.push(t);
-        });
-      }
-      return tokens;
-    }
-    function isAtelierIiiToken(t){
-      const k=normEventsKey(t);
-      return k==="l'atelier iii"||k==='latelier iii';
-    }
-    function isObscuraPremiereToken(t){
-      const k=normEventsKey(t);
-      return k==='obscura premiere'||k==='obscura';
-    }
-    /** New guest = Events is only L'Atelier III, or L'Atelier III & Obscura Premiere. */
-    function isNewGuestByEventsOnly(eventsVal){
-      const tokens=parseEventTokens(eventsVal);
-      if(!tokens.length) return false;
-      if(!tokens.some(isAtelierIiiToken)) return false;
-      for(const t of tokens){
-        if(isAtelierIiiToken(t)) continue;
-        if(isObscuraPremiereToken(t)) continue;
-        return false;
-      }
-      return true;
-    }
-
     function normGenderLabel(raw){
       const k=String(raw||'').trim().toLowerCase();
       if(!k) return '';
@@ -1196,8 +1058,10 @@
       if(g.coupleFlag) return true;
       return !!(String(g.partnerName||'').trim()||String(g.partnerGender||'').trim());
     }
+    /** Guest Type pie reads Airtable "Guest Type" (New / Returning). */
     function guestTypeBucketForGuest(g){
-      return isNewGuestByEventsOnly(g.events)?'New Guest':'Returning';
+      const direct=normGuestTypeDirect(g.guestTypeDirect);
+      return direct||'Returning';
     }
     function relationshipBucketForGuest(g){
       const direct=normRelationshipDirect(g.relationshipDirect);
@@ -1214,89 +1078,16 @@
     }
 
     function guestIsWorking(g){
-      if(listFieldMatches(g,'working')) return true;
-      return parseEventTokens(g.events).some(t=>normListKey(t)==='working');
-    }
-    function normGuestMatchKey(s){
-      return String(s||'').toLowerCase().replace(/[\u0027\u2019]/g,'').replace(/\s+/g,' ').trim();
-    }
-    function guestWorkingMatchKeys(g){
-      const keys=[];
-      const em=normGuestMatchKey(g.email);
-      if(em) keys.push('e:'+em);
-      const nm=normGuestMatchKey(g.name);
-      if(nm) keys.push('n:'+nm);
-      if(g.id) keys.push('id:'+g.id);
-      return keys;
-    }
-    /** Door-list Working tags (ratios pool may be a different Airtable table). */
-    function buildDoorWorkingKeySet(){
-      const set=new Set();
-      for(const g of guests){
-        if(!guestIsWorking(g)) continue;
-        guestWorkingMatchKeys(g).forEach(k=>set.add(k));
-      }
-      return set;
-    }
-    function guestExcludedFromRatios(g, doorWorkingKeys){
-      if(guestIsWorking(g)) return true;
-      if(doorWorkingKeys&&doorWorkingKeys.size){
-        if(guestWorkingMatchKeys(g).some(k=>doorWorkingKeys.has(k))) return true;
-      }
-      return false;
+      return listFieldMatches(g,'working');
     }
 
-    function getRatiosConfig(){
-      const ev=EVENTS.find(e=>e.table===curTable);
-      return {
-        table:ev?.ratiosTable||'tblVfUOrsJrnQEJAn',
-        view:ev?.ratiosView||'viwfUA7ZjzlVEEnFg'
-      };
-    }
-
-    async function resolveRatiosViewName(tableId,viewId){
-      const ev=EVENTS.find(e=>e.table===curTable);
-      if(ev?.ratiosViewName){
-        ratiosViewNameCache=ev.ratiosViewName;
-        return ev.ratiosViewName;
-      }
-      if(!viewId) return null;
-      if(ratiosViewNameCache) return ratiosViewNameCache;
-      if(!/^viw[a-zA-Z0-9]{10,}$/.test(viewId)){
-        ratiosViewNameCache=viewId;
-        return viewId;
-      }
-      try{
-        const token=ensureToken();
-        const r=await fetch(`https://api.airtable.com/v0/meta/bases/${BASE}/tables`,{
-          headers:{Authorization:'Bearer '+token}
-        });
-        const d=await r.json();
-        if(!r.ok) throw new Error(d?.error?.message||String(r.status));
-        for(const t of d.tables||[]){
-          if(t.id!==tableId) continue;
-          for(const v of t.views||[]){
-            if(v.id===viewId){
-              ratiosViewNameCache=v.name;
-              return v.name;
-            }
-          }
-        }
-      }catch(e){
-        console.warn('Could not resolve ratios view name',e);
-      }
-      return null;
-    }
-
+    /** All ratio pies use the door list; anyone with List = Working is excluded. */
     function guestsForRatios(){
-      const pool=ratioGuests.length?ratioGuests:guests;
-      const doorWorkingKeys=buildDoorWorkingKeySet();
-      return pool.filter(g=>!guestExcludedFromRatios(g, doorWorkingKeys));
+      return guests.filter(g=>!guestIsWorking(g));
     }
 
     function refreshRatiosIfOpen(){
-      if(curTab!=='ratios') return;
-      refreshRatiosQuiet().then(()=>render()).catch(()=>{});
+      if(curTab!=='ratios') render();
     }
 
     function countGenderBuckets(pool){
@@ -1489,7 +1280,6 @@
         gender:fieldGenderFromRecord(f),
         partnerGender:fieldPartnerGenderFromRecord(f),
         partnerName:fieldPartnerNameFromRecord(f),
-        events:fieldEventsValue(f),
         appType:fieldAppTypeFromRecord(f),
         desire:fieldValueLine(f,F_DESIRE),
         guestTypeDirect:fieldGuestTypeDirectFromRecord(f),
@@ -1497,10 +1287,6 @@
         coupleFlag:recordHasCoupleFlag(f),
         hasRelationshipLink:recordHasRelationshipLink(f)
       };
-    }
-
-    function toRatioG(r){
-      return toG(r);
     }
 
     function resolveDatePartnersFromGuests(guests){
@@ -1532,28 +1318,6 @@
         resolveDatePartnersFromGuests(guests);
         refreshRatiosIfOpen();
       }catch(_){}
-    }
-
-    async function refreshRatiosQuiet(){
-      const {table,view}=getRatiosConfig();
-      if(!table) return;
-      try{
-        const viewName=await resolveRatiosViewName(table,view);
-        let recs=[],offset=null;
-        do{
-          const qs=new URLSearchParams();
-          if(viewName) qs.set('view',viewName);
-          if(offset) qs.set('offset',offset);
-          const q=qs.toString();
-          const d=await req(q?'?'+q:'',{},table);
-          if(d.records) recs=recs.concat(d.records);
-          offset=d.offset;
-        }while(offset);
-        await hydrateEventNameCache(recs,table);
-        ratioGuests=recs.map(toRatioG);
-      }catch(e){
-        console.error('Ratios refresh failed',e);
-      }
     }
 
     async function load(){
@@ -1612,8 +1376,7 @@
       lastGuestTab=curTab;
       curTab='ratios';
       buildTabs();
-      document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Loading ratios…</div></div>';
-      refreshRatiosQuiet().then(()=>render());
+      render();
     }
 
     function setTab(id){
