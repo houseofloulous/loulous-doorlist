@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event -->
+<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=on-demand -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -134,7 +134,6 @@
     .ratio-swatch{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:inset 0 0 0 1px rgba(0,0,0,.06);}
     .ratio-leg-lbl{flex:1;}
     .ratio-leg-pct{color:var(--warm);font-size:12px;white-space:nowrap;}
-    .ratio-note{font-size:11px;color:var(--warm);margin-top:16px;text-align:center;line-height:1.45;}
     #detailView{display:none;position:fixed;inset:0;background:#f2ede8;z-index:200;overflow-y:auto;}
     .detail-head{background:var(--blue);padding:0 0 24px;text-align:center;}
     .detail-nav{display:flex;align-items:center;padding:14px 16px 0;}
@@ -432,7 +431,8 @@
     let guests=[],ratioGuests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
     let tableFields=new Set();
     let ratiosViewNameCache=null;
-    let ratiosRefreshTimer=null;
+    const eventNameById={};
+    let eventsLinkedTableId=null;
     let saveGen=0;
     let TOKEN='';
     const PASS='house';
@@ -619,7 +619,7 @@
       curTable=e.table;
       ratiosViewNameCache=null;
       ratioGuests=[];
-      stopRatiosRefresh();
+      eventsLinkedTableId=null;
       curTab=defaultTabForCurrentTable();
       document.getElementById('eventTitle').textContent=e.label;
       document.getElementById('evScreen').style.display='none';
@@ -628,7 +628,6 @@
     }
 
     function showEvScreen(){
-      stopRatiosRefresh();
       if(EVENTS.length===1){ pickEv(0); return; }
       document.getElementById('evScreen').style.display='flex';
       document.getElementById('app').style.display='none';
@@ -1024,6 +1023,69 @@
       return '';
     }
 
+    function isAirtableRecId(s){
+      return typeof s==='string' && /^rec[a-zA-Z0-9]{10,}$/.test(s);
+    }
+    function rawEventsLinks(f){
+      let v=fieldAny(f,F_EVENTS);
+      if(v==null||v===''){
+        const k=fieldKeyByPattern(f,['event','private edition','attendance'],false);
+        if(k) v=f[k];
+      }
+      if(!Array.isArray(v)) return [];
+      return v.filter(isAirtableRecId);
+    }
+    function eventNameFromRecordFields(f){
+      if(!f||typeof f!=='object') return '';
+      for(const k of ['Name','Event Name','Event','Title','Label']){
+        if(f[k]!=null&&String(f[k]).trim()) return String(f[k]).trim();
+      }
+      return '';
+    }
+    async function ensureEventsLinkedTableId(performersTableId){
+      if(eventsLinkedTableId) return eventsLinkedTableId;
+      const ev=EVENTS.find(e=>e.table===curTable);
+      if(ev&&ev.eventsTable){ eventsLinkedTableId=ev.eventsTable; return eventsLinkedTableId; }
+      try{
+        const token=ensureToken();
+        const r=await fetch(`https://api.airtable.com/v0/meta/bases/${BASE}/tables`,{
+          headers:{Authorization:'Bearer '+token}
+        });
+        const d=await r.json();
+        if(!r.ok) return null;
+        const perf=(d.tables||[]).find(t=>t.id===performersTableId);
+        const evField=(perf?.fields||[]).find(x=>x.name==='Events'&&x.type==='multipleRecordLinks');
+        if(evField?.options?.linkedTableId) eventsLinkedTableId=evField.options.linkedTableId;
+      }catch(e){
+        console.warn('Could not resolve Events linked table',e);
+      }
+      return eventsLinkedTableId;
+    }
+    async function hydrateEventNameCache(recs,performersTableId){
+      const need=new Set();
+      for(const r of recs){
+        for(const id of rawEventsLinks(r.fields||{})){
+          if(!eventNameById[id]) need.add(id);
+        }
+      }
+      if(!need.size) return;
+      const evTable=await ensureEventsLinkedTableId(performersTableId);
+      if(!evTable) return;
+      const ids=[...need];
+      for(let i=0;i<ids.length;i+=8){
+        const chunk=ids.slice(i,i+8);
+        const formula='OR('+chunk.map(id=>`RECORD_ID()='${id}'`).join(',')+')';
+        try{
+          const d=await req('?filterByFormula='+encodeURIComponent(formula)+'&pageSize=100',{},evTable);
+          for(const rec of (d.records||[])){
+            const nm=eventNameFromRecordFields(rec.fields);
+            if(nm) eventNameById[rec.id]=nm;
+          }
+        }catch(e){
+          console.warn('Event name lookup failed',e);
+        }
+      }
+    }
     function fieldEventsValue(f){
       let v=fieldAny(f,F_EVENTS);
       if(v==null||v===''){
@@ -1032,9 +1094,18 @@
       }
       if(v==null||v==='') return '';
       if(Array.isArray(v)){
-        const lines=v.map(x=>airtableValueToNameLine(x)).filter(Boolean);
+        const lines=[];
+        for(const item of v){
+          if(isAirtableRecId(item)){
+            const cached=eventNameById[item];
+            if(cached) lines.push(cached);
+            continue;
+          }
+          const line=airtableValueToNameLine(item);
+          if(line&&!isAirtableRecId(line)) lines.push(line);
+        }
         if(lines.length) return lines;
-        return v.filter(Boolean).map(x=>String(x).trim()).filter(Boolean);
+        return v.filter(Boolean).map(x=>String(x).trim()).filter(x=>!isAirtableRecId(x));
       }
       const line=airtableValueToNameLine(v);
       return line||String(v).trim();
@@ -1223,18 +1294,9 @@
       return pool.filter(g=>!guestExcludedFromRatios(g, doorWorkingKeys));
     }
 
-    function stopRatiosRefresh(){
-      if(ratiosRefreshTimer){
-        clearInterval(ratiosRefreshTimer);
-        ratiosRefreshTimer=null;
-      }
-    }
-
-    function startRatiosRefresh(){
-      stopRatiosRefresh();
-      ratiosRefreshTimer=setInterval(()=>{
-        if(curTab==='ratios') refreshRatiosQuiet().then(()=>render());
-      },30000);
+    function refreshRatiosIfOpen(){
+      if(curTab!=='ratios') return;
+      refreshRatiosQuiet().then(()=>render()).catch(()=>{});
     }
 
     function countGenderBuckets(pool){
@@ -1370,7 +1432,7 @@
       }${ratioCardHtml('Guest Type',typeSegs,['New Guest','Returning'])
       }${ratioCardHtml('Relationship Status',relSegs,['Single','Partnered'])
       }${ratioCardHtml('Desire',desireSegs,['Exhibitionist','Unknown','Voyeur'])
-      }</div><div class="ratio-note">Live from your Airtable ratios view · refreshes every 30s · Working excluded from all charts · New = L'Atelier III only, or L'Atelier III &amp; Obscura Premiere</div></div>`;
+      }</div></div>`;
     }
 
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
@@ -1468,6 +1530,7 @@
         }
         guests=sortGuestsByName(recs.map(toG));
         resolveDatePartnersFromGuests(guests);
+        refreshRatiosIfOpen();
       }catch(_){}
     }
 
@@ -1486,6 +1549,7 @@
           if(d.records) recs=recs.concat(d.records);
           offset=d.offset;
         }while(offset);
+        await hydrateEventNameCache(recs,table);
         ratioGuests=recs.map(toRatioG);
       }catch(e){
         console.error('Ratios refresh failed',e);
@@ -1540,7 +1604,6 @@
 
     function toggleRatios(){
       if(curTab==='ratios'){
-        stopRatiosRefresh();
         curTab=lastGuestTab||defaultTabForCurrentTable();
         buildTabs();
         render();
@@ -1550,14 +1613,10 @@
       curTab='ratios';
       buildTabs();
       document.getElementById('main').innerHTML='<div class="cstate"><div class="spinner"></div><div class="cstate-txt">Loading ratios…</div></div>';
-      refreshRatiosQuiet().then(()=>{
-        render();
-        startRatiosRefresh();
-      });
+      refreshRatiosQuiet().then(()=>render());
     }
 
     function setTab(id){
-      if(curTab==='ratios') stopRatiosRefresh();
       if(curTab!=='ratios') lastGuestTab=id;
       curTab=id;
       buildTabs();
@@ -1790,6 +1849,7 @@
         await patchGuestResilient(curG.id, fields);
         applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
         showToast('Saved ✓');
+        refreshRatiosIfOpen();
       }catch(e){
         console.error('Door fields save failed',e);
         enqueuePending(curG.id, curTable, fields);
@@ -1882,6 +1942,7 @@
         applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
         showToast('Saved ✓');
         try{ render(); }catch(_){}
+        refreshRatiosIfOpen();
         flushPendingQueue().catch(()=>{});
       },600);
     }
