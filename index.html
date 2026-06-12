@@ -1063,15 +1063,21 @@
       return tokens;
     }
     function isAtelierIiiToken(t){
-      return /^l'?ater?lier iii$/.test(String(t||'').replace(/\s+/g,' '));
+      const k=normEventsKey(t);
+      return k==="l'atelier iii"||k==='latelier iii';
     }
-    function isNewPrivateEditionGuest(eventsVal){
+    function isObscuraPremiereToken(t){
+      const k=normEventsKey(t);
+      return k==='obscura premiere'||k==='obscura';
+    }
+    /** New guest = Events is only L'Atelier III, or L'Atelier III & Obscura Premiere. */
+    function isNewGuestByEventsOnly(eventsVal){
       const tokens=parseEventTokens(eventsVal);
       if(!tokens.length) return false;
       if(!tokens.some(isAtelierIiiToken)) return false;
       for(const t of tokens){
         if(isAtelierIiiToken(t)) continue;
-        if(t==='obscura') continue;
+        if(isObscuraPremiereToken(t)) continue;
         return false;
       }
       return true;
@@ -1120,9 +1126,7 @@
       return !!(String(g.partnerName||'').trim()||String(g.partnerGender||'').trim());
     }
     function guestTypeBucketForGuest(g){
-      const direct=normGuestTypeDirect(g.guestTypeDirect);
-      if(direct) return direct;
-      return isNewPrivateEditionGuest(g.events)?'New Guest':'Returning';
+      return isNewGuestByEventsOnly(g.events)?'New Guest':'Returning';
     }
     function relationshipBucketForGuest(g){
       const direct=normRelationshipDirect(g.relationshipDirect);
@@ -1139,7 +1143,36 @@
     }
 
     function guestIsWorking(g){
-      return listFieldMatches(g,'working');
+      if(listFieldMatches(g,'working')) return true;
+      return parseEventTokens(g.events).some(t=>normListKey(t)==='working');
+    }
+    function normGuestMatchKey(s){
+      return String(s||'').toLowerCase().replace(/[\u0027\u2019]/g,'').replace(/\s+/g,' ').trim();
+    }
+    function guestWorkingMatchKeys(g){
+      const keys=[];
+      const em=normGuestMatchKey(g.email);
+      if(em) keys.push('e:'+em);
+      const nm=normGuestMatchKey(g.name);
+      if(nm) keys.push('n:'+nm);
+      if(g.id) keys.push('id:'+g.id);
+      return keys;
+    }
+    /** Door-list Working tags (ratios pool may be a different Airtable table). */
+    function buildDoorWorkingKeySet(){
+      const set=new Set();
+      for(const g of guests){
+        if(!guestIsWorking(g)) continue;
+        guestWorkingMatchKeys(g).forEach(k=>set.add(k));
+      }
+      return set;
+    }
+    function guestExcludedFromRatios(g, doorWorkingKeys){
+      if(guestIsWorking(g)) return true;
+      if(doorWorkingKeys&&doorWorkingKeys.size){
+        if(guestWorkingMatchKeys(g).some(k=>doorWorkingKeys.has(k))) return true;
+      }
+      return false;
     }
 
     function getRatiosConfig(){
@@ -1186,7 +1219,8 @@
 
     function guestsForRatios(){
       const pool=ratioGuests.length?ratioGuests:guests;
-      return pool.filter(g=>!guestIsWorking(g));
+      const doorWorkingKeys=buildDoorWorkingKeySet();
+      return pool.filter(g=>!guestExcludedFromRatios(g, doorWorkingKeys));
     }
 
     function stopRatiosRefresh(){
@@ -1336,7 +1370,7 @@
       }${ratioCardHtml('Guest Type',typeSegs,['New Guest','Returning'])
       }${ratioCardHtml('Relationship Status',relSegs,['Single','Partnered'])
       }${ratioCardHtml('Desire',desireSegs,['Exhibitionist','Unknown','Voyeur'])
-      }</div><div class="ratio-note">Live from your Airtable ratios view · refreshes every 30s · Working excluded · New = L'Atelier III (or L'Atelier III &amp; Obscura only)</div></div>`;
+      }</div><div class="ratio-note">Live from your Airtable ratios view · refreshes every 30s · Working excluded from all charts · New = L'Atelier III only, or L'Atelier III &amp; Obscura Premiere</div></div>`;
     }
 
     /** Legacy: first `Date: …` line in Notes when there is no dedicated Date field value. */
