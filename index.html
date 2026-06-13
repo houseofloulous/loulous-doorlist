@@ -103,6 +103,25 @@
       width:100%;
     }
     .grid>.card{flex:0 0 auto;width:var(--guest-card-w);}
+    /** Tables tab: seated parties grouped in a gold frame */
+    .tables-grid{flex-direction:column;align-items:stretch;gap:14px;}
+    .table-party{
+      width:100%;
+      border:1.5px solid var(--accent);
+      border-radius:14px;
+      padding:12px 12px 14px;
+      background:linear-gradient(180deg,rgba(201,169,110,.1) 0%,rgba(255,255,255,.55) 100%);
+      box-shadow:0 1px 4px rgba(0,0,0,.05);
+      box-sizing:border-box;
+    }
+    .table-party-inner{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:center;
+      align-items:stretch;
+      gap:var(--ggrid);
+    }
+    .table-party-inner>.card{flex:0 0 auto;width:var(--guest-card-w);}
     .card{background:#fff;border-radius:10px;overflow:hidden;cursor:pointer;position:relative;box-shadow:0 1px 4px rgba(0,0,0,.07);transition:transform .12s,filter .15s,opacity .15s;}
     .card:active{transform:scale(.96);}
     .card.checked{filter:grayscale(1);opacity:.62;}
@@ -387,6 +406,14 @@
       {id:'garden',lbl:'Garden Nocturne'},
       {id:'tables',lbl:'Tables'},
       {id:'working',lbl:'Working'},
+    ];
+    /** Tables tab seating parties (first-name match, in display order). */
+    const TABLE_PARTY_GROUPS=[
+      ['Alon','Megan'],
+      ['David','Haley'],
+      ['Ed','Laura','Paula'],
+      ['Sacha'],
+      ['Yannick','Malu'],
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -1386,6 +1413,85 @@
       render();
     }
 
+    function guestMatchesTablePartyToken(name,token){
+      const n=String(name||'').trim().toLowerCase();
+      const t=String(token||'').trim().toLowerCase();
+      if(!n||!t) return false;
+      if(n===t) return true;
+      if(n.startsWith(t+' ')) return true;
+      if(n.includes(' '+t+' ')) return true;
+      if(n.endsWith(' '+t)) return true;
+      return false;
+    }
+    function tablePartyGroupIndexForGuest(g){
+      const name=g&&g.name||'';
+      for(let i=0;i<TABLE_PARTY_GROUPS.length;i++){
+        for(const tok of TABLE_PARTY_GROUPS[i]){
+          if(guestMatchesTablePartyToken(name,tok)) return i;
+        }
+      }
+      return -1;
+    }
+    function sortTablePartyMembers(arr){
+      return [...arr].sort((a,b)=>{
+        if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
+        return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
+      });
+    }
+    function buildTablePartyLayout(list){
+      const buckets=TABLE_PARTY_GROUPS.map(()=>[]);
+      const ungrouped=[];
+      for(const g of list){
+        const idx=tablePartyGroupIndexForGuest(g);
+        if(idx>=0) buckets[idx].push(g);
+        else ungrouped.push(g);
+      }
+      const groups=[];
+      buckets.forEach((members,i)=>{
+        if(!members.length) return;
+        groups.push({order:i, members:sortTablePartyMembers(members)});
+      });
+      for(const g of sortTablePartyMembers(ungrouped)){
+        groups.push({order:1000+groups.length, members:[g]});
+      }
+      return groups;
+    }
+    function filterTableListForSearch(list,q,byIdAll){
+      if(!q) return list;
+      const include=new Set();
+      const byParty=new Map();
+      for(const g of list){
+        const idx=tablePartyGroupIndexForGuest(g);
+        if(idx>=0){
+          if(!byParty.has(idx)) byParty.set(idx,[]);
+          byParty.get(idx).push(g);
+        }
+      }
+      for(const g of list){
+        let hit=guestMatchesSearch(g,q);
+        if(!hit){
+          for(const id of (g.dateClusterMates||[])){
+            const p=byIdAll[id];
+            if(p && guestMatchesSearch(p,q)){ hit=true; break; }
+          }
+        }
+        if(!hit) continue;
+        include.add(g.id);
+        const idx=tablePartyGroupIndexForGuest(g);
+        if(idx>=0){
+          for(const mate of (byParty.get(idx)||[])) include.add(mate.id);
+        }
+      }
+      return list.filter(g=>include.has(g.id));
+    }
+    function renderTablesGrid(list){
+      const groups=buildTablePartyLayout(list);
+      if(!groups.length) return '';
+      return `<div class="grid tables-grid">${groups.map(grp=>
+        `<div class="table-party"><div class="table-party-inner">${grp.members.map(gCard).join('')}</div></div>`
+      ).join('')}</div>`;
+    }
+
     function render(){
       if(curTab==='ratios'){
         const pool=guestsForRatios();
@@ -1409,6 +1515,19 @@
         return !listFieldMatches(g,'working');
       });
       const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
+      if(curTab==='tables'){
+        if(q) list=filterTableListForSearch(list,q,byIdAll);
+        const chk=list.filter(g=>g.checkedIn).length;
+        const pend=pendingCountForTable(curTable);
+        const pendHtml=pend?`<div class="stat stat-pending" role="button" tabindex="0" title="Tap to retry sync to Airtable" onclick="retryPendingSync()"><b>${pend}</b> queued</div>`:'';
+        document.getElementById('stats').innerHTML=`<div class="stat"><b>${list.length}</b> guests</div><div class="stat"><b>${chk}</b> checked in</div>${pendHtml}`;
+        if(!list.length){
+          document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
+          return;
+        }
+        document.getElementById('main').innerHTML=renderTablesGrid(list);
+        return;
+      }
       if(q) list=list.filter(g=>{
         if(guestMatchesSearch(g,q)) return true;
         for(const id of (g.dateClusterMates||[])){
