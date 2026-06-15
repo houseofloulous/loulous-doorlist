@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=guest-type-field -->
+<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=guest-type-field | pass=House -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -214,12 +214,12 @@
     textarea.det-input{resize:none;min-height:80px;}
     .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
     .modal-bg.open{opacity:1;pointer-events:all;}
-    .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;overflow-y:auto;padding-bottom:40px;}
+    .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
     .modal-handle{width:36px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;margin:12px auto 0;}
     .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
     .modal-title{font-size:22px;color:var(--dark);}
     .modal-close{background:none;border:none;font-size:22px;color:var(--warm);cursor:pointer;}
-    .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:12px;}
+    .modal-body{padding:0 14px;display:flex;flex-direction:column;gap:12px;flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;}
     #addModalBody.add-at .add-sec-name{order:1;}
     #addModalBody.add-at .add-sec-ci{order:2;}
     #addModalBody.add-at .add-sec-wb{order:3;}
@@ -240,9 +240,10 @@
     .modal-toggle-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:8px;}
     .modal-nda-hint{padding:10px 16px 14px;font-size:12px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(0,0,0,.05);line-height:1.4;}
     .modal-nda-link{font-size:16px;text-decoration:none;flex-shrink:0;}
-    .modal-actions{display:flex;gap:10px;padding:14px 14px 0;}
-    .mcancel{flex:1;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);}
-    .msubmit{flex:2;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
+    .modal-actions{display:flex;gap:10px;flex-shrink:0;padding:14px 14px max(20px,env(safe-area-inset-bottom));background:#f2ede8;border-top:1px solid rgba(0,0,0,.06);}
+    .mcancel{flex:1 1 0;min-width:0;min-height:48px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:12px;padding:14px;font-size:13px;cursor:pointer;color:var(--dark);}
+    .msubmit{flex:2 1 0;min-width:0;min-height:48px;background:var(--blue);border:none;border-radius:12px;padding:14px;font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:#fff;cursor:pointer;font-weight:500;}
+    .msubmit:disabled{opacity:.55;cursor:wait;}
     /* Narrow phones: keep this block LAST so it wins over min-width:.tab rules above */
     @media(max-width:480px){
       html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
@@ -431,7 +432,7 @@
     const F_CHECKED_IN=['Checked In','Check-in'];
     const F_STI=['STI Verified','STI Tests'];
     const F_COAT=['Coat Check #'];
-    const F_PHONE_CHECK=['Phone Check #','Phone check #','Phone Check','Pouch #','Phone pouch'];
+    const F_PHONE_CHECK=['Phone Check #','Phone check #','Pouch #','Phone pouch'];
     const F_NOTES=['Notes','Door Notes'];
     /** +1 / date name — text column(s) only. */
     const F_GUEST_DATE=['Date','Date name','Guest date','Plus one','+1','Date (guest)'];
@@ -470,17 +471,20 @@
     let tableFields=new Set();
     let saveGen=0;
     let TOKEN='';
-    const PASS='house';
+    const PASS='House';
+    function doorPasswordOk(p){
+      return String(p||'').trim().toLowerCase()==='house';
+    }
     function ensureToken(){
       if(!TOKEN){
         const p=(localStorage.getItem('ll_pass')||'').trim();
-        if(p===PASS){
+        if(doorPasswordOk(p)){
           TOKEN='pat77o3kWwRFu0E0G.0efbab0f505d6fc54447711ff2543dd1f9a54adc62a7f9f9f96a73524faea154';
           return TOKEN;
         }
         const entered=(prompt('Enter door password:')||'').trim();
-        if(entered===PASS){
-          localStorage.setItem('ll_pass',entered);
+        if(doorPasswordOk(entered)){
+          localStorage.setItem('ll_pass',PASS);
           TOKEN='pat77o3kWwRFu0E0G.0efbab0f505d6fc54447711ff2543dd1f9a54adc62a7f9f9f96a73524faea154';
         } else {
           alert('Wrong password');
@@ -922,6 +926,20 @@
       for(const n of candidates){
         const k=lower.get(n.toLowerCase());
         if(k) return k;
+      }
+      return null;
+    }
+    /** Never map pouch numbers onto the guest contact Phone column. */
+    function pickPhoneCheckField(){
+      const blocked=new Set(['phone','phone number','mobile','cell','tel','telephone']);
+      for(const n of F_PHONE_CHECK){
+        if(tableFields.has(n) && !blocked.has(n.toLowerCase())) return n;
+      }
+      const lower=new Map();
+      for(const k of tableFields) lower.set(k.toLowerCase(),k);
+      for(const n of F_PHONE_CHECK){
+        const k=lower.get(n.toLowerCase());
+        if(k && !blocked.has(k.toLowerCase())) return k;
       }
       return null;
     }
@@ -1707,7 +1725,7 @@
       const fields={};
       const kC=pickField(F_COAT);
       if(kC) fields[kC]=vCoat;
-      const kP=pickField(F_PHONE_CHECK);
+      const kP=pickPhoneCheckField();
       if(kP) fields[kP]=vPhone;
       const kN=pickField(F_NOTES);
       if(kN) fields[kN]=vNotes;
@@ -1734,19 +1752,72 @@
       }
     }
 
+    function detailStillOpen(recordId,myGen){
+      return !!(curG && curG.id===recordId && myGen===saveGen);
+    }
+
+    function readDetailToggleState(){
+      const dCI=document.getElementById('dCI');
+      const dNDA=document.getElementById('dNDA');
+      const dTbl=document.getElementById('dTbl');
+      const stiEl=document.getElementById('dSTI');
+      const dCabaret=document.getElementById('dCabaret');
+      if(!curG||!dCI||!dNDA) return null;
+      const cI=dCI.checked;
+      const cN=dNDA.checked;
+      const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
+      const cS=stiEl && stiEl.checked;
+      const cCab=dCabaret?dCabaret.checked:!!curG.cabaret;
+      const wb=[];
+      if(cTbl) wb.push('Gold');
+      if(cS) wb.push('Black');
+      const newList=setGuestListWithTable(curG, cTbl);
+      const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
+      const kCab=pickField(F_CABARET);
+      if(kCab) criticalFields[kCab]=cCab;
+      const wristFields={ [pickField(F_WRISTBAND)]:wb };
+      wristFields[pickField(F_STI)]=cS;
+      const kList=pickField(F_LIST);
+      if(kList) wristFields[kList]=listValueForAirtable(newList);
+      const applyLocal=()=>{
+        const i=guests.findIndex(g=>g.id===curG.id);
+        if(i>-1){
+          guests[i]={
+            ...guests[i],
+            checkedIn:cI,
+            nda:cN?'Signed':'No',
+            ndaSigned:!!cN,
+            tableGuest:cTbl,
+            list:newList,
+            stiVerified:cS,
+            wristbands:wb,
+            wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
+            sti:cS,
+            cabaret:cCab
+          };
+          if(curG && curG.id===guests[i].id) curG=guests[i];
+        }
+      };
+      return {criticalFields,wristFields,applyLocal};
+    }
+
     async function saveLocal(){
       if(!curG)return;
+      const recordId=curG.id;
+      const myGen=saveGen;
       const {vCoat,vPhone,vNotes,v2,fields}=readDoorTextFromDOM();
       if(!document.getElementById('dCoat')||!document.getElementById('dNotes')) return;
+      if(Object.keys(fields).length===0) return;
       try{
-        if(Object.keys(fields).length===0) throw new Error('No known Airtable fields to save (refresh the list or check your base).');
-        await patchGuestResilient(curG.id, fields);
+        await patchGuestResilient(recordId, fields);
+        if(!detailStillOpen(recordId,myGen)) return;
         applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
         showToast('Saved ✓');
         refreshRatiosIfOpen();
       }catch(e){
         console.error('Door fields save failed',e);
-        enqueuePending(curG.id, curTable, fields);
+        if(!detailStillOpen(recordId,myGen)) return;
+        enqueuePending(recordId, curTable, fields);
         applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
         showToast('Saved ✓');
         try{ render(); }catch(_){}
@@ -1756,96 +1827,62 @@
     let textSaveTimer=null;
     function scheduleTextSave(){
       clearTimeout(textSaveTimer);
-      textSaveTimer=setTimeout(()=>{ saveLocal(); },600);
+      textSaveTimer=setTimeout(()=>{ saveLocal(); },350);
+    }
+
+    async function saveDetailToggles(recordId,myGen){
+      if(!curG||curG.id!==recordId) return;
+      const state=readDetailToggleState();
+      if(!state) return;
+      const {criticalFields,wristFields,applyLocal}=state;
+      try{
+        await patchGuestResilient(recordId, criticalFields);
+        if(!detailStillOpen(recordId,myGen)) return;
+      }catch(e){
+        console.error('Door critical save failed',e);
+        enqueuePending(recordId, curTable, {...criticalFields,...wristFields});
+        if(!detailStillOpen(recordId,myGen)) return;
+        applyLocal();
+        showToast('Saved ✓');
+        try{ render(); }catch(_){}
+        return;
+      }
+      try{
+        await patchGuestResilient(recordId, wristFields);
+      }catch(e){
+        console.error('Door wristband save failed',e);
+        enqueuePending(recordId, curTable, wristFields);
+      }
+      if(!detailStillOpen(recordId,myGen)) return;
+      applyLocal();
+      showToast('Saved ✓');
+      try{ render(); }catch(_){}
+      refreshRatiosIfOpen();
+      flushPendingQueue().catch(()=>{});
     }
 
     let saveTimer=null;
     function autoSave(){
       clearTimeout(saveTimer);
-      const myGen=++saveGen;
-      saveTimer=setTimeout(async()=>{
-        if(!curG)return;
-        const dCI=document.getElementById('dCI');
-        const dNDA=document.getElementById('dNDA');
-        const dTbl=document.getElementById('dTbl');
-        const stiEl=document.getElementById('dSTI');
-        const dCabaret=document.getElementById('dCabaret');
-        if(!dCI||!dNDA)return;
-        const cI=dCI.checked;
-        const cN=dNDA.checked;
-        const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
-        const cS=stiEl && stiEl.checked;
-        const cCab=dCabaret?dCabaret.checked:!!curG.cabaret;
-        const wb=[];
-        if(cTbl) wb.push('Gold');
-        if(cS) wb.push('Black');
-        const newList=setGuestListWithTable(curG, cTbl);
-        const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
-        const kCab=pickField(F_CABARET);
-        if(kCab) criticalFields[kCab]=cCab;
-        const wristFields={ [pickField(F_WRISTBAND)]:wb };
-        wristFields[pickField(F_STI)]=cS;
-        const kList=pickField(F_LIST);
-        if(kList) wristFields[kList]=listValueForAirtable(newList);
-        const applyLocal=()=>{
-          const i=guests.findIndex(g=>g.id===curG.id);
-          if(i>-1){
-            guests[i]={
-              ...guests[i],
-              checkedIn:cI,
-              nda:cN?'Signed':'No',
-              ndaSigned:!!cN,
-              tableGuest:cTbl,
-              list:newList,
-              stiVerified:cS,
-              wristbands:wb,
-              wristband:wb.includes('Gold')?'Gold':(wb.includes('Black')?'Black':''),
-              sti:cS,
-              cabaret:cCab
-            };
-          }
-        };
-        try{
-          await patchGuestResilient(curG.id, criticalFields);
-        }catch(e){
-          console.error('Door critical save failed',e);
-          enqueuePending(curG.id, curTable, {...criticalFields,...wristFields});
-          if(myGen!==saveGen) return;
-          applyLocal();
-          showToast('Saved ✓');
-          try{ render(); }catch(_){}
-          return;
-        }
-        try{
-          await patchGuestResilient(curG.id, wristFields);
-        }catch(e){
-          console.error('Door wristband save failed',e);
-          enqueuePending(curG.id, curTable, wristFields);
-        }
-        const text=readDoorTextFromDOM();
-        if(Object.keys(text.fields).length){
-          try{
-            await patchGuestResilient(curG.id, text.fields);
-          }catch(e){
-            console.error('Door text save failed',e);
-            enqueuePending(curG.id, curTable, text.fields);
-          }
-        }
-        if(myGen!==saveGen) return;
-        applyLocal();
-        applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
-        showToast('Saved ✓');
-        try{ render(); }catch(_){}
-        refreshRatiosIfOpen();
-        flushPendingQueue().catch(()=>{});
-      },600);
+      if(!curG) return;
+      const recordId=curG.id;
+      const myGen=saveGen;
+      saveTimer=setTimeout(()=>{ saveDetailToggles(recordId,myGen); },350);
     }
 
     async function closeDetail(){
       clearTimeout(saveTimer);
       clearTimeout(textSaveTimer);
-      saveGen++;
-      try{ await saveLocal(); }catch(_){}
+      if(curG){
+        const recordId=curG.id;
+        const myGen=++saveGen;
+        try{
+          await saveDetailToggles(recordId,myGen);
+          if(curG && curG.id===recordId) await saveLocal();
+        }catch(_){}
+      }else{
+        saveGen++;
+      }
       document.getElementById('detailView').style.display='none';
       document.getElementById('app').style.display='block';
       curG=null;
@@ -1874,6 +1911,8 @@
 
     function closeAdd(){
       document.getElementById('addModal').classList.remove('open');
+      const addBtn=document.getElementById('addBtn');
+      if(addBtn){ addBtn.disabled=false; addBtn.textContent='Add Guest'; }
       const mbReset=document.getElementById('addModalBody');
       if(mbReset) mbReset.className='modal-body add-at';
       const mgd=document.getElementById('mGuestDate');
@@ -1899,6 +1938,8 @@
       const name=document.getElementById('aN').value.trim();
       if(!name){alert('Guest name required');return;}
       const btn=document.getElementById('addBtn');
+      if(btn.disabled) return;
+      btn.disabled=true;
       btn.textContent='Adding…';
 
       const mTbl=document.getElementById('mTbl');
@@ -1933,7 +1974,7 @@
               const addPatch={};
               const kC=pickField(F_COAT);
               if(kC) addPatch[kC]=coat;
-              const kP=pickField(F_PHONE_CHECK);
+              const kP=pickPhoneCheckField();
               if(kP) addPatch[kP]=phoneChk;
               const kN=pickField(F_NOTES);
               if(kN) addPatch[kN]=notes;
@@ -1952,8 +1993,11 @@
         }
       }catch(e){
         console.error('Door add guest failed',e);
+        alert('Could not add guest: '+fmtErr(e));
+      }finally{
+        btn.disabled=false;
+        btn.textContent='Add Guest';
       }
-      btn.textContent='Add Guest';
     }
 
     if(EVENTS.length===1) pickEv(0);
