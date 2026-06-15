@@ -69,10 +69,18 @@
     .hbtn.ratios-btn svg{width:17px;height:17px;flex-shrink:0;display:block;}
     .hbtn.ratios-btn.active{background:rgba(255,255,255,.14);border-color:var(--accent);color:var(--accent);}
     .ratios-btn-lbl{font-size:11px;letter-spacing:.06em;}
-    /* Door list tabs — 4 or 5 columns when Cabaret tabs are active. */
+    /* Door list tabs — grid for L'Atelier / DND; horizontal pills for Obscura. */
+    .obscura-tabs-hint{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.38);text-align:center;padding:6px 16px 0;}
     .tabs{display:grid;column-gap:8px;row-gap:6px;align-items:stretch;padding:8px 8px 6px;box-sizing:border-box;border-top:1px solid rgba(255,255,255,.07);}
     .tabs.tabs-4{grid-template-columns:repeat(4,minmax(0,1fr));}
     .tabs.tabs-5{grid-template-columns:repeat(5,minmax(0,1fr));}
+    .tabs.tabs-obscura{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:7px;padding:4px 12px 12px;scrollbar-width:none;grid-template-columns:unset;}
+    .tabs.tabs-obscura::-webkit-scrollbar{display:none;}
+    .tabs.tabs-obscura .tab{flex:0 0 auto;width:auto;min-width:max-content;border-radius:20px;border-bottom-width:1px;padding:11px 16px;font-size:14px;letter-spacing:.08em;white-space:nowrap;}
+    .tabs.tabs-obscura .tab.active{border-color:var(--accent);background:rgba(201,169,110,.18);border-bottom-color:var(--accent);}
+    .app-obscura .ob-all-wrap{display:flex;flex-direction:column;gap:18px;padding:8px 0 16px;width:100%;}
+    .app-obscura .ob-sec-wrap{width:100%;}
+    .app-obscura .ob-sec{font-size:17px;letter-spacing:.08em;text-transform:uppercase;color:var(--dark);text-align:center;margin:8px 0 10px;font-weight:400;}
     .tab{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-bottom:3px solid rgba(255,255,255,.12);border-radius:8px 8px 0 0;padding:10px 4px 9px;font-size:12px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:rgba(255,255,255,.48);cursor:pointer;white-space:normal;line-height:1.15;text-align:center;min-width:0;width:100%;display:flex;align-items:center;justify-content:center;transition:color .18s,background .18s,border-color .18s,font-weight .18s;-webkit-hyphens:manual;hyphens:manual;}
     .tab.active{color:#fff;font-weight:800;background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.22);border-bottom-color:var(--accent);box-shadow:inset 0 -1px 0 rgba(255,255,255,.1);}
     @media(min-width:400px){
@@ -315,6 +323,7 @@
         <button class="hbtn" onclick="openAdd()">+ ADD NEW GUEST</button>
         <button type="button" class="hbtn nda" id="ndaToolbarBtn" onclick="openNdaForm()">NDA</button>
       </div>
+      <p class="obscura-tabs-hint" id="obscuraTabHint" hidden>List filter</p>
       <div class="tabs" id="tabs" role="tablist"></div>
     </div>
     <div class="stats" id="stats"></div>
@@ -403,12 +412,44 @@
     const BASE='appY6p2HwRtDmOvAf';
     const NDA_FORM_URL='https://forms.gle/gNPU5Etg7HSuhYYY7';
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
-    /** Upcoming door lists — Airtable table names must match exactly (calendar order). */
+    /** Door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
-      {name:"Obscura",date:"September 18th",label:"OBSCURA | September 18th",table:"Obscura 9/18",art:"/landing-events/obscura-september-18.jpg"},
-      {name:"L'Atelier x Torture Garden",date:"September 19th",label:"L'ATELIER X TORTURE GARDEN | September 19th",table:"L'Atelier 9/19",art:"/landing-events/latelier-september-19.jpg",cabaret:true},
-      {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"11/21 Door List",art:"/landing-events/do-not-disturb-november-21.jpg"},
-      {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",cabaret:true},
+      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
+      {name:"Obscura",date:"September 18th",label:"OBSCURA | September 18th",table:"Obscura 9/18",art:"/landing-events/obscura-september-18.jpg",tabs:'obscura'},
+      {name:"L'Atelier x Torture Garden",date:"September 19th",label:"L'ATELIER X TORTURE GARDEN | September 19th",table:"L'Atelier 9/19",art:"/landing-events/latelier-september-19.jpg",tabs:'atelier-tg'},
+      {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"11/21 Door List",art:"/landing-events/do-not-disturb-november-21.jpg",tabs:'dnd'},
+      {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",tabs:'atelier'},
+    ];
+    /** Obscura — `match` = Airtable List option. */
+    const OBSCURA_TABS=[
+      {id:'ga',lbl:'GA',match:'GA'},
+      {id:'salon2',lbl:'Salon (2)',match:'Salon Table for 2'},
+      {id:'salon4',lbl:'Salon (4)',match:'Salon Table for 4'},
+      {id:'booth',lbl:"Madame's Booth",match:"Madame's Booth"},
+      {id:'stage',lbl:'Stage seat',match:'Intimate Stage Table Seat'},
+      {id:'working',lbl:'Working',match:'Working'},
+      {id:'all',lbl:'All'},
+    ];
+    const OBSCURA_ALL_SECTIONS=[
+      {match:'GA',lbl:'GENERAL ADMISSION'},
+      {match:'Intimate Stage Table Seat',lbl:'INTIMATE STAGE TABLE SEAT'},
+      {match:'Salon Table for 2',lbl:'SALON TABLE OF 2'},
+      {match:'Salon Table for 4',lbl:'SALON TABLE OF 4'},
+      {match:"Madame's Booth",lbl:"MADAME'S BOOTH"},
+      {match:'Working',lbl:'WORKING'},
+    ];
+    const DND_TABS=[
+      {id:'dinner',lbl:'Dinner'},
+      {id:'nightcap',lbl:'Nightcap'},
+      {id:'working',lbl:'Working'},
+      {id:'all',lbl:'Full List'},
+    ];
+    const ATELIER_TG_TABS=[
+      {id:'working',lbl:'Working'},
+      {id:'guest',lbl:'Guests'},
+      {id:'tables',lbl:'Tables'},
+      {id:'latelier',lbl:"L'Atelier"},
+      {id:'all',lbl:'Full List'},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
@@ -559,17 +600,55 @@
       el.innerHTML=buildWBDisplayHTML(tableOn,sti);
     }
 
+    function currentEventConfig(){
+      return EVENTS.find(e=>e.table===curTable)||null;
+    }
+    function eventTabMode(){
+      const ev=currentEventConfig();
+      return ev&&ev.tabs?ev.tabs:'atelier';
+    }
+    function isObscuraTable(){ return eventTabMode()==='obscura'; }
+    function isDoNotDisturbTable(){ return eventTabMode()==='dnd'; }
+    function isAtelierTgTable(){ return eventTabMode()==='atelier-tg'; }
+    function syncEventUi(){
+      const app=document.getElementById('app');
+      if(app) app.classList.toggle('app-obscura',isObscuraTable());
+      const nda=document.getElementById('ndaToolbarBtn');
+      if(nda) nda.style.display=isObscuraTable()?'none':'';
+      const hint=document.getElementById('obscuraTabHint');
+      if(hint) hint.hidden=!isObscuraTable();
+    }
+    function isObscuraGaGuest(g){
+      return listFieldMatches(g,'GA');
+    }
+    function scrollActiveTabIntoView(smooth){
+      if(!isObscuraTable()) return;
+      requestAnimationFrame(()=>{
+        document.querySelector('#tabs .tab.active')?.scrollIntoView?.({
+          inline:'center',block:'nearest',behavior:smooth?'smooth':'auto'
+        });
+      });
+    }
+
     function getTabsForCurrentTable(){
-      return hasCabaretField()?CABARET_TABS:BASE_TABS;
+      const mode=eventTabMode();
+      if(mode==='obscura') return OBSCURA_TABS;
+      if(mode==='dnd') return DND_TABS;
+      if(mode==='atelier-tg') return ATELIER_TG_TABS;
+      if(hasCabaretField()) return CABARET_TABS;
+      return BASE_TABS;
     }
     function defaultTabForCurrentTable(){
-      return hasCabaretField()?'all':'guest';
+      const mode=eventTabMode();
+      if(mode==='obscura') return 'working';
+      if(mode==='dnd') return 'dinner';
+      return 'guest';
     }
     function hasNotesExtraField(){
       try{ return F_NOTES_EXTRA.some(n=>tableFields.has(n)); }catch(_){ return false; }
     }
     function eventHasCabaretFlag(){
-      const ev=EVENTS.find(e=>e.table===curTable);
+      const ev=currentEventConfig();
       return !!(ev&&ev.cabaret);
     }
     function seedCabaretTableFields(){
@@ -627,6 +706,9 @@
       if(k==='guest') return 'Guest';
       if(k==='table'||k==='tables') return 'Table';
       if(k==='working') return 'Working';
+      if(k==='dinner') return 'Dinner';
+      if(k==='nightcap') return 'Nightcap';
+      if(k==='latelier') return "L'Atelier";
       const raw=String(seg||'').trim();
       return raw||'Guest';
     }
@@ -660,6 +742,7 @@
       if(!e) return;
       curTable=e.table;
       curTab=defaultTabForCurrentTable();
+      syncEventUi();
       document.getElementById('eventTitle').textContent=e.label;
       document.getElementById('evScreen').style.display='none';
       document.getElementById('app').style.display='block';
@@ -1417,13 +1500,14 @@
       const tabs=getTabsForCurrentTable();
       if(curTab!=='ratios' && !tabs.some(t=>t.id===curTab)) curTab=tabs[0].id;
       const wrap=document.getElementById('tabs');
-      wrap.className='tabs tabs-'+tabs.length;
-      wrap.setAttribute('aria-label','Guest segments');
+      wrap.className='tabs'+(isObscuraTable()?' tabs-obscura':' tabs-'+tabs.length);
+      wrap.setAttribute('aria-label', isObscuraTable()?'Filter by list assignment':'Guest segments');
       wrap.innerHTML=tabs.map(t=>{
         const active=curTab!=='ratios'&&t.id===curTab;
         return `<button type="button" role="tab" class="tab ${active?'active':''}" aria-selected="${active?'true':'false'}" onclick="setTab('${esc(t.id)}')">${esc(t.lbl)}</button>`;
       }).join('');
       updateRatiosBtn();
+      scrollActiveTabIntoView(false);
     }
 
     function toggleRatios(){
@@ -1443,7 +1527,64 @@
       if(curTab!=='ratios') lastGuestTab=id;
       curTab=id;
       buildTabs();
+      scrollActiveTabIntoView(true);
       render();
+    }
+
+    function applyTabFilter(list){
+      if(isObscuraTable()){
+        if(curTab==='all') return list;
+        const t=OBSCURA_TABS.find(x=>x.id===curTab);
+        if(t&&t.match) return list.filter(g=>listFieldMatches(g,t.match));
+        return list;
+      }
+      if(isDoNotDisturbTable()){
+        if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
+        if(curTab==='dinner') return list.filter(g=>listFieldMatches(g,'dinner'));
+        if(curTab==='nightcap'||curTab==='after') return list.filter(g=>listFieldMatches(g,'nightcap'));
+        if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
+        return list;
+      }
+      if(isAtelierTgTable()){
+        if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
+        if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
+        if(curTab==='guest') return list.filter(g=>listFieldMatches(g,'guest'));
+        if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
+        if(curTab==='latelier') return list.filter(g=>listFieldMatches(g,"L'Atelier"));
+        return list;
+      }
+      if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
+      else if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
+      else if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
+      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!listFieldMatches(g,'working'));
+      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!listFieldMatches(g,'working'));
+      else if(curTab==='guest') return list.filter(g=>{
+        const segs=listSegmentsLower(g);
+        if(!segs.length) return true;
+        return !listFieldMatches(g,'working');
+      });
+      return list;
+    }
+
+    function buildObscuraAllGroupedMainHtml(list){
+      const used=new Set();
+      let html='<div class="ob-all-wrap">';
+      for(const sec of OBSCURA_ALL_SECTIONS){
+        const bucket=list.filter(g=>{
+          if(used.has(g.id)) return false;
+          if(!listFieldMatches(g,sec.match)) return false;
+          used.add(g.id);
+          return true;
+        });
+        if(!bucket.length) continue;
+        html+=`<section class="ob-sec-wrap"><h2 class="ob-sec">${esc(sec.lbl)}</h2><div class="grid">${bucket.map(gCard).join('')}</div></section>`;
+      }
+      const rest=list.filter(g=>!used.has(g.id));
+      if(rest.length){
+        html+=`<section class="ob-sec-wrap"><h2 class="ob-sec">OTHER</h2><div class="grid">${rest.map(gCard).join('')}</div></section>`;
+      }
+      html+='</div>';
+      return html;
     }
 
     function guestMatchesTablePartyToken(name,token){
@@ -1536,19 +1677,9 @@
         return;
       }
       const q=(document.getElementById('searchInput')?.value||'').toLowerCase();
-      let list=guests;
-      if(curTab==='tables') list=list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
-      else if(curTab==='working') list=list.filter(g=>listFieldMatches(g,'working'));
-      else if(curTab==='all') list=list.filter(g=>!listFieldMatches(g,'working'));
-      else if(curTab==='lust') list=list.filter(g=>g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='garden') list=list.filter(g=>!g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='guest') list=list.filter(g=>{
-        const segs=listSegmentsLower(g);
-        if(!segs.length) return true;
-        return !listFieldMatches(g,'working');
-      });
+      let list=applyTabFilter(guests);
       const byIdAll=Object.fromEntries(guests.map(x=>[x.id,x]));
-      if(curTab==='tables'){
+      if(curTab==='tables' && eventTabMode()==='atelier'){
         if(q) list=filterTableListForSearch(list,q,byIdAll);
         const chk=list.filter(g=>g.checkedIn).length;
         const pend=pendingCountForTable(curTable);
@@ -1570,6 +1701,13 @@
         return false;
       });
       list=[...list].sort((a,b)=>{
+        if(isObscuraTable()){
+          if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
+          const sa=String(a.seatAssignment||'').trim().toLowerCase();
+          const sb=String(b.seatAssignment||'').trim().toLowerCase();
+          if(sa!==sb) return sa.localeCompare(sb);
+          return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
+        }
         if(!!a.checkedIn!==!!b.checkedIn) return a.checkedIn?1:-1;
         return (a.name||'').localeCompare((b.name||''),undefined,{sensitivity:'base'});
       });
@@ -1581,6 +1719,10 @@
         document.getElementById('main').innerHTML='<div class="cstate"><div class="cstate-txt">No guests found</div></div>';
         return;
       }
+      if(isObscuraTable()&&curTab==='all'){
+        document.getElementById('main').innerHTML=buildObscuraAllGroupedMainHtml(list);
+        return;
+      }
       document.getElementById('main').innerHTML=`<div class="grid">${list.map(gCard).join('')}</div>`;
     }
 
@@ -1588,10 +1730,17 @@
       const ph=g.photo
         ?`<img class="card-photo" src="${esc(g.photo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="card-init" style="display:none">${ini(g.name)}</div>`
         :`<div class="card-init">${ini(g.name)}</div>`;
-      const showGoldDot=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
+      const showGoldDot=isDoNotDisturbTable()
+        ?!!(g.wristbands&&g.wristbands.includes('Gold'))
+        :(g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold')));
       const dot=(showGoldDot?`<span class="wb-dot wb-gold"></span>`:'')+(g.stiVerified?`<span class="wb-dot wb-black"></span>`:'');
       const cabTag=g.cabaret?'<span class="card-cabaret" title="Cabaret">🎭</span>':'';
-      const listTag=`<div class="card-tag">${cabTag}${dot}${esc(g.list||'')}</div>`;
+      let listBody=esc(g.list||'');
+      if(isObscuraTable()&&!isObscuraGaGuest(g)){
+        const seat=String(g.seatAssignment||'').trim();
+        if(seat) listBody+=` · ${esc(seat)}`;
+      }
+      const listTag=`<div class="card-tag">${cabTag}${dot}${listBody}</div>`;
       return `<div class="card${g.checkedIn?' checked':''}" onclick="openDetail('${g.id}')">
         ${ph}
         <div class="card-body">
@@ -1609,7 +1758,9 @@
       const phoneCheckVal=loc.phoneCheck!=null?loc.phoneCheck:(g.phoneCheckNum||'');
       const notesVal=loc.notes!=null?loc.notes:(g.doorNotes||'');
       const ph=g.photo?`<img class="detail-avatar" src="${esc(g.photo)}" alt="${esc(g.name)}">`:`<div class="detail-init">${ini(g.name)}</div>`;
-      const hasGoldPill=g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold'));
+      const hasGoldPill=isDoNotDisturbTable()
+        ?!!(g.wristbands&&g.wristbands.includes('Gold'))
+        :(g.tableGuest||!!(g.wristbands&&g.wristbands.includes('Gold')));
       const wbPill=buildWBDisplayHTML(hasGoldPill,!!g.stiVerified);
       const ndaSig=typeof g.ndaSigned==='boolean'?g.ndaSigned:ndaIsSigned(g.nda);
       const ndaRow=!ndaSig
@@ -1639,18 +1790,18 @@
             </div>
             <div class="det-row">
               <div class="det-row-left">
-                <div class="det-lbl">Tables</div>
-                <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
-              </div>
-              <label class="toggle"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} onchange="onTable(this)"><span class="slider"></span></label>
-            </div>
-            <div class="det-row">
-              <div class="det-row-left">
                 <div class="det-lbl">STI Tests Verified</div>
                 <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
               </div>
               <label class="toggle"><input type="checkbox" id="dSTI" ${g.stiVerified?'checked':''} onchange="onSTI(this)"><span class="slider"></span></label>
             </div>
+            ${!isDoNotDisturbTable()?`<div class="det-row">
+              <div class="det-row-left">
+                <div class="det-lbl">Tables</div>
+                <div class="det-sublbl">💛 Table guests receive GOLD WRISTBANDS</div>
+              </div>
+              <label class="toggle"><input type="checkbox" id="dTbl" ${g.tableGuest?'checked':''} onchange="onTable(this)"><span class="slider"></span></label>
+            </div>`:''}
             <div class="det-row">
               <div class="det-lbl">🤫 NDA Signed:</div>
               <label class="toggle"><input type="checkbox" id="dNDA" ${ndaSig?'checked':''} onchange="onNDA(this)"><span class="slider"></span></label>
@@ -1690,7 +1841,9 @@
       const dTbl=document.getElementById('dTbl');
       const sti=document.getElementById('dSTI');
       if(!box||!curG)return;
-      const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
+      const cTbl=isDoNotDisturbTable()
+        ?!!(curG.wristbands&&curG.wristbands.includes('Gold'))
+        :(dTbl?dTbl.checked:guestIsTableGuest(curG));
       const cS=sti && sti.checked;
       box.innerHTML=buildWBDisplayHTML(cTbl,cS);
     }
@@ -1768,20 +1921,22 @@
       if(!curG||!dCI||!dNDA) return null;
       const cI=dCI.checked;
       const cN=dNDA.checked;
-      const cTbl=dTbl?dTbl.checked:guestIsTableGuest(curG);
+      const cTbl=isDoNotDisturbTable()
+        ?!!(curG.wristbands&&curG.wristbands.includes('Gold'))
+        :(dTbl?dTbl.checked:guestIsTableGuest(curG));
       const cS=stiEl && stiEl.checked;
       const cCab=dCabaret?dCabaret.checked:!!curG.cabaret;
       const wb=[];
-      if(cTbl) wb.push('Gold');
+      if(isDoNotDisturbTable()||cTbl) wb.push('Gold');
       if(cS) wb.push('Black');
-      const newList=setGuestListWithTable(curG, cTbl);
+      const newList=isDoNotDisturbTable()?curG.list:setGuestListWithTable(curG, cTbl);
       const criticalFields={[pickField(F_CHECKED_IN)]:cI,'NDA':cN?'Signed':'No'};
       const kCab=pickField(F_CABARET);
       if(kCab) criticalFields[kCab]=cCab;
       const wristFields={ [pickField(F_WRISTBAND)]:wb };
       wristFields[pickField(F_STI)]=cS;
       const kList=pickField(F_LIST);
-      if(kList) wristFields[kList]=listValueForAirtable(newList);
+      if(kList&&!isDoNotDisturbTable()) wristFields[kList]=listValueForAirtable(newList);
       const applyLocal=()=>{
         const i=guests.findIndex(g=>g.id===curG.id);
         if(i>-1){
@@ -1790,7 +1945,7 @@
             checkedIn:cI,
             nda:cN?'Signed':'No',
             ndaSigned:!!cN,
-            tableGuest:cTbl,
+            tableGuest:isDoNotDisturbTable()?wb.includes('Gold'):cTbl,
             list:newList,
             stiVerified:cS,
             wristbands:wb,
@@ -1958,12 +2113,13 @@
       if(kCabAdd && mCab && mCab.checked) fields[kCabAdd]=true;
 
       const wb=[];
-      if(tableOn) wb.push('Gold');
+      if(isDoNotDisturbTable()) wb.push('Gold');
+      else if(tableOn) wb.push('Gold');
       if(stiOn) wb.push('Black');
       fields[pickField(F_STI)]=stiOn;
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
       const kList=pickField(F_LIST);
-      if(kList) fields[kList]=listValueForAirtable(tableOn?'Table':'Guest');
+      if(kList&&!isDoNotDisturbTable()) fields[kList]=listValueForAirtable(tableOn?'Table':'Guest');
 
       const coat=document.getElementById('mCoat').value.trim();
       const phoneChk=document.getElementById('mPhoneCheck')?document.getElementById('mPhoneCheck').value.trim():'';
