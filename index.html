@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | ratios=guest-type-field | pass=House -->
+<!-- door-build: NDA=forms.gle/gNPU5Etg7HSuhYYY7 | landing=select-event | events=sep-nov-dec-2025 | pass=House -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -403,9 +403,12 @@
     const BASE='appY6p2HwRtDmOvAf';
     const NDA_FORM_URL='https://forms.gle/gNPU5Etg7HSuhYYY7';
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
-    /** Single active door list (Airtable table name must match). */
+    /** Upcoming door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
+      {name:"Obscura",date:"September 18th",label:"OBSCURA | September 18th",table:"Obscura 9/18",art:"/landing-events/obscura-september-18.jpg"},
+      {name:"L'Atelier x Torture Garden",date:"September 19th",label:"L'ATELIER X TORTURE GARDEN | September 19th",table:"L'Atelier 9/19",art:"/landing-events/latelier-september-19.jpg",cabaret:true},
+      {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"11/21 Door List",art:"/landing-events/do-not-disturb-november-21.jpg"},
+      {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",cabaret:true},
     ];
     const BASE_TABS=[
       {id:'guest',lbl:'Guests'},
