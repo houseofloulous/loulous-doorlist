@@ -416,7 +416,7 @@
     const EVENTS=[
       {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
       {name:"Obscura",date:"September 18th",label:"OBSCURA | September 18th",table:"Obscura 9/18",art:"/landing-events/obscura-sept-18.jpg",tabs:'obscura'},
-      {name:"RUNA",date:"September 19th",label:"RUNA | September 19th",table:"RUNA 9/19",art:"/landing-events/runa-sept-19.jpg",tabs:'atelier-tg'},
+      {name:"RUNA",date:"September 19th",label:"RUNA | September 19th",table:"RUNA 9/19",art:"/landing-events/runa-sept-19.jpg",tabs:'runa'},
       {name:"October L'Atelier",date:"October 24th",label:"L'ATELIER | October 24th",table:"L'Atelier 10/24",art:"/landing-events/obscura-oct-24.jpg",tabs:'atelier'},
       {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"Do Not Disturb 11/21",art:"/landing-events/do-not-disturb-november-21.jpg",tabs:'dnd'},
       {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",tabs:'atelier'},
@@ -445,11 +445,11 @@
       {id:'working',lbl:'Working'},
       {id:'all',lbl:'Full List'},
     ];
-    const ATELIER_TG_TABS=[
+    const RUNA_TABS=[
       {id:'working',lbl:'Working'},
-      {id:'guest',lbl:'Guests'},
-      {id:'tables',lbl:'Tables'},
-      {id:'latelier',lbl:"L'Atelier"},
+      {id:'vip',lbl:'VIP'},
+      {id:'tables',lbl:'Table'},
+      {id:'ga',lbl:'GA'},
       {id:'all',lbl:'Full List'},
     ];
     const BASE_TABS=[
@@ -610,7 +610,7 @@
     }
     function isObscuraTable(){ return eventTabMode()==='obscura'; }
     function isDoNotDisturbTable(){ return eventTabMode()==='dnd'; }
-    function isAtelierTgTable(){ return eventTabMode()==='atelier-tg'; }
+    function isRunaTable(){ return eventTabMode()==='runa'; }
     function syncEventUi(){
       const app=document.getElementById('app');
       if(app) app.classList.toggle('app-obscura',isObscuraTable());
@@ -635,13 +635,14 @@
       const mode=eventTabMode();
       if(mode==='obscura') return OBSCURA_TABS;
       if(mode==='dnd') return DND_TABS;
-      if(mode==='atelier-tg') return ATELIER_TG_TABS;
+      if(mode==='runa') return RUNA_TABS;
       if(hasCabaretField()) return CABARET_TABS;
       return BASE_TABS;
     }
     function defaultTabForCurrentTable(){
       const mode=eventTabMode();
       if(mode==='obscura') return 'working';
+      if(mode==='runa') return 'ga';
       if(mode==='dnd') return 'dinner';
       return 'guest';
     }
@@ -698,7 +699,7 @@
         return k!=='table' && k!=='tables';
       });
       if(isTable) segs.push('Table');
-      else if(!segs.length) segs.push('Guest');
+      else if(!segs.length) segs.push(isRunaTable()?'GA':'Guest');
       return segs.join(', ');
     }
     /** Map list labels to exact Airtable single-/multi-select option spelling. */
@@ -707,6 +708,8 @@
       if(k==='guest') return 'Guest';
       if(k==='table'||k==='tables') return 'Table';
       if(k==='working') return 'Working';
+      if(k==='vip') return 'VIP';
+      if(k==='ga') return 'GA';
       if(k==='dinner') return 'Dinner';
       if(k==='nightcap') return 'Nightcap';
       if(k==='latelier') return "L'Atelier";
@@ -1546,12 +1549,12 @@
         if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
         return list;
       }
-      if(isAtelierTgTable()){
+      if(isRunaTable()){
         if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
         if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
-        if(curTab==='guest') return list.filter(g=>listFieldMatches(g,'guest'));
+        if(curTab==='vip') return list.filter(g=>listFieldMatches(g,'vip'));
         if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
-        if(curTab==='latelier') return list.filter(g=>listFieldMatches(g,"L'Atelier"));
+        if(curTab==='ga') return list.filter(g=>listFieldMatches(g,'ga'));
         return list;
       }
       if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
@@ -2120,7 +2123,7 @@
       fields[pickField(F_STI)]=stiOn;
       if(wb.length) fields[pickField(F_WRISTBAND)]=wb;
       const kList=pickField(F_LIST);
-      if(kList&&!isDoNotDisturbTable()) fields[kList]=listValueForAirtable(tableOn?'Table':'Guest');
+      if(kList&&!isDoNotDisturbTable()) fields[kList]=listValueForAirtable(tableOn?'Table':(isRunaTable()?'GA':'Guest'));
 
       const coat=document.getElementById('mCoat').value.trim();
       const phoneChk=document.getElementById('mPhoneCheck')?document.getElementById('mPhoneCheck').value.trim():'';
