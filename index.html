@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: events=jun-obscura-tg-oct-dnd-dec | images=match-github-landing-events | pass=House -->
+<!-- door-build: events=oct-obscura-atelier-nov-dnd-dec | images=match-github-landing-events | pass=House -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -414,11 +414,8 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
-      {name:"June L'Atelier",date:"June 13th",label:"L'ATELIER | June 13th",table:"L'Atelier 6/13",art:"/landing-events/latelier-june-13.jpg",cabaret:true},
-      {name:"Obscura",date:"September 18th",label:"OBSCURA | September 18th",table:"Obscura 9/18",art:"/landing-events/obscura-sept-18.jpg",tabs:'obscura'},
-      {name:"RUNA",date:"September 19th",label:"RUNA | September 19th",table:"RUNA 9/19",art:"/landing-events/runa-sept-19.png",tabs:'runa'},
       {name:"Obscura",date:"October 9th",label:"OBSCURA | October 9th",table:"Obscura 10/9",art:"/landing-events/obscura-oct-9.jpg",tabs:'obscura'},
-      {name:"October L'Atelier",date:"October 24th",label:"L'ATELIER | October 24th",table:"L'Atelier 10/24",art:"/landing-events/latelier-oct-24.jpg",tabs:'atelier'},
+      {name:"October L'Atelier",date:"October 17th",label:"L'ATELIER | October 17th",table:"tbl6sWH7iRCV1NW8E",art:"/landing-events/latelier-oct-17.png",tabs:'atelier'},
       {name:"Obscura",date:"November 6th",label:"OBSCURA | November 6th",table:"Obscura 11/6",art:"/landing-events/obscura-nov-6.jpg",tabs:'obscura'},
       {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"Do Not Disturb 11/21",art:"/landing-events/do-not-disturb-nov-21.jpg",tabs:'dnd'},
       {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",tabs:'atelier'},
@@ -471,9 +468,10 @@
     const TABLE_PARTY_GROUPS=[
       ['Alon','Megan'],
       ['David','Haley'],
-      ['Ed','Paula','Mayte'],
+      ['Ed','Paula'],
       ['Sacha'],
       ['Yannick','Kat'],
+      ['Hans','Evie'],
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
