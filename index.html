@@ -545,9 +545,9 @@
       location.reload();
     }
 
-    function showToast(msg='Saved ✓',ms=1800){
+    function showToast(msg='Saved ✓',ms=700){
       const t=document.getElementById('toast');
-      t.textContent=msg; t.classList.add('show');
+      t.textContent='Saved ✓'; t.classList.add('show');
       setTimeout(()=>t.classList.remove('show'),ms);
     }
     function fmtErr(e){
@@ -854,8 +854,6 @@
           }
         }
         localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
-        if(dropped) showToast(dropped===1?'1 old change cleared — re-save that guest if needed':'Old unsynced changes cleared — re-save if needed', 3200);
-        else if(remaining.length<before) showToast('Saved ✓');
         if(remaining.length!==before||dropped) try{ render(); }catch(_){}
       }finally{
         flushBusy=false;
@@ -864,9 +862,6 @@
 
     async function retryPendingSync(){
       await flushPendingQueue();
-      const pend=pendingCountForTable(curTable);
-      if(pend) showToast(`${pend} still queued — re-save that guest on their profile`, 3200);
-      else showToast('Synced ✓');
       try{ render(); }catch(_){}
     }
 
@@ -878,6 +873,7 @@
       let f={...fields};
       const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristbands')||Object.prototype.hasOwnProperty.call(f,'Wristband');
       const hasList=Object.prototype.hasOwnProperty.call(f,'List');
+      let triedCheckinAlt=false;
       for(let attempt=0; attempt<12; attempt++){
         try{
           await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
@@ -924,17 +920,18 @@
               f=next;
               continue;
             }
-            if(Object.prototype.hasOwnProperty.call(f,'Checked In')){
+            if(!triedCheckinAlt && Object.prototype.hasOwnProperty.call(f,'Checked In')){
+              triedCheckinAlt=true;
               const next={...f};
               next['Check-in']=next['Checked In'];
               delete next['Checked In'];
               f=next;
               continue;
             }
-            if(Object.prototype.hasOwnProperty.call(f,'Check-in')){
+            if(Object.prototype.hasOwnProperty.call(f,'Check-in')||Object.prototype.hasOwnProperty.call(f,'Checked In')){
               const next={...f};
-              next['Checked In']=next['Check-in'];
               delete next['Check-in'];
+              delete next['Checked In'];
               f=next;
               continue;
             }
@@ -1963,25 +1960,34 @@
       return {criticalFields,wristFields,applyLocal};
     }
 
+    function doorTextUnchanged(vCoat,vPhone,vNotes,v2){
+      if(!curG) return true;
+      const coat=String(curG.coatCheck||'');
+      const phone=String(curG.phoneCheckNum||'');
+      const notes=String(curG.doorNotes||'');
+      const extra=String(curG.doorNotesExtra||'');
+      return vCoat===coat && vPhone===phone && vNotes===notes && (!hasNotesExtraField()||v2===extra);
+    }
+
     async function saveLocal(){
+      clearTimeout(textSaveTimer);
       if(!curG)return;
       const recordId=curG.id;
       const myGen=saveGen;
       const {vCoat,vPhone,vNotes,v2,fields}=readDoorTextFromDOM();
       if(!document.getElementById('dCoat')||!document.getElementById('dNotes')) return;
       if(Object.keys(fields).length===0) return;
+      if(doorTextUnchanged(vCoat,vPhone,vNotes,v2)) return;
+      applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
       try{
         await patchGuestResilient(recordId, fields);
         if(!detailStillOpen(recordId,myGen)) return;
-        applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
-        showToast('Saved ✓');
+        showToast();
         refreshRatiosIfOpen();
       }catch(e){
         console.error('Door fields save failed',e);
         if(!detailStillOpen(recordId,myGen)) return;
         enqueuePending(recordId, curTable, fields);
-        applyDoorTextToGuest(vCoat,vPhone,vNotes,v2);
-        showToast('Saved ✓');
         try{ render(); }catch(_){}
       }
     }
@@ -1989,7 +1995,7 @@
     let textSaveTimer=null;
     function scheduleTextSave(){
       clearTimeout(textSaveTimer);
-      textSaveTimer=setTimeout(()=>{ saveLocal(); },350);
+      textSaveTimer=setTimeout(()=>{ saveLocal(); },120);
     }
 
     async function saveDetailToggles(recordId,myGen){
@@ -1997,58 +2003,50 @@
       const state=readDetailToggleState();
       if(!state) return;
       const {criticalFields,wristFields,applyLocal}=state;
+      const fields={...criticalFields,...wristFields};
+      applyLocal();
       try{
-        await patchGuestResilient(recordId, criticalFields);
-        if(!detailStillOpen(recordId,myGen)) return;
+        await patchGuestResilient(recordId, fields);
       }catch(e){
-        console.error('Door critical save failed',e);
-        enqueuePending(recordId, curTable, {...criticalFields,...wristFields});
-        if(!detailStillOpen(recordId,myGen)) return;
-        applyLocal();
-        showToast('Saved ✓');
+        console.error('Door toggle save failed',e);
+        enqueuePending(recordId, curTable, fields);
         try{ render(); }catch(_){}
         return;
       }
-      try{
-        await patchGuestResilient(recordId, wristFields);
-      }catch(e){
-        console.error('Door wristband save failed',e);
-        enqueuePending(recordId, curTable, wristFields);
-      }
       if(!detailStillOpen(recordId,myGen)) return;
-      applyLocal();
-      showToast('Saved ✓');
+      showToast();
       try{ render(); }catch(_){}
       refreshRatiosIfOpen();
-      flushPendingQueue().catch(()=>{});
     }
 
-    let saveTimer=null;
     function autoSave(){
-      clearTimeout(saveTimer);
       if(!curG) return;
       const recordId=curG.id;
       const myGen=saveGen;
-      saveTimer=setTimeout(()=>{ saveDetailToggles(recordId,myGen); },350);
+      saveDetailToggles(recordId,myGen);
     }
 
-    async function closeDetail(){
-      clearTimeout(saveTimer);
+    function closeDetail(){
       clearTimeout(textSaveTimer);
-      if(curG){
-        const recordId=curG.id;
-        const myGen=++saveGen;
-        try{
-          await saveDetailToggles(recordId,myGen);
-          if(curG && curG.id===recordId) await saveLocal();
-        }catch(_){}
-      }else{
-        saveGen++;
-      }
+      const recordId=curG&&curG.id;
+      const myGen=saveGen;
+      const text=curG?readDoorTextFromDOM():null;
+      const textDirty=!!(curG&&text&&!doorTextUnchanged(text.vCoat,text.vPhone,text.vNotes,text.v2));
+      if(textDirty) applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
+      saveGen++;
       document.getElementById('detailView').style.display='none';
       document.getElementById('app').style.display='block';
       curG=null;
       render();
+      if(textDirty&&recordId&&Object.keys(text.fields).length){
+        patchGuestResilient(recordId, text.fields).then(()=>{
+          if(myGen+1===saveGen) showToast();
+        }).catch(e=>{
+          console.error('Door close save failed',e);
+          enqueuePending(recordId, curTable, text.fields);
+          try{ render(); }catch(_){}
+        });
+      }
     }
 
     function openAdd(){
