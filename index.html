@@ -222,7 +222,7 @@
     textarea.det-input{resize:none;min-height:80px;}
     .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .2s;}
     .modal-bg.open{opacity:1;pointer-events:all;}
-    .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+    .modal{background:#f2ede8;border-radius:20px 20px 0 0;width:100%;max-height:min(90vh,90dvh);display:flex;flex-direction:column;overflow:hidden;}
     .modal-handle{width:36px;height:4px;background:rgba(0,0,0,.1);border-radius:2px;margin:12px auto 0;}
     .modal-head{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 12px;}
     .modal-title{font-size:22px;color:var(--dark);}
@@ -243,7 +243,7 @@
     .modal-field-lbl{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--warm);margin-bottom:2px;}
     .modal-input{width:100%;background:none;border:none;outline:none;font-size:15px;color:var(--dark);}
     .modal-input::placeholder{color:#c0b8ae;}
-    .modal-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);}
+    .modal-toggle-row{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:14px 16px;border-bottom:1px solid rgba(0,0,0,.05);background:#fff;flex-shrink:0;}
     .modal-toggle-row:last-child{border-bottom:none;}
     .modal-toggle-lbl{font-size:14px;color:var(--dark);display:flex;align-items:center;gap:8px;}
     .modal-nda-hint{padding:10px 16px 14px;font-size:12px;color:var(--red);display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid rgba(0,0,0,.05);line-height:1.4;}
@@ -374,7 +374,7 @@
           <div class="modal-toggle-row" style="align-items:flex-start;">
             <div style="flex:1;min-width:0">
               <div class="modal-toggle-lbl" style="margin-bottom:4px">STI Tests Verified</div>
-              <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
+              <div class="det-sublbl">🖤 Verified tests receive BLACK WRISTBANDS</div>
             </div>
             <label class="toggle"><input type="checkbox" id="mSTI" onchange="updateAddWbPills()"><span class="slider"></span></label>
           </div>
@@ -1792,7 +1792,7 @@
             <div class="det-row">
               <div class="det-row-left">
                 <div class="det-lbl">STI Tests Verified</div>
-                <div class="det-sublbl">🖤 Verified guests receive BLACK WRISTBANDS</div>
+                <div class="det-sublbl">🖤 Verified tests receive BLACK WRISTBANDS</div>
               </div>
               <label class="toggle"><input type="checkbox" id="dSTI" ${g.stiVerified?'checked':''} onchange="onSTI(this)"><span class="slider"></span></label>
             </div>
@@ -2049,8 +2049,27 @@
       }
     }
 
+    function fitAddModal(){
+      const bg=document.getElementById('addModal');
+      const sheet=bg&&bg.querySelector('.modal');
+      if(!sheet) return;
+      if(!bg.classList.contains('open')){
+        sheet.style.maxHeight='';
+        sheet.style.height='';
+        sheet.style.transform='';
+        return;
+      }
+      const vv=window.visualViewport;
+      if(!vv) return;
+      const height=Math.max(240, Math.floor(vv.height-12));
+      const lift=Math.max(0, Math.round(window.innerHeight-(vv.offsetTop+vv.height)));
+      sheet.style.maxHeight=height+'px';
+      sheet.style.height=height+'px';
+      sheet.style.transform=lift?('translateY(-'+lift+'px)'):'';
+    }
     function openAdd(){
       document.getElementById('addModal').classList.add('open');
+      fitAddModal();
       const mb=document.getElementById('addModalBody');
       if(mb) mb.className='modal-body add-at';
       document.getElementById('aN').focus();
@@ -2071,6 +2090,7 @@
 
     function closeAdd(){
       document.getElementById('addModal').classList.remove('open');
+      fitAddModal();
       const addBtn=document.getElementById('addBtn');
       if(addBtn){ addBtn.disabled=false; addBtn.textContent='Add Guest'; }
       const mbReset=document.getElementById('addModalBody');
@@ -2163,6 +2183,20 @@
 
     if(EVENTS.length===1) pickEv(0);
     else{ ensureLandingSubtitle(); buildEvList(); }
+    if(window.visualViewport){
+      visualViewport.addEventListener('resize', fitAddModal);
+      visualViewport.addEventListener('scroll', fitAddModal);
+    }
+    document.getElementById('addModal').addEventListener('focusin', (e)=>{
+      const body=document.getElementById('addModalBody');
+      const el=e.target;
+      if(!body||!el||!body.contains(el)) return;
+      setTimeout(()=>{
+        fitAddModal();
+        const top=el.getBoundingClientRect().top-body.getBoundingClientRect().top+body.scrollTop;
+        body.scrollTop=Math.max(0, top-16);
+      }, 60);
+    });
     document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='visible') flushPendingQueue().catch(()=>{});
     });
