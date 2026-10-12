@@ -414,7 +414,6 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
-      {name:"Obscura",date:"October 9th",label:"OBSCURA | October 9th",table:"Obscura 10/9",art:"/landing-events/obscura-oct-9.jpg",tabs:'obscura'},
       {name:"October L'Atelier",date:"October 17th",label:"L'ATELIER | October 17th",table:"tbl6sWH7iRCV1NW8E",art:"/landing-events/latelier-oct-17.png",tabs:'atelier'},
       {name:"Obscura",date:"November 6th",label:"OBSCURA | November 6th",table:"Obscura 11/6",art:"/landing-events/obscura-nov-6.jpg",tabs:'obscura'},
       {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"Do Not Disturb 11/21",art:"/landing-events/do-not-disturb-nov-21.jpg",tabs:'dnd'},
@@ -1222,7 +1221,9 @@
     }
 
     function guestIsWorking(g){
-      return listFieldMatches(g,'working');
+      if(!g) return false;
+      if(listFieldMatches(g,'working')) return true;
+      return listSegmentsLower(g).some(seg=>normListKey(seg).includes('working'));
     }
 
     /** All ratio pies use the door list; anyone with List = Working is excluded. */
@@ -1556,14 +1557,10 @@
       }
       if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
       else if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
-      else if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
-      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='guest') return list.filter(g=>{
-        const segs=listSegmentsLower(g);
-        if(!segs.length) return true;
-        return !listFieldMatches(g,'working');
-      });
+      else if(curTab==='all') return list.filter(g=>!guestIsWorking(g));
+      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!guestIsWorking(g));
+      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!guestIsWorking(g));
+      else if(curTab==='guest') return list.filter(g=>!guestIsWorking(g));
       return list;
     }
 
