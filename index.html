@@ -28,7 +28,7 @@
     .ev-logo-link:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:4px;}
     .ev-logo{height:62px;margin-bottom:0;}
     .ev-sub{font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:32px;margin-top:12px;}
-    #evScreen .ev-list{width:100%;max-width:min(100%,320px);display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;row-gap:0;column-gap:0;padding:0 0 28px;box-sizing:border-box;}
+    #evScreen .ev-list{width:100%;max-width:min(100%,320px);display:flex;flex-direction:column;flex-wrap:nowrap;gap:0;row-gap:0;column-gap:0;margin-top:28px;padding:0 0 28px;box-sizing:border-box;}
     #evScreen .ev-list>button.ev-item+.ev-item{margin-top:36px;}
     button.ev-item.ev-item-art{
       display:block;width:100%;padding:0;margin:0;border:none;border-radius:12px;cursor:pointer;
@@ -296,7 +296,6 @@
       <a class="ev-logo-link" href="https://www.houseofloulous.com/" target="_blank" rel="noopener noreferrer" title="House of LouLou's — main site">
         <img class="ev-logo" src="https://cdn.jsdelivr.net/gh/houseofloulous/loulous-doorlist@main/LL%20white%20logo%20name%20only.png" alt="LouLou's">
       </a>
-      <div class="ev-sub" id="evLandingSubtitle">Select event</div>
       <div class="ev-list" id="evList"></div>
     </div>
     <div class="ev-landing-spacer" aria-hidden="true"></div>
@@ -724,11 +723,6 @@
       if(!segs.length) return null;
       if(segs.length===1) return segs[0];
       return segs;
-    }
-
-    function ensureLandingSubtitle(){
-      const el=document.getElementById('evLandingSubtitle');
-      if(el) el.textContent='Select event';
     }
 
     function buildEvList(){
@@ -1309,7 +1303,8 @@
     }
 
     function guestIsWorking(g){
-      return listFieldMatches(g,'working');
+      if(listFieldMatches(g,'working')) return true;
+      return listSegmentsLower(g).some(seg=>normListKey(seg)==='working');
     }
 
     /** All ratio pies use the door list; anyone with List = Working is excluded. */
@@ -1642,15 +1637,11 @@
         return list;
       }
       if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
-      else if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
-      else if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
-      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!listFieldMatches(g,'working'));
-      else if(curTab==='guest') return list.filter(g=>{
-        const segs=listSegmentsLower(g);
-        if(!segs.length) return true;
-        return !listFieldMatches(g,'working');
-      });
+      else if(curTab==='working') return list.filter(g=>guestIsWorking(g));
+      else if(curTab==='all') return list;
+      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!guestIsWorking(g));
+      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!guestIsWorking(g));
+      else if(curTab==='guest') return list.filter(g=>!guestIsWorking(g));
       return list;
     }
 
@@ -2321,7 +2312,7 @@
     }
 
     if(EVENTS.length===1) pickEv(0);
-    else{ ensureLandingSubtitle(); buildEvList(); }
+    else{ buildEvList(); }
     if(window.visualViewport){
       visualViewport.addEventListener('resize', fitAddModal);
       visualViewport.addEventListener('scroll', fitAddModal);
