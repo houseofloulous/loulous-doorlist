@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: events=oct-obscura-atelier-nov-dnd-dec | images=match-github-landing-events | pass=House -->
+<!-- door-build: events=oct-obscura-atelier-nov-dec | images=match-github-landing-events | pass=House -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -414,9 +414,9 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
+      {name:"Obscura",date:"October 9th",label:"OBSCURA | October 9th",table:"Obscura 10/9",art:"/landing-events/obscura-oct-9.jpg",tabs:'obscura'},
       {name:"October L'Atelier",date:"October 17th",label:"L'ATELIER | October 17th",table:"tbl6sWH7iRCV1NW8E",art:"/landing-events/latelier-oct-17.png",tabs:'atelier'},
       {name:"Obscura",date:"November 6th",label:"OBSCURA | November 6th",table:"Obscura 11/6",art:"/landing-events/obscura-nov-6.jpg",tabs:'obscura'},
-      {name:"Do Not Disturb",date:"November 21st",label:"DO NOT DISTURB | November 21st",table:"Do Not Disturb 11/21",art:"/landing-events/do-not-disturb-nov-21.jpg",tabs:'dnd'},
       {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",tabs:'atelier'},
     ];
     /** Obscura — `match` = Airtable List option. */
@@ -510,7 +510,7 @@
       voyeur:'#c4b5d4'
     };
 
-    const PENDING_KEY='ll_door_pending_v1';
+    const PENDING_KEY='ll_door_pending_v2';
     let guests=[],curTab='guest',lastGuestTab='guest',curTable='',curG=null,local={};
     let tableFields=new Set();
     let saveGen=0;
@@ -799,15 +799,49 @@
       throw lastErr;
     }
 
-    function enqueuePending(recordId,tableId,fields){
+    try{ localStorage.removeItem('ll_door_pending_v1'); }catch(_){}
+    function readPending(){
       try{
         const raw=localStorage.getItem(PENDING_KEY);
-        let arr=raw?JSON.parse(raw):[];
-        const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
-        if(i>-1) arr[i]={...arr[i], fields:{...arr[i].fields,...fields}, ts:Date.now()};
-        else arr.push({recordId,tableId,fields:{...fields}, ts:Date.now()});
-        localStorage.setItem(PENDING_KEY, JSON.stringify(arr.slice(-500)));
-      }catch(_){}
+        const arr=raw?JSON.parse(raw):[];
+        return Array.isArray(arr)?arr:[];
+      }catch(_){ return []; }
+    }
+    function writePending(arr){
+      try{ localStorage.setItem(PENDING_KEY, JSON.stringify(arr.slice(-500))); }catch(_){}
+    }
+    function sameFieldValue(a,b){
+      return JSON.stringify(a)===JSON.stringify(b);
+    }
+    function revisePending(recordId,tableId,fields){
+      if(!recordId||!fields||!Object.keys(fields).length) return;
+      const arr=readPending();
+      const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
+      if(i>-1) arr[i]={...arr[i], fields:{...arr[i].fields,...fields}, ts:Date.now(), failCount:arr[i].failCount||0};
+      else arr.push({recordId,tableId,fields:{...fields}, ts:Date.now(), failCount:0});
+      writePending(arr);
+    }
+    function supersedePending(recordId,tableId,fields){
+      const arr=readPending();
+      const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
+      if(i<0) return;
+      arr[i]={...arr[i], fields:{...arr[i].fields,...fields}, ts:Date.now(), failCount:0};
+      writePending(arr);
+    }
+    function dropPendingFields(recordId,tableId,fields){
+      const arr=readPending();
+      const i=arr.findIndex(x=>x.recordId===recordId&&x.tableId===tableId);
+      if(i<0) return;
+      const next={...arr[i].fields};
+      for(const k of Object.keys(fields||{})){
+        if(sameFieldValue(next[k], fields[k])) delete next[k];
+      }
+      if(!Object.keys(next).length) arr.splice(i,1);
+      else arr[i]={...arr[i], fields:next};
+      writePending(arr);
+    }
+    function enqueuePending(recordId,tableId,fields){
+      revisePending(recordId,tableId,fields);
     }
 
     function pendingCountForTable(tableId){
@@ -825,35 +859,90 @@
     }
 
     let flushBusy=false;
+    const patchTail=new Map();
+    const latestFieldWrite=new Map();
+    function markLatestFields(recordId,fields){
+      const ts=Date.now();
+      for(const k of Object.keys(fields||{})){
+        latestFieldWrite.set(recordId+'|'+k,{value:fields[k],ts});
+      }
+    }
+    function latestFieldsOnly(recordId,fields){
+      const out={};
+      for(const k of Object.keys(fields||{})){
+        const cur=latestFieldWrite.get(recordId+'|'+k);
+        if(!cur||sameFieldValue(cur.value,fields[k])) out[k]=fields[k];
+      }
+      return out;
+    }
+    function commitGuestFields(recordId,tableId,fields){
+      if(!recordId||!fields||!Object.keys(fields).length) return Promise.resolve();
+      markLatestFields(recordId,fields);
+      supersedePending(recordId,tableId,fields);
+      const prev=patchTail.get(recordId)||Promise.resolve();
+      const job=prev.catch(()=>{}).then(async()=>{
+        const send=latestFieldsOnly(recordId,fields);
+        if(!Object.keys(send).length){
+          dropPendingFields(recordId,tableId,fields);
+          return;
+        }
+        try{
+          await patchGuestResilient(recordId,send,tableId);
+          dropPendingFields(recordId,tableId,send);
+        }catch(e){
+          const still=latestFieldsOnly(recordId,send);
+          if(Object.keys(still).length) revisePending(recordId,tableId,still);
+          throw e;
+        }
+      });
+      const tracked=job.finally(()=>{
+        if(patchTail.get(recordId)===tracked) patchTail.delete(recordId);
+      });
+      patchTail.set(recordId,tracked);
+      return tracked;
+    }
     async function flushPendingQueue(){
       if(flushBusy) return;
-      const raw=localStorage.getItem(PENDING_KEY);
-      if(!raw) return;
-      let arr;
-      try{ arr=JSON.parse(raw); }catch(_){ return; }
+      const arr=readPending();
       if(!arr.length) return;
       flushBusy=true;
       try{
         const before=arr.length;
-        const remaining=[];
         let dropped=0;
         const maxAge=7*24*60*60*1000;
         for(const item of arr){
+          const tail=patchTail.get(item.recordId);
+          if(tail){ try{ await tail; }catch(_){ } }
+          const fresh=readPending().find(x=>x.recordId===item.recordId&&x.tableId===item.tableId);
+          if(!fresh||!Object.keys(fresh.fields||{}).length) continue;
+          const send=latestFieldsOnly(fresh.recordId,fresh.fields);
+          const stale={};
+          for(const k of Object.keys(fresh.fields)){
+            if(!Object.prototype.hasOwnProperty.call(send,k)) stale[k]=fresh.fields[k];
+          }
+          if(Object.keys(stale).length) dropPendingFields(fresh.recordId,fresh.tableId,stale);
+          if(!Object.keys(send).length) continue;
           try{
-            await patchGuestResilient(item.recordId, item.fields, item.tableId);
+            await patchGuestResilient(fresh.recordId,send,fresh.tableId);
+            dropPendingFields(fresh.recordId,fresh.tableId,send);
           }catch(e){
-            const fails=(item.failCount||0)+1;
-            const age=Date.now()-(item.ts||0);
+            const fails=(fresh.failCount||0)+1;
+            const age=Date.now()-(fresh.ts||0);
             if(isPermanentPendingErr(e)||age>maxAge||fails>=6){
               dropped++;
-              console.warn('Dropped pending door sync', item.recordId, e&&e.message);
+              dropPendingFields(fresh.recordId,fresh.tableId,send);
+              console.warn('Dropped pending door sync', fresh.recordId, e&&e.message);
               continue;
             }
-            remaining.push({...item, failCount:fails, ts:item.ts||Date.now()});
+            const kept=readPending();
+            const i=kept.findIndex(x=>x.recordId===fresh.recordId&&x.tableId===fresh.tableId);
+            if(i>-1){
+              kept[i]={...kept[i], failCount:fails};
+              writePending(kept);
+            }
           }
         }
-        localStorage.setItem(PENDING_KEY, JSON.stringify(remaining));
-        if(remaining.length!==before||dropped) try{ render(); }catch(_){}
+        if(readPending().length!==before||dropped) try{ render(); }catch(_){}
       }finally{
         flushBusy=false;
       }
@@ -1221,9 +1310,7 @@
     }
 
     function guestIsWorking(g){
-      if(!g) return false;
-      if(listFieldMatches(g,'working')) return true;
-      return listSegmentsLower(g).some(seg=>normListKey(seg).includes('working'));
+      return listFieldMatches(g,'working');
     }
 
     /** All ratio pies use the door list; anyone with List = Working is excluded. */
@@ -1541,14 +1628,14 @@
         return list;
       }
       if(isDoNotDisturbTable()){
-        if(curTab==='all') return list;
+        if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
         if(curTab==='dinner') return list.filter(g=>listFieldMatches(g,'dinner'));
         if(curTab==='nightcap'||curTab==='after') return list.filter(g=>listFieldMatches(g,'nightcap'));
         if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
         return list;
       }
       if(isRunaTable()){
-        if(curTab==='all') return list;
+        if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
         if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
         if(curTab==='vip') return list.filter(g=>listFieldMatches(g,'vip'));
         if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
@@ -1557,10 +1644,14 @@
       }
       if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
       else if(curTab==='working') return list.filter(g=>listFieldMatches(g,'working'));
-      else if(curTab==='all') return list;
-      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!guestIsWorking(g));
-      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!guestIsWorking(g));
-      else if(curTab==='guest') return list.filter(g=>!guestIsWorking(g));
+      else if(curTab==='all') return list.filter(g=>!listFieldMatches(g,'working'));
+      else if(curTab==='lust') return list.filter(g=>g.cabaret&&!listFieldMatches(g,'working'));
+      else if(curTab==='garden') return list.filter(g=>!g.cabaret&&!listFieldMatches(g,'working'));
+      else if(curTab==='guest') return list.filter(g=>{
+        const segs=listSegmentsLower(g);
+        if(!segs.length) return true;
+        return !listFieldMatches(g,'working');
+      });
       return list;
     }
 
@@ -1954,7 +2045,21 @@
           if(curG && curG.id===guests[i].id) curG=guests[i];
         }
       };
-      return {criticalFields,wristFields,applyLocal};
+      const fields={};
+      const checkKey=pickField(F_CHECKED_IN);
+      if(!!cI!==!!curG.checkedIn) fields[checkKey]=cI;
+      if(!!cN!==!!curG.ndaSigned) fields.NDA=cN?'Signed':'No';
+      const kCabOut=pickField(F_CABARET);
+      if(kCabOut && !!cCab!==!!curG.cabaret) fields[kCabOut]=!!cCab;
+      const tableChanged=!isDoNotDisturbTable() && (!!cTbl!==!!(curG.tableGuest||guestIsTableGuest(curG)));
+      const stiChanged=!!cS!==!!curG.stiVerified;
+      if(stiChanged) fields[pickField(F_STI)]=!!cS;
+      if(tableChanged||stiChanged) fields[pickField(F_WRISTBAND)]=wb;
+      if(tableChanged){
+        const kListOut=pickField(F_LIST);
+        if(kListOut) fields[kListOut]=listValueForAirtable(newList);
+      }
+      return {criticalFields,wristFields,applyLocal,fields};
     }
 
     function doorTextUnchanged(vCoat,vPhone,vNotes,v2){
@@ -1964,6 +2069,22 @@
       const notes=String(curG.doorNotes||'');
       const extra=String(curG.doorNotesExtra||'');
       return vCoat===coat && vPhone===phone && vNotes===notes && (!hasNotesExtraField()||v2===extra);
+    }
+
+    function changedDoorTextFields(text){
+      const fields={};
+      if(!curG||!text) return fields;
+      const kC=pickField(F_COAT);
+      if(kC && text.vCoat!==String(curG.coatCheck||'')) fields[kC]=text.vCoat;
+      const kP=pickPhoneCheckField();
+      if(kP && text.vPhone!==String(curG.phoneCheckNum||'')) fields[kP]=text.vPhone;
+      const kN=pickField(F_NOTES);
+      if(kN && text.vNotes!==String(curG.doorNotes||'')) fields[kN]=text.vNotes;
+      if(hasNotesExtraField()){
+        const k2=pickField(F_NOTES_EXTRA);
+        if(k2 && text.v2!==String(curG.doorNotesExtra||'')) fields[k2]=text.v2;
+      }
+      return fields;
     }
 
     let textSaveTimer=null;
@@ -1989,7 +2110,9 @@
       const {vCoat,vPhone,vNotes,v2,fields}=readDoorTextFromDOM();
       if(!document.getElementById('dCoat')||!document.getElementById('dNotes')) return;
       if(Object.keys(fields).length===0) return;
-      if(doorTextUnchanged(vCoat,vPhone,vNotes,v2)){
+      const textSnap={vCoat,vPhone,vNotes,v2};
+      const changed=changedDoorTextFields(textSnap);
+      if(!Object.keys(changed).length){
         if(!fromTyping) flushQuietSavedToast();
         return;
       }
@@ -2001,13 +2124,11 @@
         showToast();
       }
       try{
-        await patchGuestResilient(recordId, fields);
+        await commitGuestFields(recordId, curTable, changed);
         if(!detailStillOpen(recordId,myGen)) return;
         refreshRatiosIfOpen();
       }catch(e){
         console.error('Door fields save failed',e);
-        if(!detailStillOpen(recordId,myGen)) return;
-        enqueuePending(recordId, curTable, fields);
         try{ render(); }catch(_){}
       }
     }
@@ -2021,14 +2142,13 @@
       if(!curG||curG.id!==recordId) return;
       const state=readDetailToggleState();
       if(!state) return;
-      const {criticalFields,wristFields,applyLocal}=state;
-      const fields={...criticalFields,...wristFields};
+      const {fields,applyLocal}=state;
       applyLocal();
+      if(!fields||!Object.keys(fields).length) return;
       try{
-        await patchGuestResilient(recordId, fields);
+        await commitGuestFields(recordId, curTable, fields);
       }catch(e){
         console.error('Door toggle save failed',e);
-        enqueuePending(recordId, curTable, fields);
         try{ render(); }catch(_){}
         return;
       }
@@ -2052,19 +2172,18 @@
       const recordId=curG&&curG.id;
       const myGen=saveGen;
       const text=curG?readDoorTextFromDOM():null;
-      const textDirty=!!(curG&&text&&!doorTextUnchanged(text.vCoat,text.vPhone,text.vNotes,text.v2));
-      if(textDirty) applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
+      const changed=changedDoorTextFields(text);
+      if(Object.keys(changed).length) applyDoorTextToGuest(text.vCoat,text.vPhone,text.vNotes,text.v2);
       saveGen++;
       document.getElementById('detailView').style.display='none';
       document.getElementById('app').style.display='block';
       curG=null;
       render();
-      if(textDirty&&recordId&&Object.keys(text.fields).length){
-        patchGuestResilient(recordId, text.fields).then(()=>{
+      if(recordId&&Object.keys(changed).length){
+        commitGuestFields(recordId, curTable, changed).then(()=>{
           if(myGen+1===saveGen) showToast();
         }).catch(e=>{
           console.error('Door close save failed',e);
-          enqueuePending(recordId, curTable, text.fields);
           try{ render(); }catch(_){}
         });
       }
