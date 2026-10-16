@@ -1517,6 +1517,19 @@
       return parseDateNameFromNotes(g.doorNotes);
     }
 
+    /** iPhone HEIC originals do not display in the door. Airtable's preview is a normal image. */
+    function photoUrlFromAttachment(p){
+      if(!p) return null;
+      const name=String(p.filename||'').toLowerCase();
+      const typ=String(p.type||'').toLowerCase();
+      const heic=/heic|heif/.test(typ)||name.endsWith('.heic')||name.endsWith('.heif');
+      if(heic&&p.thumbnails){
+        const t=p.thumbnails.full||p.thumbnails.large||p.thumbnails.small;
+        if(t&&t.url) return t.url;
+      }
+      return p.url||null;
+    }
+
     function toG(r){
       const f=r.fields;
       const nDoor=fieldStr(f,F_NOTES)||fieldStr(f,['Note']);
@@ -1531,7 +1544,7 @@
       return {
         id:r.id,name:f['Full Name']||'',checkedIn:!!fieldAny(f,F_CHECKED_IN),
         rsvp:f.RSVP==null||f.RSVP===''?'':String(f.RSVP),
-        photo:f.Photo&&f.Photo[0]?f.Photo[0].url:null,
+        photo:photoUrlFromAttachment(f.Photo&&f.Photo[0]),
         list:Array.isArray(f.List)?f.List.filter(Boolean).join(', '):(f.List==null||f.List===''?'':String(f.List)),
         nda:ndaRaw,
         ndaSigned:ndaIsSigned(ndaRaw),
