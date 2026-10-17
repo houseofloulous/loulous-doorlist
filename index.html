@@ -1733,7 +1733,7 @@
         if(curTab==='ga') return list.filter(g=>listFieldMatches(g,'ga'));
         return list;
       }
-      if(curTab==='tables') return list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
+      if(curTab==='tables') return guestsForTablesTab(list);
       else if(curTab==='working') return list.filter(g=>guestIsWorking(g));
       else if(curTab==='all') return list;
       else if(curTab==='lust') return list.filter(g=>g.cabaret&&!guestIsWorking(g));
@@ -1781,6 +1781,23 @@
         }
       }
       return -1;
+    }
+    /** Tables tab: List = Table, plus anyone seated in a party with those guests. */
+    function guestsForTablesTab(list){
+      const seated=list.filter(g=>listFieldMatches(g,'table')||listFieldMatches(g,'tables'));
+      const partyIds=new Set();
+      for(const g of seated){
+        const idx=tablePartyGroupIndexForGuest(g);
+        if(idx>=0) partyIds.add(idx);
+      }
+      if(!partyIds.size) return seated;
+      const ids=new Set(seated.map(g=>g.id));
+      for(const g of list){
+        if(ids.has(g.id)||guestIsWorking(g)) continue;
+        const idx=tablePartyGroupIndexForGuest(g);
+        if(partyIds.has(idx)) ids.add(g.id);
+      }
+      return list.filter(g=>ids.has(g.id));
     }
     function sortTablePartyMembers(arr){
       return [...arr].sort((a,b)=>{
