@@ -254,19 +254,12 @@
     #addModal .det-input-wrap,#addModal .wb-display{display:block;height:auto;min-height:max-content;}
     #addModal .det-row,#addModal .modal-nda-hint,#addModal .modal-toggle-row{flex-shrink:0;min-height:max-content;height:auto;}
     #addModal .modal-actions{flex:0 0 auto;position:relative;z-index:2;}
-    .door-notes{max-width:640px;margin:0 auto;padding:14px 14px 28px;}
-    .door-notes p{font-size:14px;line-height:1.4;color:var(--warm);margin-bottom:12px;}
-    .door-note-card{background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;}
-    .door-note-card input,.door-note-card textarea{width:100%;background:#f5f2ee;border:none;border-radius:8px;padding:12px 14px;font-size:16px;color:var(--dark);outline:none;}
-    .door-note-card textarea{min-height:96px;resize:vertical;margin-top:10px;}
-    .door-note-save{width:100%;margin-top:12px;min-height:48px;background:var(--blue);border:none;border-radius:12px;color:#fff;font-size:15px;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
-    .door-note-item{background:#fff;border-radius:14px;padding:14px 14px 12px;margin-top:10px;}
-    .door-note-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline;}
-    .door-note-name{font-size:18px;color:var(--dark);}
-    .door-note-when{font-size:12px;color:var(--warm);flex-shrink:0;}
-    .door-note-text{font-size:15px;line-height:1.4;margin-top:6px;white-space:pre-wrap;}
-    .door-note-meta{display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:12px;color:var(--warm);}
-    .door-note-remove{background:none;border:none;color:var(--red);font-size:13px;cursor:pointer;padding:4px 0;}
+    body.notes-open{background:#000;}
+    body.notes-open #stats{display:none;}
+    body.notes-open #main{background:#000;}
+    .door-notes{background:#000;min-height:calc(100dvh - 250px);}
+    #doorPad{display:block;width:100%;min-height:calc(100dvh - 250px);height:calc(100dvh - 250px);background:#000;color:#fff;border:none;outline:none;resize:none;padding:22px 18px 48px;font-size:18px;line-height:1.5;caret-color:#fff;}
+    #doorPad::placeholder{color:rgba(255,255,255,.35);}
     .modal-row{padding:12px 16px;border-bottom:1px solid rgba(0,0,0,.05);display:flex;align-items:center;gap:10px;}
     .modal-row:last-child{border-bottom:none;}
     .modal-ico{font-size:16px;flex-shrink:0;}
@@ -788,6 +781,8 @@
     }
 
     function showEvScreen(){
+      flushDoorPad();
+      document.body.classList.remove('notes-open');
       stopRatioAirtableRefresh();
       ratioGuests=null;
       eventLoadGen++;
@@ -1717,6 +1712,7 @@
     }
 
     function toggleRatios(){
+      if(curTab==='notes') flushDoorPad();
       if(curTab==='ratios'){
         curTab=lastGuestTab||defaultTabForCurrentTable();
         buildTabs();
@@ -1731,6 +1727,7 @@
     }
 
     function setTab(id){
+      if(curTab==='notes' && id!=='notes') flushDoorPad();
       if(curTab!=='ratios') lastGuestTab=id;
       curTab=id;
       buildTabs();
@@ -1890,82 +1887,53 @@
       ).join('')}</div>`;
     }
 
-    const DOOR_NOTES_KEY='ll_door_notes_v1';
-    function readDoorNotes(){
+    const DOOR_PAD_KEY='ll_door_pad_v1';
+    function readPads(){
       try{
-        const arr=JSON.parse(localStorage.getItem(DOOR_NOTES_KEY)||'[]');
-        return Array.isArray(arr)?arr:[];
-      }catch(_){ return []; }
+        const o=JSON.parse(localStorage.getItem(DOOR_PAD_KEY)||'{}');
+        return o&&typeof o==='object'&&!Array.isArray(o)?o:{};
+      }catch(_){ return {}; }
     }
-    function writeDoorNotes(arr){
-      try{ localStorage.setItem(DOOR_NOTES_KEY, JSON.stringify(arr.slice(-200))); }catch(_){}
+    function readPad(table){
+      const pads=readPads();
+      return typeof pads[table]==='string'?pads[table]:'';
     }
-    function notesForCurrentTable(){
-      return readDoorNotes().filter(n=>n.table===curTable).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    function writePad(table, text){
+      const pads=readPads();
+      pads[table]=String(text==null?'':text);
+      try{ localStorage.setItem(DOOR_PAD_KEY, JSON.stringify(pads)); }catch(_){}
+    }
+    function flushDoorPad(){
+      const el=document.getElementById('doorPad');
+      if(el) writePad(curTable, el.value);
     }
     function saveDoorNote(name, text){
-      const note={
-        id:'n'+Date.now()+Math.random().toString(36).slice(2,6),
-        table:curTable,
-        name:String(name||'').trim(),
-        text:String(text||'').trim(),
-        ts:Date.now(),
-        synced:false
-      };
-      const all=readDoorNotes();
-      all.push(note);
-      writeDoorNotes(all);
-      return note;
+      const lines=[String(name||'').trim(), String(text||'').trim()].filter(Boolean);
+      if(!lines.length) return;
+      const block=lines.join('\n');
+      const cur=readPad(curTable).replace(/\s+$/,'');
+      writePad(curTable, cur?cur+'\n\n'+block:block);
     }
-    function markDoorNoteSynced(id){
-      const all=readDoorNotes();
-      const note=all.find(n=>n.id===id);
-      if(note){ note.synced=true; writeDoorNotes(all); }
-    }
-    function removeDoorNote(id){
-      writeDoorNotes(readDoorNotes().filter(n=>n.id!==id));
-      render();
-    }
-    function noteWhen(ts){
-      try{ return new Date(ts).toLocaleString([],{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}); }
-      catch(_){ return ''; }
+    function fitDoorPad(){
+      const pad=document.getElementById('doorPad');
+      if(!pad) return;
+      const vv=window.visualViewport;
+      const viewBottom=vv?vv.offsetTop+vv.height:window.innerHeight;
+      const top=pad.getBoundingClientRect().top;
+      const h=Math.max(160, Math.round(viewBottom-top));
+      pad.style.height=h+'px';
+      pad.style.minHeight=h+'px';
     }
     function renderNotes(){
-      const notes=notesForCurrentTable();
-      const items=notes.map(n=>`<article class="door-note-item"><div class="door-note-top"><div class="door-note-name">${esc(n.name||'Note')}</div><div class="door-note-when">${esc(noteWhen(n.ts))}</div></div>${n.text?`<div class="door-note-text">${esc(n.text)}</div>`:''}<div class="door-note-meta"><span>${n.synced?'On the guest list':'On this phone'}</span><button type="button" class="door-note-remove" onclick="removeDoorNote('${esc(n.id)}')">Remove</button></div></article>`).join('');
-      document.getElementById('stats').innerHTML=`<div class="stat"><b>${notes.length}</b> notes</div>`;
-      document.getElementById('main').innerHTML=`<div class="door-notes"><p>If Add Guest does not go through, write the name and what happened. It stays on this phone.</p><div class="door-note-card"><input id="noteName" type="text" placeholder="Full name" autocomplete="name"><textarea id="noteText" placeholder="Who approved them, coat check, or what went wrong"></textarea><button type="button" class="door-note-save" id="noteSaveBtn" onclick="saveNotesTab()">Save note</button></div>${items}</div>`;
-    }
-    async function saveNotesTab(){
-      const nameEl=document.getElementById('noteName');
-      const textEl=document.getElementById('noteText');
-      const name=nameEl?nameEl.value.trim():'';
-      const text=textEl?textEl.value.trim():'';
-      if(!name&&!text){ alert('Write a name or a note'); return; }
-      const note=saveDoorNote(name, text);
-      const btn=document.getElementById('noteSaveBtn');
-      if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
-      if(name){
-        try{
-          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Full Name':name}})});
-          if(d&&d.id){
-            const kN=pickField(F_NOTES)||'Door Notes';
-            if(text){
-              try{ await patchGuestResilient(d.id,{[kN]:text}); }catch(e2){ console.error('Door note text failed', e2); }
-            }
-            markDoorNoteSynced(note.id);
-            let rec=d;
-            try{ rec=await req('/'+d.id); }catch(__){}
-            guests.push(toG(rec));
-            guests=sortGuestsByName(guests);
-          }
-        }catch(e){
-          console.error('Door note list save failed', e);
-        }
-      }
-      render();
-      const saved=readDoorNotes().find(n=>n.id===note.id);
-      showToast(saved&&saved.synced?'Saved ✓':'Saved on this phone');
+      document.body.classList.add('notes-open');
+      const stats=document.getElementById('stats');
+      if(stats) stats.innerHTML='';
+      const existing=document.getElementById('doorPad');
+      if(existing){ fitDoorPad(); return; }
+      document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="writePad(curTable, this.value)"></textarea></div>`;
+      const pad=document.getElementById('doorPad');
+      if(pad) pad.value=readPad(curTable);
+      fitDoorPad();
     }
 
     function render(){
@@ -1973,6 +1941,7 @@
         renderNotes();
         return;
       }
+      document.body.classList.remove('notes-open');
       if(curTab==='ratios'){
         const pool=guestsForRatios();
         const chk=pool.filter(g=>g.checkedIn).length;
@@ -2577,10 +2546,10 @@
     if(EVENTS.length===1) pickEv(0);
     else{ buildEvList(); }
     if(window.visualViewport){
-      visualViewport.addEventListener('resize', fitAddModal);
-      visualViewport.addEventListener('scroll', fitAddModal);
+      visualViewport.addEventListener('resize', ()=>{ fitAddModal(); fitDoorPad(); });
+      visualViewport.addEventListener('scroll', ()=>{ fitAddModal(); fitDoorPad(); });
     }
-    window.addEventListener('resize', fitAddModal);
+    window.addEventListener('resize', ()=>{ fitAddModal(); fitDoorPad(); });
     document.getElementById('addModal').addEventListener('focusin', (e)=>{
       const body=document.getElementById('addModalBody');
       const el=e.target;
