@@ -928,6 +928,13 @@
       return out;
     }
     const DOOR_PAD_MARK='DOORPAD\n';
+    const DOOR_PAD_HOME='Events';
+    const DOOR_PAD_RECORD={
+      'tbl6sWH7iRCV1NW8E':'recscvlwEvyVCIztu',
+      'Obscura 11/6':'recR9mRjXjlIDdqXF',
+      "L'Atelier 12/12":'rec0oOPgEpUa9AWjK'
+    };
+    function doorPadHomeId(table){ return DOOR_PAD_RECORD[table]||''; }
     function encodeDoorPad(text){ return DOOR_PAD_MARK+String(text==null?'':text); }
     function decodeDoorPad(raw){
       const s=String(raw==null?'':raw);
@@ -1723,7 +1730,8 @@
         resolveDatePartnersFromGuests(incoming);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
-        adoptDoorPad(split.pads);
+        retireStrayPads(split.pads, tableAtStart);
+        adoptDoorPad();
         const detail=document.getElementById('detailView');
         if(detail&&detail.style.display==='block'){
           updateLiveGuests(incoming);
@@ -1768,7 +1776,8 @@
         resolveDatePartnersFromGuests(guests);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
-        adoptDoorPad(split.pads);
+        retireStrayPads(split.pads, curTable);
+        adoptDoorPad();
         render();
         startRatioAirtableRefresh();
         refreshGuestsQuiet();
@@ -2035,21 +2044,45 @@
       if(local.startsWith(remote)||local.includes(remote)) return local;
       return local.replace(/\s+$/,'')+'\n\n'+remote;
     }
-    function adoptDoorPad(padRecs){
-      const switched=doorPadTable!==curTable;
+    function strayPadRecord(r){
+      const f=r&&r.fields?r.fields:{};
+      const raw=typeof f['Door Notes']==='string'?f['Door Notes']:'';
+      if(!raw.startsWith(DOOR_PAD_MARK)) return false;
+      if(f['Full Name']||f.Rolodex) return false;
+      return true;
+    }
+    function retireStrayPads(recs, table){
+      for(const r of recs||[]){
+        if(!strayPadRecord(r)) continue;
+        req('/'+r.id,{method:'DELETE'},table).catch(()=>{});
+      }
+    }
+    async function adoptDoorPad(){
+      const table=curTable;
+      const homeId=doorPadHomeId(table);
+      if(!homeId) return;
+      const switched=doorPadTable!==table;
       if(switched){
-        doorPadTable=curTable;
+        doorPadTable=table;
         doorPadRecordId='';
         doorPadBase='';
       }
-      const rec=choosePadRecord(padRecs);
-      const remote=stripFailedAddDump(rec?doorPadTextFromRecord(rec):'');
-      if(rec) doorPadRecordId=rec.id;
-      const local=stripFailedAddDump(switched?readPad(curTable):currentPadText());
+      let remote='';
+      try{
+        const rec=await req('/'+homeId,{},DOOR_PAD_HOME);
+        if(table!==curTable) return;
+        const raw=rec&&rec.fields&&typeof rec.fields.Notes==='string'?rec.fields.Notes:'';
+        if(raw && !raw.startsWith(DOOR_PAD_MARK)) return;
+        remote=raw.startsWith(DOOR_PAD_MARK)?raw.slice(DOOR_PAD_MARK.length):'';
+      }catch(_){ return; }
+      if(table!==curTable) return;
+      doorPadRecordId=homeId;
+      remote=stripFailedAddDump(remote);
+      const local=stripFailedAddDump(switched?readPad(table):currentPadText());
       const merged=mergePad(doorPadBase, local, remote);
       if(merged!==local) setPadText(merged);
       if(merged===remote) doorPadBase=remote;
-      else pushDoorPad(curTable, doorPadRecordId, merged).catch(()=>{});
+      else pushDoorPad(table, homeId, merged).catch(()=>{});
     }
     function scheduleDoorPadSave(){
       clearTimeout(doorPadTimer);
@@ -2059,22 +2092,14 @@
     }
     async function pushDoorPad(table, recId, text){
       table=table||curTable;
-      if(!table) return;
+      const homeId=doorPadHomeId(table);
+      if(!table||!homeId) return;
       if(text==null) text=(table===curTable&&doorPadTable===table)?currentPadText():readPad(table);
-      const recordId=recId||(table===curTable?doorPadRecordId:'');
-      if(table===curTable&&text===doorPadBase&&recordId) return;
+      if(table===curTable&&text===doorPadBase&&doorPadRecordId===homeId) return;
       try{
-        let savedId=recordId;
-        if(!savedId){
-          if(!text) return;
-          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Door Notes':encodeDoorPad(text)}})},table);
-          if(!d||!d.id) throw new Error('Airtable did not return the notes page');
-          savedId=d.id;
-        }else{
-          await patchGuestResilient(savedId,{'Door Notes':encodeDoorPad(text)},table);
-        }
+        await req('/'+homeId,{method:'PATCH',body:JSON.stringify({fields:{Notes:encodeDoorPad(text)}})},DOOR_PAD_HOME);
         if(table!==curTable) return;
-        doorPadRecordId=savedId;
+        doorPadRecordId=homeId;
         if(currentPadText()===text) doorPadBase=text;
         else scheduleDoorPadSave();
       }catch(e){
