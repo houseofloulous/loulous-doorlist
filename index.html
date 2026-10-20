@@ -2042,7 +2042,7 @@
       const merged=mergePad(doorPadBase, local, remote);
       if(merged!==local) setPadText(merged);
       if(merged===remote) doorPadBase=remote;
-      else scheduleDoorPadSave();
+      else pushDoorPad(curTable, doorPadRecordId, merged).catch(()=>{});
     }
     function scheduleDoorPadSave(){
       clearTimeout(doorPadTimer);
