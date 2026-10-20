@@ -923,15 +923,30 @@
       }
       return out;
     }
-    const DOOR_NOTES_NAME='DOOR NOTES';
+    const DOOR_PAD_MARK='DOORPAD\n';
+    function encodeDoorPad(text){ return DOOR_PAD_MARK+String(text==null?'':text); }
+    function decodeDoorPad(raw){
+      const s=String(raw==null?'':raw);
+      if(s.startsWith(DOOR_PAD_MARK)) return s.slice(DOOR_PAD_MARK.length);
+      return null;
+    }
     function isDoorNotesName(name){
-      return String(name||'').trim().toUpperCase()===DOOR_NOTES_NAME;
+      return String(name||'').trim().toUpperCase()==='DOOR NOTES';
+    }
+    function recordDoorPadRaw(r){
+      const f=r&&r.fields?r.fields:{};
+      if(typeof f['Door Notes']==='string') return f['Door Notes'];
+      if(typeof f['Notes']==='string') return f['Notes'];
+      return '';
+    }
+    function isDoorPadRecord(r){
+      const f=r&&r.fields?r.fields:{};
+      return decodeDoorPad(recordDoorPadRaw(r))!=null || isDoorNotesName(f['Full Name']);
     }
     function splitDoorRecords(recs){
       const pads=[], people=[];
       for(const r of recs||[]){
-        const name=r&&r.fields?r.fields['Full Name']:'';
-        if(isDoorNotesName(name)) pads.push(r);
+        if(isDoorPadRecord(r)) pads.push(r);
         else people.push(r);
       }
       return {pads, people};
@@ -1971,16 +1986,9 @@
       pads[table]=String(text==null?'':text);
       try{ localStorage.setItem(DOOR_PAD_KEY, JSON.stringify(pads)); }catch(_){}
     }
-    function doorPadFieldName(){
-      if(tableFields.has('Door Notes')) return 'Door Notes';
-      if(tableFields.has('Notes')) return 'Notes';
-      return 'Door Notes';
-    }
     function doorPadTextFromRecord(r){
-      const f=r&&r.fields?r.fields:{};
-      if(typeof f['Door Notes']==='string') return f['Door Notes'];
-      if(typeof f['Notes']==='string') return f['Notes'];
-      return '';
+      const decoded=decodeDoorPad(recordDoorPadRaw(r));
+      return decoded==null?'':decoded;
     }
     function choosePadRecord(recs){
       if(!recs||!recs.length) return null;
@@ -2044,16 +2052,15 @@
       const table=curTable;
       const text=currentPadText();
       if(text===doorPadBase && doorPadRecordId) return;
-      const field=doorPadFieldName();
       try{
         if(!doorPadRecordId){
           if(!text) return;
-          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Full Name':DOOR_NOTES_NAME,[field]:text}})},table);
+          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Door Notes':encodeDoorPad(text)}})},table);
           if(!d||!d.id) throw new Error('Airtable did not return the notes page');
           if(table!==curTable) return;
           doorPadRecordId=d.id;
         }else{
-          await patchGuestResilient(doorPadRecordId,{[field]:text},table);
+          await patchGuestResilient(doorPadRecordId,{'Door Notes':encodeDoorPad(text)},table);
         }
         if(table!==curTable) return;
         if(currentPadText()===text) doorPadBase=text;
