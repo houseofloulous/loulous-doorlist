@@ -445,18 +445,18 @@
     const OBSCURA_TABS=[
       {id:'ga',lbl:'GA',match:'GA'},
       {id:'salon2',lbl:'Salon (2)',match:'Salon Table for 2'},
-      {id:'salon4',lbl:'Salon (4)',match:'Salon Table for 4'},
+      {id:'salon4',lbl:'Salon (4)',match:['Salon Table for 4','Table for 4','Salon Table of 4']},
       {id:'booth',lbl:"Madame's Booth",match:"Madame's Booth"},
-      {id:'stage',lbl:'Stage seat',match:'Intimate Stage Table Seat'},
+      {id:'stage',lbl:'Stage table',match:["Monsieur's Table",'Stage Table','Intimate Stage Table Seat','Stage seat']},
       {id:'working',lbl:'Working',match:'Working'},
       {id:'all',lbl:'All'},
       {id:'notes',lbl:'Notes'},
     ];
     const OBSCURA_ALL_SECTIONS=[
       {match:'GA',lbl:'GENERAL ADMISSION'},
-      {match:'Intimate Stage Table Seat',lbl:'INTIMATE STAGE TABLE SEAT'},
+      {match:["Monsieur's Table",'Stage Table','Intimate Stage Table Seat','Stage seat'],lbl:'STAGE TABLE'},
       {match:'Salon Table for 2',lbl:'SALON TABLE OF 2'},
-      {match:'Salon Table for 4',lbl:'SALON TABLE OF 4'},
+      {match:['Salon Table for 4','Table for 4','Salon Table of 4'],lbl:'SALON TABLE OF 4'},
       {match:"Madame's Booth",lbl:"MADAME'S BOOTH"},
       {match:'Working',lbl:'WORKING'},
     ];
@@ -707,8 +707,8 @@
       return String(s==null?'':s).toLowerCase().replace(/[\u0027\u2019]/g,'').replace(/\s+/g,'');
     }
     function listFieldMatches(g, tokenOrLabel){
-      const want=normListKey(tokenOrLabel);
-      return listSegmentsLower(g).some(seg=>normListKey(seg)===want);
+      const wants=(Array.isArray(tokenOrLabel)?tokenOrLabel:[tokenOrLabel]).map(normListKey);
+      return listSegmentsLower(g).some(seg=>wants.includes(normListKey(seg)));
     }
     /** Gold wristbands: List must include Table (or Tables), not the legacy Patron field. */
     function guestIsTableFromFields(f){
