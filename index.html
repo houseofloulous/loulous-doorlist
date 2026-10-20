@@ -994,13 +994,10 @@
       const job=(async()=>{
         const ev=EVENTS.find(e=>e.table===table);
         if(!ev) return '';
-        const md=monthDayFromLabel(ev.date);
+        const want=isoForDoorEvent(ev);
         let rows=[];
         try{ rows=await fetchDoorEventRows(); }catch(_){ rows=[]; }
-        let matches=rows.filter(r=>{
-          const d=eventRowMonthDay(r.fields&&r.fields.Date);
-          return !!(md&&d&&d.month===md.month&&d.day===md.day);
-        });
+        let matches=rows.filter(r=>String((r.fields&&r.fields.Date)||'').slice(0,10)===want);
         if(matches.length>1){
           const token=String(ev.name||'').toLowerCase().split(/\s+/)[0];
           const named=matches.filter(r=>token&&String((r.fields&&r.fields['Event Name'])||'').toLowerCase().includes(token));
@@ -2136,7 +2133,7 @@
       const lens=chunks.map(c=>c.length);
       const max=Math.max.apply(null, lens);
       const min=Math.min.apply(null, lens);
-      if(min>80 && max-min<Math.max(80, max*0.25)) return chunks.reduce((a,b)=>a.length>=b.length?a:b);
+      if(min>80 && max-min<Math.max(80, max*0.25)) return chunks[0];
       return s;
     }
     function strayPadRecord(r){
@@ -2152,6 +2149,10 @@
         req('/'+r.id,{method:'DELETE'},table).catch(()=>{});
       }
     }
+    function doorPadFocused(){
+      const el=document.getElementById('doorPad');
+      return !!(el && document.activeElement===el);
+    }
     async function adoptDoorPad(){
       const table=curTable;
       const homeId=await resolveDoorPadHome(table, false);
@@ -2159,7 +2160,6 @@
         if(table===curTable){
           doorPadTable=table;
           doorPadSynced=true;
-          if(!doorPadBase) doorPadBase=collapseRepeatedPad(stripFailedAddDump(currentPadText()));
         }
         return;
       }
@@ -2181,23 +2181,22 @@
       }catch(_){ return; }
       if(table!==curTable) return;
       doorPadRecordId=homeId;
-      const local=collapseRepeatedPad(stripFailedAddDump(switched?readPad(table):currentPadText()));
       if(!doorPadSynced){
-        setPadText(remote);
+        const typed=currentPadText();
+        const already=remote&&typed&&typed!==remote&&typed.includes(remote);
+        if(!already&&typed!==remote) setPadText(remote);
         doorPadBase=remote;
         doorPadSynced=true;
+        if(already) scheduleDoorPadSave();
         return;
       }
+      if(doorPadFocused()) return;
+      const local=collapseRepeatedPad(stripFailedAddDump(currentPadText()));
       if(local===doorPadBase){
         if(remote!==local){
           setPadText(remote);
           doorPadBase=remote;
         }
-        return;
-      }
-      if(remote!==doorPadBase){
-        setPadText(remote);
-        doorPadBase=remote;
         return;
       }
       pushDoorPad(table, homeId, local).catch(()=>{});
@@ -2212,35 +2211,22 @@
       table=table||curTable;
       const homeId=await resolveDoorPadHome(table, true);
       if(!table||!homeId) return;
-      if(text==null) text=(table===curTable&&doorPadTable===table)?currentPadText():readPad(table);
-      text=collapseRepeatedPad(stripFailedAddDump(text));
       if(table===curTable&&!doorPadSynced) return;
+      if(text==null) text=(table===curTable&&doorPadTable===table)?currentPadText():readPad(table);
+      const focused=table===curTable&&doorPadFocused();
+      if(!focused) text=collapseRepeatedPad(stripFailedAddDump(text));
+      if(!String(text||'').trim()){
+        const kept=table===curTable?doorPadBase:readPad(table);
+        if(String(kept||'').trim() && !focused) return;
+      }
       if(table===curTable&&text===doorPadBase&&doorPadRecordId===homeId) return;
       try{
-        const cur=await req('/'+homeId,{},DOOR_PAD_HOME);
-        const raw=cur&&cur.fields&&typeof cur.fields.Notes==='string'?cur.fields.Notes:'';
-        const parsed=parseDoorPad(raw);
-        const remoteText=parsed?collapseRepeatedPad(stripFailedAddDump(parsed.text)):'';
-        if(remoteText===text){
-          if(table!==curTable) return;
-          doorPadRecordId=homeId;
-          doorPadBase=text;
-          doorPadSynced=true;
-          return;
-        }
-        if(doorPadSynced && remoteText!==doorPadBase){
-          if(table!==curTable) return;
-          setPadText(remoteText);
-          doorPadBase=remoteText;
-          doorPadSynced=true;
-          doorPadRecordId=homeId;
-          return;
-        }
         await req('/'+homeId,{method:'PATCH',body:JSON.stringify({fields:{Notes:encodeDoorPad(text)}})},DOOR_PAD_HOME);
         if(table!==curTable) return;
         doorPadRecordId=homeId;
         doorPadSynced=true;
-        if(collapseRepeatedPad(stripFailedAddDump(currentPadText()))===text) doorPadBase=text;
+        const now=currentPadText();
+        if(now===text) doorPadBase=text;
         else scheduleDoorPadSave();
       }catch(e){
         console.error('Door notes sync failed', e);
