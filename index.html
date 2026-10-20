@@ -934,12 +934,95 @@
       'Obscura 11/6':'recR9mRjXjlIDdqXF',
       "L'Atelier 12/12":'rec0oOPgEpUa9AWjK'
     };
-    function doorPadHomeId(table){ return DOOR_PAD_RECORD[table]||''; }
-    function encodeDoorPad(text){ return DOOR_PAD_MARK+String(text==null?'':text); }
-    function decodeDoorPad(raw){
+    let doorPadHomeCache=Object.assign({}, DOOR_PAD_RECORD);
+    const doorPadHomePromises={};
+    function parseDoorPad(raw){
       const s=String(raw==null?'':raw);
-      if(s.startsWith(DOOR_PAD_MARK)) return s.slice(DOOR_PAD_MARK.length);
-      return null;
+      if(!s.startsWith(DOOR_PAD_MARK)) return null;
+      let body=s.slice(DOOR_PAD_MARK.length);
+      let ts=0;
+      const nl=body.indexOf('\n');
+      const first=nl<0?body:body.slice(0,nl);
+      if(/^\d{13}$/.test(first)){
+        ts=Number(first);
+        body=nl<0?'':body.slice(nl+1);
+      }
+      return {text:body, ts:ts};
+    }
+    function encodeDoorPad(text){
+      return DOOR_PAD_MARK+String(text==null?'':text);
+    }
+    function decodeDoorPad(raw){
+      const parsed=parseDoorPad(raw);
+      return parsed?parsed.text:null;
+    }
+    function monthDayFromLabel(dateLabel){
+      const months=['january','february','march','april','may','june','july','august','september','october','november','december'];
+      const m=String(dateLabel||'').trim().match(/^([A-Za-z]+)\s+(\d{1,2})/);
+      if(!m) return null;
+      const month=months.indexOf(m[1].toLowerCase());
+      const day=Number(m[2]);
+      if(month<0||!day) return null;
+      return {month:month+1, day:day};
+    }
+    function isoForDoorEvent(ev){
+      const md=monthDayFromLabel(ev&&ev.date);
+      if(!md) return '';
+      const now=new Date();
+      let year=now.getFullYear();
+      const candidate=new Date(year, md.month-1, md.day);
+      if(now.getTime()-candidate.getTime()>1000*60*60*24*60) year+=1;
+      return year+'-'+String(md.month).padStart(2,'0')+'-'+String(md.day).padStart(2,'0');
+    }
+    function eventRowMonthDay(dateStr){
+      const m=String(dateStr||'').match(/^(\d{4})-(\d{2})-(\d{2})/);
+      if(!m) return null;
+      return {year:Number(m[1]), month:Number(m[2]), day:Number(m[3])};
+    }
+    async function fetchDoorEventRows(){
+      let recs=[], offset=null;
+      do{
+        const d=await req(offset?'?offset='+encodeURIComponent(offset):'',{},DOOR_PAD_HOME);
+        if(d.records) recs=recs.concat(d.records);
+        offset=d.offset||null;
+      }while(offset);
+      return recs;
+    }
+    async function resolveDoorPadHome(table, create){
+      if(doorPadHomeCache[table]) return doorPadHomeCache[table];
+      if(doorPadHomePromises[table]) return doorPadHomePromises[table];
+      const job=(async()=>{
+        const ev=EVENTS.find(e=>e.table===table);
+        if(!ev) return '';
+        const md=monthDayFromLabel(ev.date);
+        let rows=[];
+        try{ rows=await fetchDoorEventRows(); }catch(_){ rows=[]; }
+        let matches=rows.filter(r=>{
+          const d=eventRowMonthDay(r.fields&&r.fields.Date);
+          return !!(md&&d&&d.month===md.month&&d.day===md.day);
+        });
+        if(matches.length>1){
+          const token=String(ev.name||'').toLowerCase().split(/\s+/)[0];
+          const named=matches.filter(r=>token&&String((r.fields&&r.fields['Event Name'])||'').toLowerCase().includes(token));
+          if(named.length) matches=named;
+          matches.sort((a,b)=>String((b.fields&&b.fields.Date)||'').localeCompare(String((a.fields&&a.fields.Date)||'')));
+        }
+        if(matches[0]){
+          doorPadHomeCache[table]=matches[0].id;
+          return matches[0].id;
+        }
+        if(!create) return '';
+        const fields={'Event Name':ev.label||ev.name||table};
+        const iso=isoForDoorEvent(ev);
+        if(iso) fields.Date=iso;
+        const made=await req('',{method:'POST',body:JSON.stringify({fields})},DOOR_PAD_HOME);
+        if(!made||!made.id) throw new Error('Could not open notes for this event');
+        doorPadHomeCache[table]=made.id;
+        return made.id;
+      })();
+      doorPadHomePromises[table]=job;
+      try{ return await job; }
+      finally{ if(doorPadHomePromises[table]===job) delete doorPadHomePromises[table]; }
     }
     function isDoorNotesName(name){
       return String(name||'').trim().toUpperCase()==='DOOR NOTES';
@@ -2003,6 +2086,7 @@
     }
     let doorPadRecordId='';
     let doorPadBase='';
+    let doorPadSynced=false;
     let doorPadTable='';
     let doorPadTimer=null;
     let doorPadChain=Promise.resolve();
@@ -2035,14 +2119,25 @@
         try{ el.setSelectionRange(pos, pos); }catch(_){}
       }
     }
-    function mergePad(base, local, remote){
-      if(local===remote) return local;
-      if(local===base) return remote;
-      if(remote===base||!remote) return local;
-      if(!local) return remote;
-      if(remote.startsWith(local)||remote.includes(local)) return remote;
-      if(local.startsWith(remote)||local.includes(remote)) return local;
-      return local.replace(/\s+$/,'')+'\n\n'+remote;
+    function collapseRepeatedPad(text){
+      const s=String(text==null?'':text).replace(/\s+$/,'');
+      if(!s) return '';
+      const lines=s.split('\n');
+      const head=lines[0];
+      if(!head.trim()) return s;
+      const idxs=[];
+      for(let i=0;i<lines.length;i++) if(lines[i]===head) idxs.push(i);
+      if(idxs.length<2||idxs[0]!==0) return s;
+      const chunks=[];
+      for(let i=0;i<idxs.length;i++){
+        const end=i+1<idxs.length?idxs[i+1]:lines.length;
+        chunks.push(lines.slice(idxs[i], end).join('\n').trim());
+      }
+      const lens=chunks.map(c=>c.length);
+      const max=Math.max.apply(null, lens);
+      const min=Math.min.apply(null, lens);
+      if(min>80 && max-min<Math.max(80, max*0.25)) return chunks.reduce((a,b)=>a.length>=b.length?a:b);
+      return s;
     }
     function strayPadRecord(r){
       const f=r&&r.fields?r.fields:{};
@@ -2059,30 +2154,53 @@
     }
     async function adoptDoorPad(){
       const table=curTable;
-      const homeId=doorPadHomeId(table);
-      if(!homeId) return;
+      const homeId=await resolveDoorPadHome(table, false);
+      if(!homeId||table!==curTable){
+        if(table===curTable){
+          doorPadTable=table;
+          doorPadSynced=true;
+          if(!doorPadBase) doorPadBase=collapseRepeatedPad(stripFailedAddDump(currentPadText()));
+        }
+        return;
+      }
       const switched=doorPadTable!==table;
       if(switched){
         doorPadTable=table;
         doorPadRecordId='';
         doorPadBase='';
+        doorPadSynced=false;
       }
       let remote='';
       try{
         const rec=await req('/'+homeId,{},DOOR_PAD_HOME);
         if(table!==curTable) return;
         const raw=rec&&rec.fields&&typeof rec.fields.Notes==='string'?rec.fields.Notes:'';
-        if(raw && !raw.startsWith(DOOR_PAD_MARK)) return;
-        remote=raw.startsWith(DOOR_PAD_MARK)?raw.slice(DOOR_PAD_MARK.length):'';
+        const parsed=parseDoorPad(raw);
+        if(raw && !parsed) return;
+        remote=collapseRepeatedPad(stripFailedAddDump(parsed?parsed.text:''));
       }catch(_){ return; }
       if(table!==curTable) return;
       doorPadRecordId=homeId;
-      remote=stripFailedAddDump(remote);
-      const local=stripFailedAddDump(switched?readPad(table):currentPadText());
-      const merged=mergePad(doorPadBase, local, remote);
-      if(merged!==local) setPadText(merged);
-      if(merged===remote) doorPadBase=remote;
-      else pushDoorPad(table, homeId, merged).catch(()=>{});
+      const local=collapseRepeatedPad(stripFailedAddDump(switched?readPad(table):currentPadText()));
+      if(!doorPadSynced){
+        setPadText(remote);
+        doorPadBase=remote;
+        doorPadSynced=true;
+        return;
+      }
+      if(local===doorPadBase){
+        if(remote!==local){
+          setPadText(remote);
+          doorPadBase=remote;
+        }
+        return;
+      }
+      if(remote!==doorPadBase){
+        setPadText(remote);
+        doorPadBase=remote;
+        return;
+      }
+      pushDoorPad(table, homeId, local).catch(()=>{});
     }
     function scheduleDoorPadSave(){
       clearTimeout(doorPadTimer);
@@ -2092,15 +2210,37 @@
     }
     async function pushDoorPad(table, recId, text){
       table=table||curTable;
-      const homeId=doorPadHomeId(table);
+      const homeId=await resolveDoorPadHome(table, true);
       if(!table||!homeId) return;
       if(text==null) text=(table===curTable&&doorPadTable===table)?currentPadText():readPad(table);
+      text=collapseRepeatedPad(stripFailedAddDump(text));
+      if(table===curTable&&!doorPadSynced) return;
       if(table===curTable&&text===doorPadBase&&doorPadRecordId===homeId) return;
       try{
+        const cur=await req('/'+homeId,{},DOOR_PAD_HOME);
+        const raw=cur&&cur.fields&&typeof cur.fields.Notes==='string'?cur.fields.Notes:'';
+        const parsed=parseDoorPad(raw);
+        const remoteText=parsed?collapseRepeatedPad(stripFailedAddDump(parsed.text)):'';
+        if(remoteText===text){
+          if(table!==curTable) return;
+          doorPadRecordId=homeId;
+          doorPadBase=text;
+          doorPadSynced=true;
+          return;
+        }
+        if(doorPadSynced && remoteText!==doorPadBase){
+          if(table!==curTable) return;
+          setPadText(remoteText);
+          doorPadBase=remoteText;
+          doorPadSynced=true;
+          doorPadRecordId=homeId;
+          return;
+        }
         await req('/'+homeId,{method:'PATCH',body:JSON.stringify({fields:{Notes:encodeDoorPad(text)}})},DOOR_PAD_HOME);
         if(table!==curTable) return;
         doorPadRecordId=homeId;
-        if(currentPadText()===text) doorPadBase=text;
+        doorPadSynced=true;
+        if(collapseRepeatedPad(stripFailedAddDump(currentPadText()))===text) doorPadBase=text;
         else scheduleDoorPadSave();
       }catch(e){
         console.error('Door notes sync failed', e);
@@ -2155,7 +2295,7 @@
       if(existing){ fitDoorPad(); return; }
       document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="onDoorPadInput()"></textarea></div>`;
       const pad=document.getElementById('doorPad');
-      if(pad) pad.value=readPad(curTable);
+      if(pad) pad.value=collapseRepeatedPad(readPad(curTable));
       fitDoorPad();
     }
 
