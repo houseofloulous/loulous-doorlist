@@ -1072,6 +1072,8 @@
       const hasWB=Object.prototype.hasOwnProperty.call(f,'Wristbands')||Object.prototype.hasOwnProperty.call(f,'Wristband');
       const hasList=Object.prototype.hasOwnProperty.call(f,'List');
       let triedCheckinAlt=false;
+      let triedListAsArray=false;
+      let triedListAsString=false;
       for(let attempt=0; attempt<12; attempt++){
         try{
           await req('/'+recordId,{method:'PATCH',body:JSON.stringify({fields:f})},tableName);
@@ -1144,10 +1146,15 @@
           }
           if(hasList && Object.prototype.hasOwnProperty.call(f,'List') && (low.includes('invalid')||low.includes('cannot')||low.includes('failed')) && /list|choice|select|option|cell/i.test(low)){
             const lv=f.List;
-            if(Array.isArray(lv) && lv.length>1){ f={...f,List:[lv[0]]}; continue; }
-            if(typeof lv==='string' && (low.includes('array')||low.includes('multiple'))){
-              f={...f,List:lv.split(/[,;]+/).map(x=>x.trim()).filter(Boolean)};
-              continue;
+            if(typeof lv==='string' && !triedListAsArray){
+              triedListAsArray=true;
+              const arr=lv.split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+              if(arr.length){ f={...f,List:arr}; continue; }
+            }
+            if(Array.isArray(lv) && !triedListAsString){
+              triedListAsString=true;
+              if(lv.length>1){ f={...f,List:[lv[0]]}; continue; }
+              if(lv.length===1){ f={...f,List:lv[0]}; continue; }
             }
             const next={...f};
             delete next.List;
@@ -2036,9 +2043,9 @@
         doorPadBase='';
       }
       const rec=choosePadRecord(padRecs);
-      const remote=rec?doorPadTextFromRecord(rec):'';
+      const remote=stripFailedAddDump(rec?doorPadTextFromRecord(rec):'');
       if(rec) doorPadRecordId=rec.id;
-      const local=switched?readPad(curTable):currentPadText();
+      const local=stripFailedAddDump(switched?readPad(curTable):currentPadText());
       const merged=mergePad(doorPadBase, local, remote);
       if(merged!==local) setPadText(merged);
       if(merged===remote) doorPadBase=remote;
@@ -2085,6 +2092,14 @@
       const el=document.getElementById('doorPad');
       if(el) writePad(curTable, el.value);
       scheduleDoorPadSave();
+    }
+    function stripFailedAddDump(text){
+      const s=String(text==null?'':text);
+      const at=s.lastIndexOf('\nAdd Guest failed:');
+      if(at<0 && !s.startsWith('Add Guest failed:')) return s;
+      const cutAt=at<0?0:at;
+      const sep=s.slice(0, cutAt).lastIndexOf('\n\n');
+      return s.slice(0, sep>=0?sep:cutAt).replace(/\s+$/,'');
     }
     function saveDoorNote(name, text){
       const lines=[String(name||'').trim(), String(text||'').trim()].filter(Boolean);
@@ -2633,6 +2648,30 @@
       updateAddWbPills();
     }
 
+    const ROLODEX_TABLE='Rolodex';
+    function splitPersonName(name){
+      const parts=String(name||'').trim().replace(/\s+/g,' ').split(' ').filter(Boolean);
+      if(parts.length<=1) return {first:parts[0]||'', last:''};
+      return {first:parts[0], last:parts.slice(1).join(' ')};
+    }
+    function airtableFormulaString(s){
+      return String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    }
+    async function findOrCreateRolodex(name){
+      const clean=String(name||'').trim().replace(/\s+/g,' ');
+      const formula="LOWER({Full Name})='"+airtableFormulaString(clean.toLowerCase())+"'";
+      const found=await req('?pageSize=1&filterByFormula='+encodeURIComponent(formula),{},ROLODEX_TABLE);
+      const existing=(found&&found.records||[])[0];
+      if(existing&&existing.id) return {id:existing.id, created:false};
+      const parts=splitPersonName(clean);
+      const fields={};
+      if(parts.first) fields['First Name']=parts.first;
+      if(parts.last) fields['Last Name']=parts.last;
+      if(!Object.keys(fields).length) throw new Error('Guest name required');
+      const made=await req('',{method:'POST',body:JSON.stringify({fields})},ROLODEX_TABLE);
+      if(!made||!made.id) throw new Error('Airtable did not return the guest');
+      return {id:made.id, created:true};
+    }
     function listValueForNewGuest(tableOn){
       if(isObscuraTable()||isDoNotDisturbTable()) return null;
       if(isRunaTable()) return listValueForAirtable(tableOn?'Table':'GA');
@@ -2675,7 +2714,16 @@
       const fallbackNote=[notes, coat&&('Coat '+coat), phoneChk&&('Phone '+phoneChk)].filter(Boolean).join('\n');
 
       try{
-        const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Full Name':name}})});
+        const person=await findOrCreateRolodex(name);
+        let d;
+        try{
+          d=await req('',{method:'POST',body:JSON.stringify({fields:{Rolodex:[person.id]}})});
+        }catch(err){
+          if(person.created){
+            try{ await req('/'+person.id,{method:'DELETE'},ROLODEX_TABLE); }catch(_){}
+          }
+          throw err;
+        }
         if(!d||!d.id) throw new Error('Airtable did not return a guest');
         const extra={};
         if(checked) Object.assign(extra, checkInWrite(true));
