@@ -909,6 +909,63 @@
       }
       return out;
     }
+    /** A fetch that started before this phone's write must not paint the old Airtable value. */
+    function overlayUnconfirmedWrites(recordId, fields, fetchStartedAt){
+      const out={...(fields||{})};
+      const prefix=recordId+'|';
+      for(const key of Array.from(latestFieldWrite.keys())){
+        if(!key.startsWith(prefix)) continue;
+        const rec=latestFieldWrite.get(key);
+        const name=key.slice(prefix.length);
+        if(!rec) continue;
+        if(rec.ts>fetchStartedAt){ out[name]=rec.value; continue; }
+        if(sameFieldValue(out[name], rec.value) || (out[name]==null && rec.value===false)) latestFieldWrite.delete(key);
+      }
+      return out;
+    }
+    const DOOR_NOTES_NAME='DOOR NOTES';
+    function isDoorNotesName(name){
+      return String(name||'').trim().toUpperCase()===DOOR_NOTES_NAME;
+    }
+    function splitDoorRecords(recs){
+      const pads=[], people=[];
+      for(const r of recs||[]){
+        const name=r&&r.fields?r.fields['Full Name']:'';
+        if(isDoorNotesName(name)) pads.push(r);
+        else people.push(r);
+      }
+      return {pads, people};
+    }
+    function guestsFromRecords(recs, tableId, fetchStartedAt){
+      return sortGuestsByName((recs||[]).map(r=>{
+        let fields=overlayUnconfirmedWrites(r.id, r.fields||{}, fetchStartedAt);
+        const pending=pendingFieldsForRecord(r.id, tableId);
+        if(pending) fields={...fields, ...pending};
+        return toG({...r, fields});
+      }));
+    }
+    function guestListChanged(a,b){
+      if(!a||!b||a.length!==b.length) return true;
+      for(let i=0;i<a.length;i++){
+        const x=a[i], y=b[i];
+        if(x.id!==y.id||!!x.checkedIn!==!!y.checkedIn||(x.list||'')!==(y.list||'')||(x.name||'')!==(y.name||'')||!!x.tableGuest!==!!y.tableGuest||!!x.stiVerified!==!!y.stiVerified||(x.coatCheck||'')!==(y.coatCheck||'')||(x.phoneCheckNum||'')!==(y.phoneCheckNum||'')||(x.doorNotes||'')!==(y.doorNotes||'')) return true;
+      }
+      return false;
+    }
+    function updateLiveGuests(incoming){
+      const detail=document.getElementById('detailView');
+      const detailOpen=!!(detail&&detail.style.display==='block');
+      const openId=detailOpen&&curG?curG.id:'';
+      let next=(incoming||[]).map(g=>(openId&&g.id===openId)?curG:g);
+      if(openId&&!next.some(g=>g.id===openId)) next.push(curG);
+      next=sortGuestsByName(next);
+      const changed=guestListChanged(guests, next);
+      guests=next;
+      if(!changed||detailOpen||curTab==='notes'||curTab==='ratios') return;
+      const y=window.scrollY;
+      render();
+      window.scrollTo(0, y);
+    }
     function commitGuestFields(recordId,tableId,fields){
       if(!recordId||!fields||!Object.keys(fields).length) return Promise.resolve();
       markLatestFields(recordId,fields);
@@ -1373,7 +1430,7 @@
     }
     function startRatioAirtableRefresh(){
       stopRatioAirtableRefresh();
-      ratioAirtableTimer=setInterval(()=>refreshGuestsQuiet(),10000);
+      ratioAirtableTimer=setInterval(()=>refreshGuestsQuiet(),5000);
     }
     function ratioFreshLine(){
       if(ratioRefreshError) return `<div class="ratios-live ratios-live-err">${esc(ratioRefreshError)}</div>`;
@@ -1620,6 +1677,7 @@
       const gen=++guestRefreshGen;
       const tableAtStart=curTable;
       const loadGenAtStart=eventLoadGen;
+      const fetchStartedAt=Date.now();
       try{
         let recs=[],offset=null;
         do{
@@ -1632,16 +1690,20 @@
           const f=r&&r.fields?r.fields:{};
           for(const k of Object.keys(f)) tableFields.add(k);
         }
-        ratioGuests=sortGuestsByName(recs.map(r=>{
-          const pending=pendingFieldsForRecord(r.id,tableAtStart);
-          const src=pending?{...r,fields:{...(r.fields||{}),...pending}}:r;
-          return toG(src);
-        }));
+        const split=splitDoorRecords(recs);
+        const incoming=guestsFromRecords(split.people, tableAtStart, fetchStartedAt);
+        ratioGuests=incoming;
         resolveDatePartnersFromGuests(ratioGuests);
+        resolveDatePartnersFromGuests(incoming);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
+        adoptDoorPad(split.pads);
         const detail=document.getElementById('detailView');
-        if(detail&&detail.style.display==='block') return;
+        if(detail&&detail.style.display==='block'){
+          updateLiveGuests(incoming);
+          return;
+        }
+        updateLiveGuests(incoming);
         if(curTab==='ratios') render();
       }catch(_){
         if(gen!==guestRefreshGen||tableAtStart!==curTable) return;
@@ -1660,6 +1722,7 @@
       buildTabs();
       try{
         let recs=[],offset=null;
+        const fetchStartedAt=Date.now();
         do{
           const d=await req(offset?'?offset='+offset:'');
           if(d.records)recs=recs.concat(d.records);
@@ -1673,11 +1736,13 @@
         seedCabaretTableFields();
         seedAppNumberFields();
         if(loadGen!==eventLoadGen) return;
-        guests=sortGuestsByName(recs.map(toG));
+        const split=splitDoorRecords(recs);
+        guests=guestsFromRecords(split.people, curTable, fetchStartedAt);
         ratioGuests=guests.slice();
         resolveDatePartnersFromGuests(guests);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
+        adoptDoorPad(split.pads);
         render();
         startRatioAirtableRefresh();
         refreshGuestsQuiet();
@@ -1886,6 +1951,11 @@
     }
 
     const DOOR_PAD_KEY='ll_door_pad_v1';
+    let doorPadRecordId='';
+    let doorPadBase='';
+    let doorPadTable='';
+    let doorPadTimer=null;
+    let doorPadChain=Promise.resolve();
     function readPads(){
       try{
         const o=JSON.parse(localStorage.getItem(DOOR_PAD_KEY)||'{}');
@@ -1901,16 +1971,118 @@
       pads[table]=String(text==null?'':text);
       try{ localStorage.setItem(DOOR_PAD_KEY, JSON.stringify(pads)); }catch(_){}
     }
+    function doorPadFieldName(){
+      if(tableFields.has('Door Notes')) return 'Door Notes';
+      if(tableFields.has('Notes')) return 'Notes';
+      return 'Door Notes';
+    }
+    function doorPadTextFromRecord(r){
+      const f=r&&r.fields?r.fields:{};
+      if(typeof f['Door Notes']==='string') return f['Door Notes'];
+      if(typeof f['Notes']==='string') return f['Notes'];
+      return '';
+    }
+    function choosePadRecord(recs){
+      if(!recs||!recs.length) return null;
+      if(doorPadRecordId){
+        const cur=recs.find(r=>r.id===doorPadRecordId);
+        if(cur) return cur;
+      }
+      return recs.slice().sort((a,b)=>{
+        const diff=doorPadTextFromRecord(b).length-doorPadTextFromRecord(a).length;
+        if(diff) return diff;
+        return String(b.createdTime||'').localeCompare(String(a.createdTime||''));
+      })[0];
+    }
+    function currentPadText(){
+      const el=document.getElementById('doorPad');
+      if(el) return el.value;
+      return readPad(curTable);
+    }
+    function setPadText(text){
+      writePad(curTable, text);
+      const el=document.getElementById('doorPad');
+      if(!el||el.value===text) return;
+      const start=el.selectionStart;
+      const focused=document.activeElement===el;
+      el.value=text;
+      if(focused&&typeof start==='number'){
+        const pos=Math.min(start, text.length);
+        try{ el.setSelectionRange(pos, pos); }catch(_){}
+      }
+    }
+    function mergePad(base, local, remote){
+      if(local===remote) return local;
+      if(local===base) return remote;
+      if(remote===base||!remote) return local;
+      if(!local) return remote;
+      if(remote.startsWith(local)||remote.includes(local)) return remote;
+      if(local.startsWith(remote)||local.includes(remote)) return local;
+      return local.replace(/\s+$/,'')+'\n\n'+remote;
+    }
+    function adoptDoorPad(padRecs){
+      if(doorPadTable!==curTable){
+        doorPadTable=curTable;
+        doorPadRecordId='';
+        doorPadBase='';
+      }
+      const rec=choosePadRecord(padRecs);
+      const remote=rec?doorPadTextFromRecord(rec):'';
+      if(rec) doorPadRecordId=rec.id;
+      const local=currentPadText();
+      const merged=mergePad(doorPadBase, local, remote);
+      if(merged!==local) setPadText(merged);
+      if(merged===remote) doorPadBase=remote;
+      else scheduleDoorPadSave();
+    }
+    function scheduleDoorPadSave(){
+      clearTimeout(doorPadTimer);
+      doorPadTimer=setTimeout(()=>{ doorPadChain=doorPadChain.then(()=>pushDoorPad()).catch(()=>{}); }, 600);
+    }
+    async function pushDoorPad(){
+      if(!curTable) return;
+      const table=curTable;
+      const text=currentPadText();
+      if(text===doorPadBase && doorPadRecordId) return;
+      const field=doorPadFieldName();
+      try{
+        if(!doorPadRecordId){
+          if(!text) return;
+          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Full Name':DOOR_NOTES_NAME,[field]:text}})},table);
+          if(!d||!d.id) throw new Error('Airtable did not return the notes page');
+          if(table!==curTable) return;
+          doorPadRecordId=d.id;
+        }else{
+          await patchGuestResilient(doorPadRecordId,{[field]:text},table);
+        }
+        if(table!==curTable) return;
+        if(currentPadText()===text) doorPadBase=text;
+        else scheduleDoorPadSave();
+      }catch(e){
+        console.error('Door notes sync failed', e);
+        clearTimeout(doorPadTimer);
+        doorPadTimer=setTimeout(()=>{ doorPadChain=doorPadChain.then(()=>pushDoorPad()).catch(()=>{}); }, 3000);
+      }
+    }
     function flushDoorPad(){
       const el=document.getElementById('doorPad');
       if(el) writePad(curTable, el.value);
+    }
+    function onDoorPadInput(){
+      const el=document.getElementById('doorPad');
+      if(el) writePad(curTable, el.value);
+      scheduleDoorPadSave();
     }
     function saveDoorNote(name, text){
       const lines=[String(name||'').trim(), String(text||'').trim()].filter(Boolean);
       if(!lines.length) return;
       const block=lines.join('\n');
       const cur=readPad(curTable).replace(/\s+$/,'');
-      writePad(curTable, cur?cur+'\n\n'+block:block);
+      const next=cur?cur+'\n\n'+block:block;
+      writePad(curTable, next);
+      const el=document.getElementById('doorPad');
+      if(el) el.value=next;
+      scheduleDoorPadSave();
     }
     function fitDoorPad(){
       const pad=document.getElementById('doorPad');
@@ -1928,7 +2100,7 @@
       if(stats) stats.innerHTML='';
       const existing=document.getElementById('doorPad');
       if(existing){ fitDoorPad(); return; }
-      document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="writePad(curTable, this.value)"></textarea></div>`;
+      document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="onDoorPadInput()" onblur="pushDoorPad()"></textarea></div>`;
       const pad=document.getElementById('doorPad');
       if(pad) pad.value=readPad(curTable);
       fitDoorPad();
@@ -2535,7 +2707,7 @@
         curTab='notes';
         buildTabs();
         render();
-        alert('Could not add them to Airtable. Saved on the Notes tab on this phone.');
+        alert('Could not add them to Airtable. The name is on the Notes tab and will show on the other devices.');
       }finally{
         if(btn){ btn.disabled=false; btn.textContent='Add Guest'; }
       }
@@ -2559,11 +2731,18 @@
       }, 60);
     });
       document.addEventListener('visibilitychange', ()=>{
-      if(document.visibilityState!=='visible') return;
+      if(document.visibilityState==='hidden'){
+        flushDoorPad();
+        pushDoorPad().catch(()=>{});
+        return;
+      }
       flushPendingQueue().catch(()=>{});
       if(curTable) refreshGuestsQuiet();
     });
-    window.addEventListener('online', ()=>flushPendingQueue().catch(()=>{}));
+    window.addEventListener('online', ()=>{
+      flushPendingQueue().catch(()=>{});
+      pushDoorPad().catch(()=>{});
+    });
     setInterval(()=>flushPendingQueue().catch(()=>{}), 30000);
   </script>
 
