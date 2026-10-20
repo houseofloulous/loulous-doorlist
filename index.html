@@ -924,7 +924,6 @@
       return out;
     }
     const DOOR_PAD_MARK='DOORPAD\n';
-    function encodeDoorPad(text){ return DOOR_PAD_MARK+String(text==null?'':text); }
     function decodeDoorPad(raw){
       const s=String(raw==null?'':raw);
       if(s.startsWith(DOOR_PAD_MARK)) return s.slice(DOOR_PAD_MARK.length);
@@ -1712,7 +1711,6 @@
         resolveDatePartnersFromGuests(incoming);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
-        adoptDoorPad(split.pads);
         const detail=document.getElementById('detailView');
         if(detail&&detail.style.display==='block'){
           updateLiveGuests(incoming);
@@ -1757,7 +1755,6 @@
         resolveDatePartnersFromGuests(guests);
         ratioRefreshError='';
         ratioRefreshedAt=Date.now();
-        adoptDoorPad(split.pads);
         render();
         startRatioAirtableRefresh();
         refreshGuestsQuiet();
@@ -1966,11 +1963,6 @@
     }
 
     const DOOR_PAD_KEY='ll_door_pad_v1';
-    let doorPadRecordId='';
-    let doorPadBase='';
-    let doorPadTable='';
-    let doorPadTimer=null;
-    let doorPadChain=Promise.resolve();
     function readPads(){
       try{
         const o=JSON.parse(localStorage.getItem(DOOR_PAD_KEY)||'{}');
@@ -1986,91 +1978,6 @@
       pads[table]=String(text==null?'':text);
       try{ localStorage.setItem(DOOR_PAD_KEY, JSON.stringify(pads)); }catch(_){}
     }
-    function doorPadTextFromRecord(r){
-      const decoded=decodeDoorPad(recordDoorPadRaw(r));
-      return decoded==null?'':decoded;
-    }
-    function choosePadRecord(recs){
-      if(!recs||!recs.length) return null;
-      if(doorPadRecordId){
-        const cur=recs.find(r=>r.id===doorPadRecordId);
-        if(cur) return cur;
-      }
-      return recs.slice().sort((a,b)=>{
-        const diff=doorPadTextFromRecord(b).length-doorPadTextFromRecord(a).length;
-        if(diff) return diff;
-        return String(b.createdTime||'').localeCompare(String(a.createdTime||''));
-      })[0];
-    }
-    function currentPadText(){
-      const el=document.getElementById('doorPad');
-      if(el) return el.value;
-      return readPad(curTable);
-    }
-    function setPadText(text){
-      writePad(curTable, text);
-      const el=document.getElementById('doorPad');
-      if(!el||el.value===text) return;
-      const start=el.selectionStart;
-      const focused=document.activeElement===el;
-      el.value=text;
-      if(focused&&typeof start==='number'){
-        const pos=Math.min(start, text.length);
-        try{ el.setSelectionRange(pos, pos); }catch(_){}
-      }
-    }
-    function mergePad(base, local, remote){
-      if(local===remote) return local;
-      if(local===base) return remote;
-      if(remote===base||!remote) return local;
-      if(!local) return remote;
-      if(remote.startsWith(local)||remote.includes(local)) return remote;
-      if(local.startsWith(remote)||local.includes(remote)) return local;
-      return local.replace(/\s+$/,'')+'\n\n'+remote;
-    }
-    function adoptDoorPad(padRecs){
-      if(doorPadTable!==curTable){
-        doorPadTable=curTable;
-        doorPadRecordId='';
-        doorPadBase='';
-      }
-      const rec=choosePadRecord(padRecs);
-      const remote=rec?doorPadTextFromRecord(rec):'';
-      if(rec) doorPadRecordId=rec.id;
-      const local=currentPadText();
-      const merged=mergePad(doorPadBase, local, remote);
-      if(merged!==local) setPadText(merged);
-      if(merged===remote) doorPadBase=remote;
-      else scheduleDoorPadSave();
-    }
-    function scheduleDoorPadSave(){
-      clearTimeout(doorPadTimer);
-      doorPadTimer=setTimeout(()=>{ doorPadChain=doorPadChain.then(()=>pushDoorPad()).catch(()=>{}); }, 600);
-    }
-    async function pushDoorPad(){
-      if(!curTable) return;
-      const table=curTable;
-      const text=currentPadText();
-      if(text===doorPadBase && doorPadRecordId) return;
-      try{
-        if(!doorPadRecordId){
-          if(!text) return;
-          const d=await req('',{method:'POST',body:JSON.stringify({fields:{'Door Notes':encodeDoorPad(text)}})},table);
-          if(!d||!d.id) throw new Error('Airtable did not return the notes page');
-          if(table!==curTable) return;
-          doorPadRecordId=d.id;
-        }else{
-          await patchGuestResilient(doorPadRecordId,{'Door Notes':encodeDoorPad(text)},table);
-        }
-        if(table!==curTable) return;
-        if(currentPadText()===text) doorPadBase=text;
-        else scheduleDoorPadSave();
-      }catch(e){
-        console.error('Door notes sync failed', e);
-        clearTimeout(doorPadTimer);
-        doorPadTimer=setTimeout(()=>{ doorPadChain=doorPadChain.then(()=>pushDoorPad()).catch(()=>{}); }, 3000);
-      }
-    }
     function flushDoorPad(){
       const el=document.getElementById('doorPad');
       if(el) writePad(curTable, el.value);
@@ -2078,7 +1985,6 @@
     function onDoorPadInput(){
       const el=document.getElementById('doorPad');
       if(el) writePad(curTable, el.value);
-      scheduleDoorPadSave();
     }
     function saveDoorNote(name, text){
       const lines=[String(name||'').trim(), String(text||'').trim()].filter(Boolean);
@@ -2089,7 +1995,6 @@
       writePad(curTable, next);
       const el=document.getElementById('doorPad');
       if(el) el.value=next;
-      scheduleDoorPadSave();
     }
     function fitDoorPad(){
       const pad=document.getElementById('doorPad');
@@ -2107,7 +2012,7 @@
       if(stats) stats.innerHTML='';
       const existing=document.getElementById('doorPad');
       if(existing){ fitDoorPad(); return; }
-      document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="onDoorPadInput()" onblur="pushDoorPad()"></textarea></div>`;
+      document.getElementById('main').innerHTML=`<div class="door-notes"><textarea id="doorPad" spellcheck="true" placeholder="" oninput="onDoorPadInput()"></textarea></div>`;
       const pad=document.getElementById('doorPad');
       if(pad) pad.value=readPad(curTable);
       fitDoorPad();
@@ -2714,7 +2619,7 @@
         curTab='notes';
         buildTabs();
         render();
-        alert('Could not add them to Airtable. The name is on the Notes tab and will show on the other devices.');
+        alert('Could not add them to Airtable. The name is on the Notes tab on this device.');
       }finally{
         if(btn){ btn.disabled=false; btn.textContent='Add Guest'; }
       }
@@ -2740,16 +2645,12 @@
       document.addEventListener('visibilitychange', ()=>{
       if(document.visibilityState==='hidden'){
         flushDoorPad();
-        pushDoorPad().catch(()=>{});
         return;
       }
       flushPendingQueue().catch(()=>{});
       if(curTable) refreshGuestsQuiet();
     });
-    window.addEventListener('online', ()=>{
-      flushPendingQueue().catch(()=>{});
-      pushDoorPad().catch(()=>{});
-    });
+    window.addEventListener('online', ()=>flushPendingQueue().catch(()=>{}));
     setInterval(()=>flushPendingQueue().catch(()=>{}), 30000);
   </script>
 
