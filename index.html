@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- door-build: events=oct-atelier-nov-obscura-dec | images=match-github-landing-events | pass=House -->
+<!-- door-build: events=dec-atelier | images=match-github-landing-events | pass=House -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -437,8 +437,6 @@
     function openNdaForm(){ window.open(NDA_FORM_URL,'_blank','noopener,noreferrer'); }
     /** Door lists — Airtable table names must match exactly (calendar order). */
     const EVENTS=[
-      {name:"October L'Atelier",date:"October 17th",label:"L'ATELIER | October 17th",table:"tbl6sWH7iRCV1NW8E",art:"/landing-events/latelier-oct-17.png",tabs:'atelier'},
-      {name:"Obscura",date:"November 6th",label:"OBSCURA | November 6th",table:"Obscura 11/6",art:"/landing-events/obscura-nov-6.jpg",tabs:'obscura'},
       {name:"December L'Atelier",date:"December 12th",label:"L'ATELIER | December 12th",table:"L'Atelier 12/12",art:"/landing-events/latelier-december-12.jpg",tabs:'atelier'},
     ];
     /** Obscura — `match` = Airtable List option. */
@@ -500,6 +498,8 @@
       ['Yannick','Kat'],
       ['Angelina','Steve Ullman'],
       ['Angelika Richter','Leo Staroselsky'],
+      ['Bryan Benjamin','Sandra Benjamin'],
+      ['Niko Exarhos','Isabel Jaramillo'],
     ];
     /** Airtable field aliases across older/newer schemas. */
     const F_CHECKED_IN=['Checked In','Check-in'];
@@ -930,8 +930,6 @@
     const DOOR_PAD_MARK='DOORPAD\n';
     const DOOR_PAD_HOME='Events';
     const DOOR_PAD_RECORD={
-      'tbl6sWH7iRCV1NW8E':'recscvlwEvyVCIztu',
-      'Obscura 11/6':'recR9mRjXjlIDdqXF',
       "L'Atelier 12/12":'rec0oOPgEpUa9AWjK'
     };
     let doorPadHomeCache=Object.assign({}, DOOR_PAD_RECORD);
